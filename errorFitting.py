@@ -228,7 +228,6 @@ def findErrorFit(weighting, choices, stdr, stdj, r, j, modz, sigmaIn, guesses, r
                         continue
                     toMerge[i][k] = cov[i-rowCorrector][k-colCorrector]
             cov = toMerge
-        #print(cov)
         for i in range(4):
             if (cov[i][i] < 0):     #If there are negatives on the covariance diagonal, something's wrong
                 raise ValueError
@@ -281,4 +280,4 @@ def findErrorFit(weighting, choices, stdr, stdj, r, j, modz, sigmaIn, guesses, r
             combined.append(stdj[i][j])
             numPoints += 2
     mpe = np.sum(100*abs(np.array(combined) - np.array(model([a, b, g, d])))/np.array(model([a, b, g, d])))
-    return a, b, g, d, sa, sb, sg, sd, np.sum(minimized.fun**2), mpe/numPoints
+    return a, b, g, d, sa, sb, sg, sd, np.sum(minimized.fun**2), mpe/numPoints, cov

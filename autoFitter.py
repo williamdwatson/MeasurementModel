@@ -179,73 +179,34 @@ class autoFitter:
             ig.append([rGuess])
             ig.append([tauGuess])
             #---Try default (complex fit, modulus weighting)---
-            r = self.findFit(w, Zr, Zj, nve, choice, 1, 1, 0, listPercent, bL, ig, [-1], bU, error_params[0], error_params[1], error_params[2], error_params[3], error_params[4])
+            r = self.findFit(w, Zr, Zj, nve, choice, 1, 1, autoType, listPercent, bL, ig, [-1], bU, error_params[0], error_params[1], error_params[2], error_params[3], error_params[4])
             if (r == "^" or r == "-" or r == "$"):
-                if (autoType != 1):
-                    #---Try imaginary fit, modulus weighting---
-                    listPercent.append("a" + str(nve))
-                    r1 = self.findFit(w, Zr, Zj, nve, choice, 1, 1, 1, listPercent, bL, ig, [-1], bU, error_params[0], error_params[1], error_params[2], error_params[3], error_params[4])
-                else:           #Fastest fitting is chosen
-                    r1 = "^"
-                if (r1 == "^" or r1 == "-" or r1 == "$"):
-                    #---Try complex fit, proportional weighting---
-                    if (choice == 1 and autoType != 1):
-                        listPercent.append("d" + str(nve))
-                        r3 = self.findFit(w, Zr, Zj, nve, 2, 1, 1, 0, listPercent, bL, ig, [-1], bU, error_params[0], error_params[1], error_params[2], error_params[3], error_params[4])
-                    else:       #If error structure weighting is chosen, skip fitting with proportional weighting
-                        r3 = "^"
-                    if (r3 == "^" or r3 == "-" or r3 == "$"):
-                        #---Try multistart (complex fit, modulus weighting)---
-                        if (autoType != 1 and autoType != 2):
-                            listPercent.append("b" + str(nve))
-                            ig[len(ig)-1] = np.logspace(-5, 5, 5 if autoType == 3 else 15)
-                            r2 = self.findFit(w, Zr, Zj, nve, choice, 1, 1, 0, listPercent, bL, ig, [-1], bU, error_params[0], error_params[1], error_params[2], error_params[3], error_params[4])
-                        else:
-                            r2 = "^"
-                        if (r2 == "^" or r2 == "-" or r2 == "$"):
-                            if didntWork:
-                                return "^", "^", "^", "^", "^", "^", "^", "^", "^", "^", "^", "^", "^" 
-                            elif (nve > 5 or nve == maxNVE):
-                                break
-                            elif (nve == 1):
-                                bestResultValues = [rBegin, rBegin, tauBegin]
-                                didntWork = True
-                                continue
-                            else:
-                                bestResultValues.append(rBegin)
-                                bestResultValues.append(tauBegin)
-                                didntWork = True
-                                continue
-                        else:
-                            didntWork = False
-                            bestResults = r2
-                            bestNVE = nve
-                            currentFitType = 0
-                            currentFitWeighting = 1
-                            fitted = r2.params.valuesdict()
-                            bestResultValues = [fitted['Re']]
-                            for i in range(1, nve+1):
-                                bestResultValues.append(fitted['R'+str(i)])
-                                bestResultValues.append(fitted['T'+str(i)])
+                #---Try multistart (complex fit, modulus weighting)---
+                listPercent.append("b" + str(nve))
+                ig[len(ig)-1] = np.logspace(-5, 5, 10)
+                r2 = self.findFit(w, Zr, Zj, nve, choice, 1, 1, autoType, listPercent, bL, ig, [-1], bU, error_params[0], error_params[1], error_params[2], error_params[3], error_params[4])
+                if (r2 == "^" or r2 == "-" or r2 == "$"):
+                    if didntWork:
+                        return "^", "^", "^", "^", "^", "^", "^", "^", "^", "^", "^", "^", "^" 
+                    elif (nve > 5 or nve == maxNVE):
+                        break
+                    elif (nve == 1):
+                        bestResultValues = [rBegin, rBegin, tauBegin]
+                        didntWork = True
+                        continue
                     else:
-                        didntWork = False
-                        bestResults = r3
-                        bestNVE = nve
-                        currentFitType = 0
-                        currentFitWeighting = 2
-                        fitted = r3.params.valuesdict()
-                        bestResultValues = [fitted['Re']]
-                        for i in range(1, nve+1):
-                            bestResultValues.append(fitted['R'+str(i)])
-                            bestResultValues.append(fitted['T'+str(i)])
+                        bestResultValues.append(rBegin)
+                        bestResultValues.append(tauBegin)
+                        didntWork = True
+                        continue
                 else:
                     didntWork = False
-                    bestResults = r1
+                    bestResults = r2
                     bestNVE = nve
-                    currentFitType = 1
+                    currentFitType = 0
                     currentFitWeighting = 1
-                    fitted = r1.params.valuesdict()
-                    bestResultValues = [bestResultValues[0]] if (nve > 1) else [fitted['Re']]
+                    fitted = r2.params.valuesdict()
+                    bestResultValues = [fitted['Re']]
                     for i in range(1, nve+1):
                         bestResultValues.append(fitted['R'+str(i)])
                         bestResultValues.append(fitted['T'+str(i)])

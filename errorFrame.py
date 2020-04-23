@@ -49,8 +49,8 @@ class ThreadedTask(threading.Thread):
         self.averageRe = avgre
         self.dc = detrend
     def run(self):
-        alph, bet, gamm, delt, sigalph, sigbet, siggamm, sigdelt, chi, mape = errorFitting.findErrorFit(self.we, self.ch, self.sdr, self.sdj, self.rdat, self.jdat, self.moddat, self.sigm, self.guess, self.choiceRe, self.averageRe, self.dc)
-        self.queue.put((alph, bet, gamm, delt, sigalph, sigbet, siggamm, sigdelt, chi, mape))
+        alph, bet, gamm, delt, sigalph, sigbet, siggamm, sigdelt, chi, mape, cov = errorFitting.findErrorFit(self.we, self.ch, self.sdr, self.sdj, self.rdat, self.jdat, self.moddat, self.sigm, self.guess, self.choiceRe, self.averageRe, self.dc)
+        self.queue.put((alph, bet, gamm, delt, sigalph, sigbet, siggamm, sigdelt, chi, mape, cov))
 
 class CreateToolTip(object):
     """
@@ -139,6 +139,10 @@ class eF(tk.Frame):
         #self.wdataLength = 0
         self.numFiles = 0
         self.fileNames = []
+        self.copyDetrend = "Off"
+        self.copyWeighting = "Variance"
+        self.copyMA = "5 point"
+        self.covar = []
         #self.fileWeightsIn = []
 #        self.standardDevsI = []
 #        self.standardDevsR = []
@@ -260,7 +264,7 @@ class eF(tk.Frame):
         
         def process_queue():
             try:
-                self.alpha, self.beta, self.gamma, self.delta, self.sigmaAlpha, self.sigmaBeta, self.sigmaGamma, self.sigmaDelta, chi, mape = self.queue.get(0)
+                self.alpha, self.beta, self.gamma, self.delta, self.sigmaAlpha, self.sigmaBeta, self.sigmaGamma, self.sigmaDelta, chi, mape, self.covar = self.queue.get(0)
                 if (self.alpha == "-"):
                     messagebox.showerror("Fitting error", "Error 34:\nThe fitting failed")
                     return
@@ -299,6 +303,9 @@ class eF(tk.Frame):
                 self.resultsFrame.grid(column=0, row=5, pady=5, sticky="W")
                 self.plotButton.configure(state="normal")
                 self.plotButton.grid(column=0, row=6, pady=5, sticky="W")
+                self.copyDetrend = self.detrendComboboxVariable.get()
+                self.copyWeighting = self.weightingComboboxVariable.get()
+                self.copyMA = self.movingAverageComboboxVariable.get()
             except queue.Empty:
                 self.after(100, process_queue)
         
@@ -580,51 +587,51 @@ class eF(tk.Frame):
             
             #---All checkboxes---
             if (a and b and re and g and d):
-                self.regressText = "\u03B1<Zj> + \u03B2<Zr - R\u2091> + \u03B3<|Z|>\u00B2 + \u03B4"
+                self.regressText = "\u03B1<|Zj|> + \u03B2<|Zr| - R\u2091> + \u03B3<|Z|>\u00B2 + \u03B4"
             #---All but one---
             elif (a and b and re and g and not d):
-                self.regressText = "\u03B1<Zj> + \u03B2<Zr - R\u2091> + \u03B3<|Z|>\u00B2"
+                self.regressText = "\u03B1<|Zj|> + \u03B2<|Zr| - R\u2091> + \u03B3<|Z|>\u00B2"
             elif (a and b and re and d and not g):
-                self.regressText = "\u03B1<Zj> + \u03B2<Zr - R\u2091> + \u03B4"
+                self.regressText = "\u03B1<|Zj|> + \u03B2<|Zr| - R\u2091> + \u03B4"
             elif (a and b and g and d and not re):
-                self.regressText = "\u03B1<Zj> + \u03B2<Zr> + \u03B3<|Z|>\u00B2 + \u03B4"
+                self.regressText = "\u03B1<|Zj|> + \u03B2<|Zr|> + \u03B3<|Z|>\u00B2 + \u03B4"
             elif (a and g and d and not b):
-                self.regressText = "\u03B1<Zj> + \u03B3<|Z|>\u00B2 + \u03B4"
+                self.regressText = "\u03B1<|Zj|> + \u03B3<|Z|>\u00B2 + \u03B4"
             elif (b and re and g and d and not a):
-                self.regressText = "\u03B2<Zr - R\u2091> + \u03B3<|Z|>\u00B2 + \u03B4"
+                self.regressText = "\u03B2<|Zr| - R\u2091> + \u03B3<|Z|>\u00B2 + \u03B4"
             #---Only three---
             elif (a and b and g and not (re or d)):
-                self.regressText = "\u03B1<Zj> + \u03B2<Zr> + \u03B3<|Z|>\u00B2"
+                self.regressText = "\u03B1<|Zj|> + \u03B2<|Zr|> + \u03B3<|Z|>\u00B2"
             elif (a and b and d and not (re or g)):
-                self.regressText = "\u03B1<Zj> + \u03B2<Zr> + \u03B4"
+                self.regressText = "\u03B1<|Zj|> + \u03B2<|Zr|> + \u03B4"
             elif (b and g and d and not (a or re)):
                 self.regressText = "\u03B2<Zr> + \u03B3<|Z|>\u00B2 + \u03B4"
             #---Only two---
             elif (a and b and not (re or g or d)):
-                self.regressText = "\u03B1<Zj> + \u03B2<Zr>"
+                self.regressText = "\u03B1<|Zj|> + \u03B2<|Zr|>"
             elif (a and b and re and not (g or d)):
-                self.regressText = "\u03B1<Zj> + \u03B2<Zr - R\u2091>"
+                self.regressText = "\u03B1<|Zj|> + \u03B2<|Zr| - R\u2091>"
             elif (a and g and not (b or d)):
-                self.regressText = "\u03B1<Zj> + \u03B3<|Z|>\u00B2"
+                self.regressText = "\u03B1<|Zj|> + \u03B3<|Z|>\u00B2"
             elif (a and d and not (b or g)):
-                self.regressText = "\u03B1<Zj> + \u03B4"
+                self.regressText = "\u03B1<|Zj|> + \u03B4"
             elif (b and g and not (re or a or d)):
-                self.regressText = "\u03B2<Zr> + \u03B3<|Z|>\u00B2"
+                self.regressText = "\u03B2<|Zr|> + \u03B3<|Z|>\u00B2"
             elif (b and d and not (re or a or g)):
-                self.regressText = "\u03B2<Zr> + \u03B4"
+                self.regressText = "\u03B2<|Zr|> + \u03B4"
             elif (b and re and g and not (a or d)):
-                self.regressText = "\u03B2<Zr - R\u2091> + \u03B3<|Z|>\u00B2"
+                self.regressText = "\u03B2<|Zr| - R\u2091> + \u03B3<|Z|>\u00B2"
             elif (b and re and d and not (a or g)):
-                self.regressText = "\u03B2<Zr - R\u2091> + \u03B4"
+                self.regressText = "\u03B2<|Zr| - R\u2091> + \u03B4"
             elif (g and d and not (a or b)):
                 self.regressText = "\u03B3<|Z|>\u00B2 + \u03B4"
             #---Only one---
             elif (a and not (b or g or d)):
-                self.regressText = "\u03B1<Zj>"
+                self.regressText = "\u03B1<|Zj|>"
             elif ((b and re) and not (a or g or d)):
-                self.regressText = "\u03B2<Zr - R\u2091>"
+                self.regressText = "\u03B2<|Zr| - R\u2091>"
             elif (b and not (re or a or g or d)):
-                self.regressText = "\u03B2<Zr>"
+                self.regressText = "\u03B2<|Zr|>"
             elif (g and not (a or b or d)):
                 self.regressText = "\u03B3<|Z|>\u00B2"
             elif (d and not (a or b or g)):
@@ -657,10 +664,30 @@ class eF(tk.Frame):
             self.copyResultsButton.configure(text="Copied")
             self.clipboard_clear()
             stringToCopy = ""
+            for name in self.fileListbox.get(0, tk.END):
+                stringToCopy += name + "\n"
+            stringToCopy += "Parameter\tValue\tStd. Dev.\n"
             for child in self.resultsView.get_children():
                 resultName, resultValue, resultStdDev, result95 = self.resultsView.item(child, 'values')
                 stringToCopy += resultName + "\t" + resultValue + "\t" + resultStdDev + "\n"
-            stringToCopy = stringToCopy[:-1]
+            v = np.sqrt(np.diag(self.covar))
+            outer_v = np.outer(v, v)
+            correl = np.zeros((len(self.covar), len(self.covar)))
+            for i in range(len(self.covar)):        #Could do self.covar/outer_v, but possibility exists of divide-by-0 error
+                for j in range(len(self.covar)):
+                    if (outer_v[i][j] == 0):
+                        correl[i][j] = 0
+                    else:
+                        correl[i][j] = self.covar[i][j] / outer_v[i][j]
+            stringToCopy += "\n---Correlation---\n\tAlpha\tBeta\tGamma\tDelta\n"
+            stringToCopy += "Alpha\t" + str(correl[0][0]) + "\t" + str(correl[0][1]) + "\t" + str(correl[0][2]) + "\t" + str(correl[0][3])
+            stringToCopy += "\nBeta\t" + str(correl[1][0]) + "\t" + str(correl[1][1]) + "\t" + str(correl[1][2]) + "\t" + str(correl[1][3])
+            stringToCopy += "\nGamma\t" + str(correl[2][0]) + "\t" + str(correl[2][1]) + "\t" + str(correl[2][2]) + "\t" + str(correl[2][3])
+            stringToCopy += "\nDelta\t" + str(correl[3][0]) + "\t" + str(correl[3][1]) + "\t" + str(correl[3][2]) + "\t" + str(correl[3][3]) + "\n"
+            stringToCopy += "\nDetrend option:\t" + self.copyDetrend + "\nWeighting:\t" + self.copyWeighting
+            if (self.copyWeighting == "Variance"):
+                stringToCopy += "\n" + self.copyMA + " moving average"
+            #stringToCopy = stringToCopy[:-1]
             pyperclip.copy(stringToCopy)
             self.after(500, lambda : self.copyResultsButton.configure(text="Copy values and std. devs."))
         
@@ -704,24 +731,124 @@ class eF(tk.Frame):
         self.alphaCheckbox = ttk.Checkbutton(self.regressionParamsFrame, text="\u03B1", variable=self.alphaCheckboxVariable, command=checkboxCommand)
         self.alphaEqual = tk.Label(self.regressionParamsFrame, text="=  ", bg=self.backgroundColor, fg=self.foregroundColor)
         self.alphaEntryVariable = tk.StringVar(self, "0.1")
-        self.alphaEntry = ttk.Entry(self.regressionParamsFrame, textvariable=self.alphaEntryVariable, exportselection=0, width=10)
+        self.alphaEntry = ttk.Entry(self.regressionParamsFrame, textvariable=self.alphaEntryVariable, width=10)
+        
+        def popup_alpha(event):
+            try:
+                self.popup_menuA.tk_popup(event.x_root, event.y_root, 0)
+            finally:
+                self.popup_menuA.grab_release()
+        def paste_alpha():
+            if (self.focus_get() != self.alphaEntry):
+                self.alphaEntry.insert(tk.END, pyperclip.paste())
+            else:
+                self.alphaEntry.insert(tk.INSERT, pyperclip.paste())
+        def copy_alpha():
+            if (self.focus_get() != self.alphaEntry):
+                pyperclip.copy(self.alphaEntry.get())
+            else:
+                try:
+                    stringToCopy = self.alphaEntry.selection_get()
+                except:
+                    stringToCopy = self.alphaEntry.get()
+                pyperclip.copy(stringToCopy)
+        self.popup_menuA = tk.Menu(self.alphaEntry, tearoff=0)
+        self.popup_menuA.add_command(label="Copy", command=copy_alpha)
+        self.popup_menuA.add_command(label="Paste", command=paste_alpha)
+        self.alphaEntry.bind("<Button-3>", popup_alpha)
+        
         self.betaCheckboxVariable = tk.IntVar(self, self.topGUI.getErrorBeta())
         self.betaCheckbox = ttk.Checkbutton(self.regressionParamsFrame, text="\u03B2", variable=self.betaCheckboxVariable, command=checkboxCommand)
         self.betaEqual = tk.Label(self.regressionParamsFrame, text="=  ", bg=self.backgroundColor, fg=self.foregroundColor)
         self.betaEntryVariable = tk.StringVar(self, "0.1")
-        self.betaEntry = ttk.Entry(self.regressionParamsFrame, textvariable=self.betaEntryVariable, exportselection=0, width=10)
+        self.betaEntry = ttk.Entry(self.regressionParamsFrame, textvariable=self.betaEntryVariable, width=10)
+        
+        def popup_beta(event):
+            try:
+                self.popup_menuB.tk_popup(event.x_root, event.y_root, 0)
+            finally:
+                self.popup_menuB.grab_release()
+        def paste_beta():
+            if (self.focus_get() != self.betaEntry):
+                self.betaEntry.insert(tk.END, pyperclip.paste())
+            else:
+                self.betaEntry.insert(tk.INSERT, pyperclip.paste())
+        def copy_beta():
+            if (self.focus_get() != self.betaEntry):
+                pyperclip.copy(self.betaEntry.get())
+            else:
+                try:
+                    stringToCopy = self.betaEntry.selection_get()
+                except:
+                    stringToCopy = self.betaEntry.get()
+                pyperclip.copy(stringToCopy)
+        self.popup_menuB = tk.Menu(self.betaEntry, tearoff=0)
+        self.popup_menuB.add_command(label="Copy", command=copy_beta)
+        self.popup_menuB.add_command(label="Paste", command=paste_beta)
+        self.betaEntry.bind("<Button-3>", popup_beta)
+        
         self.reCheckboxVariable = tk.IntVar(self, self.topGUI.getErrorRe())
         self.reCheckbox = ttk.Checkbutton(self.regressionParamsFrame, text="R\u2091", variable=self.reCheckboxVariable, command=checkboxCommand)
         self.gammaCheckboxVariable = tk.IntVar(self, self.topGUI.getErrorGamma())
         self.gammaCheckbox = ttk.Checkbutton(self.regressionParamsFrame, text="\u03B3", variable=self.gammaCheckboxVariable, command=checkboxCommand)
         self.gammaEqual = tk.Label(self.regressionParamsFrame, text="= ", bg=self.backgroundColor, fg=self.foregroundColor)
         self.gammaEntryVariable = tk.StringVar(self, "0.1")
-        self.gammaEntry = ttk.Entry(self.regressionParamsFrame, textvariable=self.gammaEntryVariable, exportselection=0, width=10)
+        self.gammaEntry = ttk.Entry(self.regressionParamsFrame, textvariable=self.gammaEntryVariable, width=10)
+        
+        def popup_gamma(event):
+            try:
+                self.popup_menuG.tk_popup(event.x_root, event.y_root, 0)
+            finally:
+                self.popup_menuG.grab_release()
+        def paste_gamma():
+            if (self.focus_get() != self.gammaEntry):
+                self.gammaEntry.insert(tk.END, pyperclip.paste())
+            else:
+                self.gammaEntry.insert(tk.INSERT, pyperclip.paste())
+        def copy_gamma():
+            if (self.focus_get() != self.gammaEntry):
+                pyperclip.copy(self.gammaEntry.get())
+            else:
+                try:
+                    stringToCopy = self.gammaEntry.selection_get()
+                except:
+                    stringToCopy = self.gammaEntry.get()
+                pyperclip.copy(stringToCopy)
+        self.popup_menuG = tk.Menu(self.gammaEntry, tearoff=0)
+        self.popup_menuG.add_command(label="Copy", command=copy_gamma)
+        self.popup_menuG.add_command(label="Paste", command=paste_gamma)
+        self.gammaEntry.bind("<Button-3>", popup_gamma)
+        
         self.deltaCheckboxVariable = tk.IntVar(self, self.topGUI.getErrorDelta())
         self.deltaCheckbox = ttk.Checkbutton(self.regressionParamsFrame, text="\u03B4", variable=self.deltaCheckboxVariable, command=checkboxCommand)
         self.deltaEqual = tk.Label(self.regressionParamsFrame, text="= ", bg=self.backgroundColor, fg=self.foregroundColor)
         self.deltaEntryVariable = tk.StringVar(self, "0.1")
-        self.deltaEntry = ttk.Entry(self.regressionParamsFrame, textvariable=self.deltaEntryVariable, exportselection=0, width=10)
+        self.deltaEntry = ttk.Entry(self.regressionParamsFrame, textvariable=self.deltaEntryVariable, width=10)
+        
+        def popup_delta(event):
+            try:
+                self.popup_menuD.tk_popup(event.x_root, event.y_root, 0)
+            finally:
+                self.popup_menuD.grab_release()
+        def paste_delta():
+            if (self.focus_get() != self.deltaEntry):
+                self.deltaEntry.insert(tk.END, pyperclip.paste())
+            else:
+                self.deltaEntry.insert(tk.INSERT, pyperclip.paste())
+        def copy_delta():
+            if (self.focus_get() != self.deltaEntry):
+                pyperclip.copy(self.deltaEntry.get())
+            else:
+                try:
+                    stringToCopy = self.deltaEntry.selection_get()
+                except:
+                    stringToCopy = self.deltaEntry.get()
+                pyperclip.copy(stringToCopy)
+        self.popup_menuD = tk.Menu(self.deltaEntry, tearoff=0)
+        self.popup_menuD.add_command(label="Copy", command=copy_delta)
+        self.popup_menuD.add_command(label="Paste", command=paste_delta)
+        self.deltaEntry.bind("<Button-3>", popup_delta)
+        
         self.optionsFrame = tk.Frame(self.regressionParamsFrame, bg=self.backgroundColor)
         self.weightingLabel = tk.Label(self.optionsFrame, text="Weighting: ", bg=self.backgroundColor, fg=self.foregroundColor)
         self.weightingComboboxVariable = tk.StringVar(self, self.topGUI.getErrorWeighting())

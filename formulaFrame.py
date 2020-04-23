@@ -33,6 +33,7 @@ from rangeSlider import RangeSlider
 import tkinter.scrolledtext as scrolledtext
 import re
 from functools import partial
+import webbrowser
 import pyperclip
 #--------------------------------pyperclip-----------------------------------
 #     Source: https://pypi.org/project/pyperclip/
@@ -213,7 +214,7 @@ class fF(tk.Frame):
             ypos_round = round(ypos, 2)
             if (xpos_round != 0.00 or ypos_round != 1.00):
                 self.hcanvas.yview_scroll(int(-1*(event.delta/120)), "units")
-        
+        """
         self.helpPopup = tk.Toplevel(bg=self.backgroundColor)
         self.helpPopup.withdraw()
         self.hcanvas = tk.Canvas(self.helpPopup, borderwidth=0, highlightthickness=0, background=self.backgroundColor)
@@ -234,7 +235,7 @@ class fF(tk.Frame):
         self.vsbh.pack(side=tk.RIGHT, fill=tk.Y)
         self.hcanvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.hcanvas.create_window((4,4), window=self.hframe, anchor="nw")
-        
+        """
         self.numParams = 0
         self.paramNameEntries = []
         self.paramNameValues = []
@@ -285,17 +286,39 @@ class fF(tk.Frame):
                                     self.jdataRaw[i] = self.jdataRaw[i+1]
                                     self.jdataRaw[i+1] = tempJ
                                     doneSorting = False
-                        try:
-                            if (self.upDelete == 0):
-                                self.wdata = self.wdataRaw.copy()[self.lowDelete:]
-                                self.rdata = self.rdataRaw.copy()[self.lowDelete:]
-                                self.jdata = self.jdataRaw.copy()[self.lowDelete:]
-                            else:
-                                self.wdata = self.wdataRaw.copy()[self.lowDelete:-1*self.upDelete]
-                                self.rdata = self.rdataRaw.copy()[self.lowDelete:-1*self.upDelete]
-                                self.jdata = self.jdataRaw.copy()[self.lowDelete:-1*self.upDelete]
-                        except:
-                            messagebox.showwarning("Frequency error", "There are more frequencies set to be deleted than data points. The number of frequencies to delete has been reset to 0.")
+                        if (self.topGUI.getFreqLoadCustom() == 1):
+                            try:
+                                if (self.upDelete == 0):
+                                    self.wdata = self.wdataRaw.copy()[self.lowDelete:]
+                                    self.rdata = self.rdataRaw.copy()[self.lowDelete:]
+                                    self.jdata = self.jdataRaw.copy()[self.lowDelete:]
+                                else:
+                                    self.wdata = self.wdataRaw.copy()[self.lowDelete:-1*self.upDelete]
+                                    self.rdata = self.rdataRaw.copy()[self.lowDelete:-1*self.upDelete]
+                                    self.jdata = self.jdataRaw.copy()[self.lowDelete:-1*self.upDelete]
+                            except:
+                                messagebox.showwarning("Frequency error", "There are more frequencies set to be deleted than data points. The number of frequencies to delete has been reset to 0.")
+                                self.upDelete = 0
+                                self.lowDelete = 0
+                                self.lowerSpinboxVariable.set(str(self.lowDelete))
+                                self.upperSpinboxVariable.set(str(self.upDelete))
+                                self.wdata = self.wdataRaw.copy()
+                                self.rdata = self.rdataRaw.copy()
+                                self.jdata = self.jdataRaw.copy()
+                            self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
+                            self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
+                            #self.rs.setMajorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
+                            self.rs.setNumberOfMajorTicks(10)
+                            self.rs.showMinorTicks(False)
+                            #self.rs.setMinorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
+                            self.rs.setLower(np.log10(min(self.wdata)))
+                            self.rs.setUpper(np.log10(max(self.wdata)))
+                            self.lowestUndeleted.configure(text="Lowest remaining frequency: {:.4e}".format(min(self.wdata)))
+                            self.highestUndeleted.configure(text="Highest remaining frequency: {:.4e}".format(max(self.wdata)))
+                            #self.wdata = self.wdataRaw.copy()
+                            #self.rdata = self.rdataRaw.copy()
+                            #self.jdata = self.jdataRaw.copy()
+                        else:
                             self.upDelete = 0
                             self.lowDelete = 0
                             self.lowerSpinboxVariable.set(str(self.lowDelete))
@@ -303,17 +326,14 @@ class fF(tk.Frame):
                             self.wdata = self.wdataRaw.copy()
                             self.rdata = self.rdataRaw.copy()
                             self.jdata = self.jdataRaw.copy()
-                        self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
-                        self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
-                        #self.rs.setMajorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
-                        self.rs.setNumberOfMajorTicks(10)
-                        self.rs.showMinorTicks(False)
-                        #self.rs.setMinorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
-                        self.rs.setLower(np.log10(min(self.wdata)))
-                        self.rs.setUpper(np.log10(max(self.wdata)))
-                        #self.wdata = self.wdataRaw.copy()
-                        #self.rdata = self.rdataRaw.copy()
-                        #self.jdata = self.jdataRaw.copy()
+                            self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
+                            self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
+                            self.rs.setNumberOfMajorTicks(10)
+                            self.rs.showMinorTicks(False)
+                            self.rs.setLower(np.log10(min(self.wdata)))
+                            self.rs.setUpper(np.log10(max(self.wdata)))
+                            self.lowestUndeleted.configure(text="Lowest remaining frequency: {:.4e}".format(min(self.wdata)))
+                            self.highestUndeleted.configure(text="Highest remaining frequency: {:.4e}".format(max(self.wdata)))
                         self.lengthOfData = len(self.wdata)
                         self.freqRangeButton.configure(state="normal")
                         self.browseEntry.configure(state="normal")
@@ -322,7 +342,7 @@ class fF(tk.Frame):
                         self.browseEntry.configure(state="readonly")
                         self.runButton.configure(state="normal")
                     except:
-                        messagebox.showerror("File error", "Error: There was an error loading or reading the file")
+                        messagebox.showerror("File error", "Error 42: \nThere was an error loading or reading the file")
                 elif (fext == ".mmcustom"):
                     try:
                         toLoad = open(n)
@@ -388,6 +408,23 @@ class fF(tk.Frame):
                                 break
                             else:
                                 formulaIn += nextLineIn
+                        for i in range(len(self.paramNameEntries)):
+                            self.paramNameEntries[i].grid_remove()
+                            self.paramNameLabels[i].grid_remove()
+                            self.paramValueEntries[i].grid_remove()
+                            self.paramValueLabels[i].grid_remove()
+                            self.paramComboboxes[i].grid_remove()
+                            self.paramDeleteButtons[i].grid_remove()
+                        self.numParams = 0
+                        self.paramNameValues.clear()
+                        self.paramNameEntries.clear()
+                        self.paramNameLabels.clear()
+                        self.paramValueLabels.clear()
+                        self.paramComboboxValues.clear()
+                        self.paramComboboxes.clear()
+                        self.paramValueValues.clear()
+                        self.paramValueEntries.clear()
+                        self.paramDeleteButtons.clear()
                         while True:
                             p = toLoad.readline()
                             if not p:
@@ -419,53 +456,57 @@ class fF(tk.Frame):
                                 self.paramDeleteButtons[len(self.paramDeleteButtons)-1].bind("<MouseWheel>", _on_mousewheel)
                                 self.paramNameEntries[len(self.paramNameEntries)-1].bind("<KeyRelease>", keyup)
                         toLoad.close()
-                        data = np.loadtxt(fileToLoad)
-                        w_in = data[:,0]
-                        r_in = data[:,1]
-                        j_in = data[:,2]
-                        self.wdataRaw = w_in
-                        self.rdataRaw = r_in
-                        self.jdataRaw = j_in
-                        doneSorting = False
-                        while (not doneSorting):
-                            doneSorting = True
-                            for i in range(len(self.wdataRaw)-1):
-                                if (self.wdataRaw[i] > self.wdataRaw[i+1]):
-                                    temp = self.wdataRaw[i]
-                                    self.wdataRaw[i] = self.wdataRaw[i+1]
-                                    self.wdataRaw[i+1] = temp
-                                    tempR = self.rdataRaw[i]
-                                    self.rdataRaw[i] = self.rdataRaw[i+1]
-                                    self.rdataRaw[i+1] = tempR
-                                    tempJ = self.jdataRaw[i]
-                                    self.jdataRaw[i] = self.jdataRaw[i+1]
-                                    self.jdataRaw[i+1] = tempJ
-                                    doneSorting = False
-                        self.upDelete = uD
-                        self.lowDelete = lD
-                        if (self.upDelete == 0):
-                            self.wdata = self.wdataRaw.copy()[self.lowDelete:]
-                            self.rdata = self.rdataRaw.copy()[self.lowDelete:]
-                            self.jdata = self.jdataRaw.copy()[self.lowDelete:]
-                        else:
-                            self.wdata = self.wdataRaw.copy()[self.lowDelete:-1*self.upDelete]
-                            self.rdata = self.rdataRaw.copy()[self.lowDelete:-1*self.upDelete]
-                            self.jdata = self.jdataRaw.copy()[self.lowDelete:-1*self.upDelete]
-                        self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
-                        self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
-                        #self.rs.setMajorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
-                        self.rs.setNumberOfMajorTicks(10)
-                        self.rs.showMinorTicks(False)
-                        #self.rs.setMinorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
-                        self.rs.setLower(np.log10(min(self.wdata)))
-                        self.rs.setUpper(np.log10(max(self.wdata)))
-                        self.lengthOfData = len(self.wdata)
-                        self.freqRangeButton.configure(state="normal")
+                        try:
+                            data = np.loadtxt(fileToLoad)
+                            w_in = data[:,0]
+                            r_in = data[:,1]
+                            j_in = data[:,2]
+                            self.wdataRaw = w_in
+                            self.rdataRaw = r_in
+                            self.jdataRaw = j_in
+                            doneSorting = False
+                            while (not doneSorting):
+                                doneSorting = True
+                                for i in range(len(self.wdataRaw)-1):
+                                    if (self.wdataRaw[i] > self.wdataRaw[i+1]):
+                                        temp = self.wdataRaw[i]
+                                        self.wdataRaw[i] = self.wdataRaw[i+1]
+                                        self.wdataRaw[i+1] = temp
+                                        tempR = self.rdataRaw[i]
+                                        self.rdataRaw[i] = self.rdataRaw[i+1]
+                                        self.rdataRaw[i+1] = tempR
+                                        tempJ = self.jdataRaw[i]
+                                        self.jdataRaw[i] = self.jdataRaw[i+1]
+                                        self.jdataRaw[i+1] = tempJ
+                                        doneSorting = False
+                            self.upDelete = uD
+                            self.lowDelete = lD
+                            if (self.upDelete == 0):
+                                self.wdata = self.wdataRaw.copy()[self.lowDelete:]
+                                self.rdata = self.rdataRaw.copy()[self.lowDelete:]
+                                self.jdata = self.jdataRaw.copy()[self.lowDelete:]
+                            else:
+                                self.wdata = self.wdataRaw.copy()[self.lowDelete:-1*self.upDelete]
+                                self.rdata = self.rdataRaw.copy()[self.lowDelete:-1*self.upDelete]
+                                self.jdata = self.jdataRaw.copy()[self.lowDelete:-1*self.upDelete]
+                            self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
+                            self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
+                            #self.rs.setMajorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
+                            self.rs.setNumberOfMajorTicks(10)
+                            self.rs.showMinorTicks(False)
+                            #self.rs.setMinorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
+                            self.rs.setLower(np.log10(min(self.wdata)))
+                            self.rs.setUpper(np.log10(max(self.wdata)))
+                            self.lengthOfData = len(self.wdata)
+                            self.freqRangeButton.configure(state="normal")
+                            self.runButton.configure(state="normal")
+                        except:
+                            messagebox.showerror("File not found", "Error 53: \nThe linked .mmfile could not be found")
+                            fileToLoad = ""
                         self.browseEntry.configure(state="normal")
                         self.browseEntry.delete(0,tk.END)
                         self.browseEntry.insert(0, n)
                         self.browseEntry.configure(state="readonly")
-                        self.runButton.configure(state="normal")
                         self.monteCarloValue.set(str(numberOfSimulations))
                         self.fittingTypeComboboxValue.set(str(fitType))
                         self.weightingComboboxValue.set(weightType)
@@ -531,9 +572,9 @@ class fF(tk.Frame):
                         self.customFormula.insert("1.0", formulaIn)
                         keyup("")
                     except:
-                        messagebox.showerror("File error", "Error: There was an error loading or reading the file")
+                        messagebox.showerror("File error", "Error 42: \nThere was an error loading or reading the file")
                 else:
-                    messagebox.showerror("File error", "Error: The file has an unknown extension")
+                    messagebox.showerror("File error", "Error 43:\n The file has an unknown extension")
         
         def changeFreqs():            
             if (self.freqWindow.state() == "withdrawn"):
@@ -974,6 +1015,9 @@ class fF(tk.Frame):
             self.pframe.bind("<Configure>", lambda event, canvas=self.pcanvas: onFrameConfigure(canvas))
         
         def helpPopup(event):
+            webbrowser.open_new(r'file://' + os.path.dirname(os.path.realpath(__file__)) + '\Formula_guide.pdf')
+            #webbrowser.open_new(r'file://C:\Users\willd\Documents\Research\Python\32820\Formula_guide.pdf')
+            """
             self.hcanvas.configure(yscrollcommand=self.vsbh.set)
             self.hcanvas.bind("<MouseWheel>", _on_mousewheel)
             self.hframe.bind("<MouseWheel>", _on_mousewheel)
@@ -992,6 +1036,7 @@ class fF(tk.Frame):
             
             self.hframe.bind("<Configure>", lambda event, canvas=self.hcanvas: onHelpFrameConfigure(canvas))
             self.helpPopup.bind("<Configure>", helpConfigure)
+            """
         
         def process_queue_custom():
             try:
@@ -1059,6 +1104,10 @@ class fF(tk.Frame):
                     self.imagFit = imagF
                     self.sdrReal = sdR
                     self.sdrImag = sdI
+                    if (len(sdR) == 1):
+                        if (sdR == "-"):
+                            self.sdrReal = np.zeros(len(self.wdata))
+                            self.sdrImag = np.zeros(len(self.wdata))
                     self.fits = r
                     self.sigmas = s
                     self.chiSquared = chi
@@ -1070,7 +1119,7 @@ class fF(tk.Frame):
             #---Check if a formula has been entered----
             formula = self.customFormula.get("1.0", tk.END)
             if ("".join(formula.split()) == ""):
-                messagebox.showwarning("Error", "Formula is empty")
+                messagebox.showwarning("Error", "Error 44: \nFormula is empty")
                 return
             
             #---Check that none of the variable names are repeated, and that none are Python reserved words or variables used in this code
@@ -1079,26 +1128,33 @@ class fF(tk.Frame):
                 if (name == "False" or name == "None" or name == "True" or name == "and" or name == "as" or name == "assert" or name == "break" or name == "class" or name == "continue" or name == "def" or name == "del" or name == "elif" or name == "else" or name == "except"\
                      or name == "finally" or name == "for" or name == "from" or name == "global" or name == "if" or name == "import" or name == "in" or name == "is" or name == "lambda" or name == "nonlocal" or name == "not" or name == "or" or name == "pass" or name == "raise"\
                       or name == "return" or name == "try" or name == "while" or name == "with" or name == "yield"):
-                    messagebox.showwarning("Error", "The variable name \"" + name + "\" is a Python reserved word. Change the variable name.")
+                    messagebox.showwarning("Error", "Error 45: \nThe variable name \"" + name + "\" is a Python reserved word. Change the variable name.")
                     return
-                elif ("self." in name):
-                    messagebox.showwarning("Error", "The variable name \"" + name + "\" contains \"self.\"; change the variable name.")
-                    return
+                #elif ("self." in name):
+                #    messagebox.showwarning("Error", "Error 46: \nThe variable name \"" + name + "\" contains \"self.\"; change the variable name.")
+                #    return
                 elif (name == "freq" or name == "Zr" or name == "Zj" or name == "Zreal" or name == "Zimag" or name == "weighting"):
-                    messagebox.showwarning("Error", "The variable name \"" + name + "\" is used by the fitting program; change the variable name.")
+                    messagebox.showwarning("Error", "Error 47: \nThe variable name \"" + name + "\" is used by the fitting program; change the variable name.")
                     return
                 for j in range(i+1, len(self.paramNameValues)):
                     if (name == self.paramNameValues[j].get()):
-                        messagebox.showwarning("Error", "Two or more variables have the same name.")
+                        messagebox.showwarning("Error", "Error 48: \nTwo or more variables have the same name.")
                         return
             
             #---Replace the functions with np.<function>, and then attempt to compile the code to look for syntax errors---        
             try:
-                prebuiltFormulas = ['PI', 'SIN', 'COS', 'TAN', 'COSH', 'SINH', 'TANH', 'ARCSIN', 'ARCCOS', 'ARCTAN', 'ARCSINH', 'ARCCOSH', 'ARCTANH', 'SQRT', 'LN', 'LOG', 'EXP', 'ABS', 'DEG2RAD', 'RAD2DEG']
+                prebuiltFormulas = ['PI', 'ARCSINH', 'ARCCOSH', 'ARCTANH', 'ARCSIN', 'ARCCOS', 'ARCTAN', 'COSH', 'SINH', 'TANH', 'SIN', 'COS', 'TAN', 'SQRT', 'EXP', 'ABS', 'DEG2RAD', 'RAD2DEG']
                 formula = formula.replace("^", "**")    #Replace ^ with ** for exponentiation (this could prevent some features like regex from being used effectively)
+                formula = formula.replace("LN", "np.emath.log")#, "cmath.log")
+                formula = formula.replace("LOG", "np.emath.log10")
                 for pf in prebuiltFormulas:
                     toReplace = "np." + pf.lower()
                     formula = formula.replace(pf, toReplace)
+                formula = formula.replace("\n", "\n\t")
+                formula = "try:\n\t" + formula
+                formula = formula.rstrip()
+                formula += "\n\tif any(np.isnan(Zreal)) or any(np.isnan(Zimag)):\n\t\traise Exception\nexcept:\n\tZreal = np.full(len(freq), 1E300)\n\tZimag = np.full(len(freq), 1E300)"
+                #print(formula)
                 compile(formula, 'user_generated_formula', 'exec')
             except:
                 messagebox.showwarning("Compile error", "There was an issue compiling the code")
@@ -1837,12 +1893,24 @@ class fF(tk.Frame):
         def saveAll():
             stringToSave = "freq\tZrdata\tZjdata\tZrmodel\tZjmodel\tSigmaZrconf\tSigmaZjconf\n"
             for i in range(len(self.wdata)):
-                stringToSave += str(self.wdata[i]) + "\t" + str(self.rdata[i]) + "\t" + str(self.jdata[i]) + "\t" + str(self.realFit[i]) + "\t" + str(self.imagFit[i]) + "\t"  + str(self.sdrReal[i]) + "\t" + str(self.sdrImag[i]) + "\n"
+                stringToSave += str(self.wdata[i]) + "\t" + str(self.rdata[i]) + "\t" + str(self.jdata[i]) + "\t" + str(self.realFit[i]) + "\t" + str(self.imagFit[i])
+                try:
+                    stringToSave += "\t"  + str(self.sdrReal[i]) + "\t" + str(self.sdrImag[i]) + "\n"
+                except:
+                    stringToSave += "\n"
             stringToSave += "----------------------------------------------------------------------------------\n"
             for i in range(len(self.paramNameValues)):
-                 stringToSave += self.paramNameValues[i].get() + " = " + str(self.fits[i]) + "\tStd. Dev. = " + str(self.sigmas[i]) + "\n"
+                 stringToSave += self.paramNameValues[i].get() + " = " + str(self.fits[i]) 
+                 try:
+                     if (self.sigmas[i] == "-"):
+                         stringToSave += "\tStd. Dev. = nan\n"
+                     else:
+                         stringToSave += "\tStd. Dev. = " + str(self.sigmas[i]) + "\n"
+                 except:
+                     stringToSave += "\tStd. Dev. = nan\n"
             stringToSave += "Chi-squared = " + str(self.chiSquared)
-            defaultSaveName, ext = os.path.splitext(os.path.basename(self.browseEntry.get()))                
+            defaultSaveName, ext = os.path.splitext(os.path.basename(self.browseEntry.get()))
+            defaultSaveName += "_custom"            
             saveName = asksaveasfile(title="Save All Results", mode='w', defaultextension=".txt", initialfile=defaultSaveName, filetypes=[("Text file (*.txt)", ".txt")])
             directory = os.path.dirname(str(saveName))
             self.topGUI.setCurrentDirectory(directory)
@@ -1914,7 +1982,7 @@ class fF(tk.Frame):
         self.fittingTypeCombobox = ttk.Combobox(self.fittingButtonFrame, textvariable=self.fittingTypeComboboxValue, value=("Real", "Imaginary", "Complex"), state="readonly", exportselection=0, width=10)
         self.monteCarloValue = tk.StringVar(self, "1000")
         self.monteCarloLabel = tk.Label(self.fittingButtonFrame, text="Number of Simulations: ", background=self.backgroundColor, foreground=self.foregroundColor)
-        self.monteCarloEntry = ttk.Entry(self.fittingButtonFrame, textvariable=self.monteCarloValue, width=8, exportselection=0)
+        self.monteCarloEntry = ttk.Entry(self.fittingButtonFrame, textvariable=self.monteCarloValue, width=8)
         self.codeLabel = tk.Label(self.fittingButtonFrame, text="Code:", bg=self.backgroundColor, fg=self.foregroundColor)
         self.helpLabel = tk.Label(self.fittingButtonFrame, text="Help", bg=self.backgroundColor, fg="blue", cursor="hand2")
         if (self.topGUI.getTheme() == "dark"):
@@ -1946,29 +2014,30 @@ class fF(tk.Frame):
         monteCarlo_ttp = CreateToolTip(self.monteCarloEntry, 'Number of Monte Carlo simulations')
         weighting_ttp = CreateToolTip(self.weightingCombobox, 'Weighting used in objective function')
         noise_ttp = CreateToolTip(self.noiseEntry, 'Assumed noise (multiplied by weighting)')
+        help_ttp = CreateToolTip(self.helpLabel, 'Opens a custom formula guide PDF')
         
         #---If error structure weighting is chosen---
         self.errorStructureFrame = tk.Frame(self.fittingButtonFrame, bg=self.backgroundColor)
         self.errorAlphaCheckboxVariable = tk.IntVar(self, 0)
         self.errorAlphaCheckbox = ttk.Checkbutton(self.errorStructureFrame, variable=self.errorAlphaCheckboxVariable, text="\u03B1 = ", command=checkErrorStructure)
         self.errorAlphaVariable = tk.StringVar(self, "0.1")
-        self.errorAlphaEntry = ttk.Entry(self.errorStructureFrame, textvariable=self.errorAlphaVariable, state="disabled", exportselection=0, width=6)
+        self.errorAlphaEntry = ttk.Entry(self.errorStructureFrame, textvariable=self.errorAlphaVariable, state="disabled", width=6)
         self.errorBetaCheckboxVariable = tk.IntVar(self, 0)
         self.errorBetaCheckbox = ttk.Checkbutton(self.errorStructureFrame, variable=self.errorBetaCheckboxVariable, text="\u03B2 = ", command=checkErrorStructure)
         self.errorBetaVariable = tk.StringVar(self, "0.1")
-        self.errorBetaEntry = ttk.Entry(self.errorStructureFrame, textvariable=self.errorBetaVariable, state="disabled", exportselection=0, width=6)
+        self.errorBetaEntry = ttk.Entry(self.errorStructureFrame, textvariable=self.errorBetaVariable, state="disabled", width=6)
         self.errorBetaReCheckboxVariable = tk.IntVar(self, 0)
         self.errorBetaReCheckbox = ttk.Checkbutton(self.errorStructureFrame, variable=self.errorBetaReCheckboxVariable, state="disabled", text="Re = ", command=checkErrorStructure)
         self.errorBetaReVariable = tk.StringVar(self, "0.1")
-        self.errorBetaReEntry = ttk.Entry(self.errorStructureFrame, textvariable=self.errorBetaReVariable, state="disabled", exportselection=0, width=6)
+        self.errorBetaReEntry = ttk.Entry(self.errorStructureFrame, textvariable=self.errorBetaReVariable, state="disabled", width=6)
         self.errorGammaCheckboxVariable = tk.IntVar(self, 1)
         self.errorGammaCheckbox = ttk.Checkbutton(self.errorStructureFrame, variable=self.errorGammaCheckboxVariable, text="\u03B3 = ", command=checkErrorStructure)
         self.errorGammaVariable = tk.StringVar(self, "0.1")
-        self.errorGammaEntry = ttk.Entry(self.errorStructureFrame, textvariable=self.errorGammaVariable, exportselection=0, width=6)
+        self.errorGammaEntry = ttk.Entry(self.errorStructureFrame, textvariable=self.errorGammaVariable, width=6)
         self.errorDeltaCheckboxVariable = tk.IntVar(self, 1)
         self.errorDeltaCheckbox = ttk.Checkbutton(self.errorStructureFrame, variable=self.errorDeltaCheckboxVariable, text="\u03B4 = ", command=checkErrorStructure)
         self.errorDeltaVariable = tk.StringVar(self, "0.1")
-        self.errorDeltaEntry = ttk.Entry(self.errorStructureFrame, textvariable=self.errorDeltaVariable, exportselection=0, width=6)
+        self.errorDeltaEntry = ttk.Entry(self.errorStructureFrame, textvariable=self.errorDeltaVariable, width=6)
         self.errorAlphaCheckbox.grid(column=0, row=0)
         self.errorAlphaEntry.grid(column=1, row=0, padx=(2, 15))
         self.errorBetaCheckbox.grid(column=2, row=0)
@@ -1979,6 +2048,122 @@ class fF(tk.Frame):
         self.errorGammaEntry.grid(column=7, row=0, padx=(2, 15))
         self.errorDeltaCheckbox.grid(column=8, row=0)
         self.errorDeltaEntry.grid(column=9, row=0, padx=(2, 15))
+        
+        def popup_alpha(event):
+            try:
+                self.popup_menuA.tk_popup(event.x_root, event.y_root, 0)
+            finally:
+                self.popup_menuA.grab_release()
+        def paste_alpha():
+            if (self.focus_get() != self.errorAlphaEntry):
+                self.errorAlphaEntry.insert(tk.END, pyperclip.paste())
+            else:
+                self.errorAlphaEntry.insert(tk.INSERT, pyperclip.paste())
+        def copy_alpha():
+            if (self.focus_get() != self.errorAlphaEntry):
+                pyperclip.copy(self.errorAlphaEntry.get())
+            else:
+                try:
+                    stringToCopy = self.errorAlphaEntry.selection_get()
+                except:
+                    stringToCopy = self.errorAlphaEntry.get()
+                pyperclip.copy(stringToCopy)
+        self.popup_menuA = tk.Menu(self.errorAlphaEntry, tearoff=0)
+        self.popup_menuA.add_command(label="Copy", command=copy_alpha)
+        self.popup_menuA.add_command(label="Paste", command=paste_alpha)
+        self.errorAlphaEntry.bind("<Button-3>", popup_alpha)
+        def popup_beta(event):
+            try:
+                self.popup_menuB.tk_popup(event.x_root, event.y_root, 0)
+            finally:
+                self.popup_menuB.grab_release()
+        def paste_beta():
+            if (self.focus_get() != self.errorBetaEntry):
+                self.errorBetaEntry.insert(tk.END, pyperclip.paste())
+            else:
+                self.errorBetaEntry.insert(tk.INSERT, pyperclip.paste())
+        def copy_beta():
+            if (self.focus_get() != self.errorBetaEntry):
+                pyperclip.copy(self.errorBetaEntry.get())
+            else:
+                try:
+                    stringToCopy = self.errorBetaEntry.selection_get()
+                except:
+                    stringToCopy = self.errorBetaEntry.get()
+                pyperclip.copy(stringToCopy)
+        self.popup_menuB = tk.Menu(self.errorBetaEntry, tearoff=0)
+        self.popup_menuB.add_command(label="Copy", command=copy_beta)
+        self.popup_menuB.add_command(label="Paste", command=paste_beta)
+        self.errorBetaEntry.bind("<Button-3>", popup_beta)
+        def popup_re(event):
+            try:
+                self.popup_menuR.tk_popup(event.x_root, event.y_root, 0)
+            finally:
+                self.popup_menuR.grab_release()
+        def paste_re():
+            if (self.focus_get() != self.errorBetaReEntry):
+                self.errorBetaReEntry.insert(tk.END, pyperclip.paste())
+            else:
+                self.errorBetaEntry.insert(tk.INSERT, pyperclip.paste())
+        def copy_re():
+            if (self.focus_get() != self.errorBetaReEntry):
+                pyperclip.copy(self.errorBetaReEntry.get())
+            else:
+                try:
+                    stringToCopy = self.errorBetaReEntry.selection_get()
+                except:
+                    stringToCopy = self.errorBetaReEntry.get()
+                pyperclip.copy(stringToCopy)
+        self.popup_menuR = tk.Menu(self.errorBetaReEntry, tearoff=0)
+        self.popup_menuR.add_command(label="Copy", command=copy_re)
+        self.popup_menuR.add_command(label="Paste", command=paste_re)
+        self.errorBetaReEntry.bind("<Button-3>", popup_re)
+        def popup_gamma(event):
+            try:
+                self.popup_menuG.tk_popup(event.x_root, event.y_root, 0)
+            finally:
+                self.popup_menuG.grab_release()
+        def paste_gamma():
+            if (self.focus_get() != self.errorBetaEntry):
+                self.errorGammaEntry.insert(tk.END, pyperclip.paste())
+            else:
+                self.errorGammaEntry.insert(tk.INSERT, pyperclip.paste())
+        def copy_gamma():
+            if (self.focus_get() != self.errorGammaEntry):
+                pyperclip.copy(self.errorGammaEntry.get())
+            else:
+                try:
+                    stringToCopy = self.errorGammaEntry.selection_get()
+                except:
+                    stringToCopy = self.errorGammaEntry.get()
+                pyperclip.copy(stringToCopy)
+        self.popup_menuG = tk.Menu(self.errorGammaEntry, tearoff=0)
+        self.popup_menuG.add_command(label="Copy", command=copy_gamma)
+        self.popup_menuG.add_command(label="Paste", command=paste_gamma)
+        self.errorGammaEntry.bind("<Button-3>", popup_gamma)
+        def popup_delta(event):
+            try:
+                self.popup_menuD.tk_popup(event.x_root, event.y_root, 0)
+            finally:
+                self.popup_menuD.grab_release()
+        def paste_delta():
+            if (self.focus_get() != self.errorDeltaEntry):
+                self.errorDeltaEntry.insert(tk.END, pyperclip.paste())
+            else:
+                self.errorDeltaEntry.insert(tk.INSERT, pyperclip.paste())
+        def copy_delta():
+            if (self.focus_get() != self.errorDeltaEntry):
+                pyperclip.copy(self.errorDeltaEntry.get())
+            else:
+                try:
+                    stringToCopy = self.errorDeltaEntry.selection_get()
+                except:
+                    stringToCopy = self.errorDeltaEntry.get()
+                pyperclip.copy(stringToCopy)
+        self.popup_menuD = tk.Menu(self.errorDeltaEntry, tearoff=0)
+        self.popup_menuD.add_command(label="Copy", command=copy_delta)
+        self.popup_menuD.add_command(label="Paste", command=paste_delta)
+        self.errorDeltaEntry.bind("<Button-3>", popup_delta)
         
         self.customFunctionFrame = tk.Frame(self, bg=self.backgroundColor)
         self.customFunctionContainer = tk.Frame(self.customFunctionFrame, borderwidth=1, relief="sunken")
@@ -2322,6 +2507,21 @@ class fF(tk.Frame):
                 self.wdata = self.wdataRaw.copy()
                 self.rdata = self.rdataRaw.copy()
                 self.jdata = self.jdataRaw.copy()
+                self.upDelete = 0
+                self.lowDelete = 0
+                self.lowerSpinboxVariable.set(str(self.lowDelete))
+                self.upperSpinboxVariable.set(str(self.upDelete))
+                self.wdata = self.wdataRaw.copy()
+                self.rdata = self.rdataRaw.copy()
+                self.jdata = self.jdataRaw.copy()
+                self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
+                self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
+                self.rs.setNumberOfMajorTicks(10)
+                self.rs.showMinorTicks(False)
+                self.rs.setLower(np.log10(min(self.wdata)))
+                self.rs.setUpper(np.log10(max(self.wdata)))
+                self.lowestUndeleted.configure(text="Lowest remaining frequency: {:.4e}".format(min(self.wdata)))
+                self.highestUndeleted.configure(text="Highest remaining frequency: {:.4e}".format(max(self.wdata)))
                 self.lengthOfData = len(self.wdata)
                 self.freqRangeButton.configure(state="normal")
                 self.browseEntry.configure(state="normal")
@@ -2330,7 +2530,7 @@ class fF(tk.Frame):
                 self.browseEntry.configure(state="readonly")
                 self.runButton.configure(state="normal")
             except:
-                messagebox.showerror("File error", "Error: There was an error loading or reading the file")
+                messagebox.showerror("File error", "Error 42: \nThere was an error loading or reading the file")
         elif (fext == ".mmcustom"):
             try:
                 toLoad = open(n)
@@ -2377,7 +2577,7 @@ class fF(tk.Frame):
                     errorBetaRe = float(errorBetaRe)
                     useBetaRe = True
                 else:
-                    errorBetaRe = float(errorBeta[1:])
+                    errorBetaRe = float(errorBetaRe[1:])
                 if (errorGamma[0] != "n"):
                     errorGamma = float(errorGamma)
                     useGamma = True
@@ -2396,6 +2596,23 @@ class fF(tk.Frame):
                         break
                     else:
                         formulaIn += nextLineIn
+                for i in range(len(self.paramNameEntries)):
+                    self.paramNameEntries[i].grid_remove()
+                    self.paramNameLabels[i].grid_remove()
+                    self.paramValueEntries[i].grid_remove()
+                    self.paramValueLabels[i].grid_remove()
+                    self.paramComboboxes[i].grid_remove()
+                    self.paramDeleteButtons[i].grid_remove()
+                self.numParams = 0
+                self.paramNameValues.clear()
+                self.paramNameEntries.clear()
+                self.paramNameLabels.clear()
+                self.paramValueLabels.clear()
+                self.paramComboboxValues.clear()
+                self.paramComboboxes.clear()
+                self.paramValueValues.clear()
+                self.paramValueEntries.clear()
+                self.paramDeleteButtons.clear()
                 while True:
                     p = toLoad.readline()
                     if not p:
@@ -2427,45 +2644,49 @@ class fF(tk.Frame):
                         self.paramDeleteButtons[len(self.paramDeleteButtons)-1].bind("<MouseWheel>", self._on_mousewheel)
                         self.paramNameEntries[len(self.paramNameEntries)-1].bind("<KeyRelease>", self.keyup)
                 toLoad.close()
-                data = np.loadtxt(fileToLoad)
-                w_in = data[:,0]
-                r_in = data[:,1]
-                j_in = data[:,2]
-                self.wdataRaw = w_in
-                self.rdataRaw = r_in
-                self.jdataRaw = j_in
-                doneSorting = False
-                while (not doneSorting):
-                    doneSorting = True
-                    for i in range(len(self.wdataRaw)-1):
-                        if (self.wdataRaw[i] > self.wdataRaw[i+1]):
-                            temp = self.wdataRaw[i]
-                            self.wdataRaw[i] = self.wdataRaw[i+1]
-                            self.wdataRaw[i+1] = temp
-                            tempR = self.rdataRaw[i]
-                            self.rdataRaw[i] = self.rdataRaw[i+1]
-                            self.rdataRaw[i+1] = tempR
-                            tempJ = self.jdataRaw[i]
-                            self.jdataRaw[i] = self.jdataRaw[i+1]
-                            self.jdataRaw[i+1] = tempJ
-                            doneSorting = False
-                self.upDelete = uD
-                self.lowDelete = lD
-                if (self.upDelete == 0):
-                    self.wdata = self.wdataRaw.copy()[self.lowDelete:]
-                    self.rdata = self.rdataRaw.copy()[self.lowDelete:]
-                    self.jdata = self.jdataRaw.copy()[self.lowDelete:]
-                else:
-                    self.wdata = self.wdataRaw.copy()[self.lowDelete:-1*self.upDelete]
-                    self.rdata = self.rdataRaw.copy()[self.lowDelete:-1*self.upDelete]
-                    self.jdata = self.jdataRaw.copy()[self.lowDelete:-1*self.upDelete]
-                self.lengthOfData = len(self.wdata)
-                self.freqRangeButton.configure(state="normal")
+                try:
+                    data = np.loadtxt(fileToLoad)
+                    w_in = data[:,0]
+                    r_in = data[:,1]
+                    j_in = data[:,2]
+                    self.wdataRaw = w_in
+                    self.rdataRaw = r_in
+                    self.jdataRaw = j_in
+                    doneSorting = False
+                    while (not doneSorting):
+                        doneSorting = True
+                        for i in range(len(self.wdataRaw)-1):
+                            if (self.wdataRaw[i] > self.wdataRaw[i+1]):
+                                temp = self.wdataRaw[i]
+                                self.wdataRaw[i] = self.wdataRaw[i+1]
+                                self.wdataRaw[i+1] = temp
+                                tempR = self.rdataRaw[i]
+                                self.rdataRaw[i] = self.rdataRaw[i+1]
+                                self.rdataRaw[i+1] = tempR
+                                tempJ = self.jdataRaw[i]
+                                self.jdataRaw[i] = self.jdataRaw[i+1]
+                                self.jdataRaw[i+1] = tempJ
+                                doneSorting = False
+                    self.upDelete = uD
+                    self.lowDelete = lD
+                    if (self.upDelete == 0):
+                        self.wdata = self.wdataRaw.copy()[self.lowDelete:]
+                        self.rdata = self.rdataRaw.copy()[self.lowDelete:]
+                        self.jdata = self.jdataRaw.copy()[self.lowDelete:]
+                    else:
+                        self.wdata = self.wdataRaw.copy()[self.lowDelete:-1*self.upDelete]
+                        self.rdata = self.rdataRaw.copy()[self.lowDelete:-1*self.upDelete]
+                        self.jdata = self.jdataRaw.copy()[self.lowDelete:-1*self.upDelete]
+                    self.lengthOfData = len(self.wdata)
+                    self.freqRangeButton.configure(state="normal")
+                    self.runButton.configure(state="normal")
+                except:
+                    messagebox.showerror("File not found", "Error 53: \nThe linked .mmfile could not be found")
+                    fileToLoad = ""
                 self.browseEntry.configure(state="normal")
                 self.browseEntry.delete(0,tk.END)
                 self.browseEntry.insert(0, n)
                 self.browseEntry.configure(state="readonly")
-                self.runButton.configure(state="normal")
                 self.monteCarloValue.set(str(numberOfSimulations))
                 self.fittingTypeComboboxValue.set(str(fitType))
                 self.weightingComboboxValue.set(weightType)
@@ -2531,9 +2752,9 @@ class fF(tk.Frame):
                 self.customFormula.insert("1.0", formulaIn[:-2])    #Insert custom formula into code box and remove last two new line characters (they come from the saving format)
                 self.keyup("")
             except:
-                messagebox.showerror("File error", "Error: There was an error loading or reading the file")
+                messagebox.showerror("File error", "Error 42: \nThere was an error loading or reading the file")
         else:
-            messagebox.showerror("File error", "Error: The file has an unknown extension")
+            messagebox.showerror("File error", "Error 43: \nThe file has an unknown extension")
     
     def setThemeLight(self):
         self.backgroundColor = "#FFFFFF"
@@ -2546,10 +2767,10 @@ class fF(tk.Frame):
         self.runFrame.configure(background="#FFFFFF")
         self.pframe.configure(background="#FFFFFF")
         self.pcanvas.configure(background="#FFFFFF")
-        self.helpPopup.configure(background="#FFFFFF")
-        self.hframe.configure(background="#FFFFFF")
-        self.hcanvas.configure(background="#FFFFFF")
-        self.helpTextLabel.configure(background="#FFFFFF", foreground="#000000")
+        #self.helpPopup.configure(background="#FFFFFF")
+        #self.hframe.configure(background="#FFFFFF")
+        #self.hcanvas.configure(background="#FFFFFF")
+        #self.helpTextLabel.configure(background="#FFFFFF", foreground="#000000")
         self.fittingTypeLabel.configure(background="#FFFFFF", foreground="#000000")
         self.monteCarloLabel.configure(background="#FFFFFF", foreground="#000000")
         self.resultsFrame.configure(background="#FFFFFF")
@@ -2597,10 +2818,10 @@ class fF(tk.Frame):
         self.runFrame.configure(background="#424242")
         self.pframe.configure(background="#424242")
         self.pcanvas.configure(background="#424242")
-        self.helpPopup.configure(background="#424242")
-        self.hframe.configure(background="#424242")
-        self.hcanvas.configure(background="#424242")
-        self.helpTextLabel.configure(background="#424242", foreground="#FFFFFF")
+        #self.helpPopup.configure(background="#424242")
+        #self.hframe.configure(background="#424242")
+        #self.hcanvas.configure(background="#424242")
+        #self.helpTextLabel.configure(background="#424242", foreground="#FFFFFF")
         self.fittingTypeLabel.configure(background="#424242", foreground="#FFFFFF")
         self.monteCarloLabel.configure(background="#424242", foreground="#FFFFFF")
         self.resultsFrame.configure(background="#424242")

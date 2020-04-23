@@ -11,6 +11,7 @@ from numpy.random import normal
 import lmfit
 #import matplotlib.pyplot as plt
 #import time
+import cmath
 
 class customFitter:
     def __init__(self):
@@ -168,7 +169,7 @@ class customFitter:
         
         if (not self.keepGoing):
             return
-        
+
         try:
             if (fitType == 3):      #Complex fitting
                 minimized = lmfit.minimize(diffComplex, parameters)
@@ -178,7 +179,8 @@ class customFitter:
                 minimized = lmfit.minimize(diffReal, parameters)
         except SystemExit:
             return "@", "@", "@", "@", "@", "@", "@", "@"
-        except:
+        except Exception as inst:
+            #print(inst)
             return "b", "b", "b", "b", "b", "b", "b", "b"
       
         if (not minimized.success):     #If the fitting fails
@@ -210,6 +212,8 @@ class customFitter:
         ToReturnImag = Zimag
         
         if None in sigma:
+            if (ToReturnReal[0] == 1E300):
+                return "b", "b", "b", "b", "b", "b", "b", "b"
             return result, "-", "-", "-", minimized.chisqr, minimized.aic, ToReturnReal, ToReturnImag
         
         if (not self.keepGoing):

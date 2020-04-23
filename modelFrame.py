@@ -17,7 +17,6 @@ import numpy as np
 import threading
 import ctypes
 import comtypes.client as cc
-from math import isclose
 import queue
 import pyperclip
 #--------------------------------pyperclip-----------------------------------
@@ -389,7 +388,7 @@ class mmF(tk.Frame):
         self.autoFitWindow.resizable(False, False)
         self.autoMaxNVEVariable = tk.StringVar(self, "15")
         self.autoNMCVariable = tk.StringVar(self, str(self.topGUI.getMC()))
-        self.autoWeightingVariable = tk.StringVar(self, "Auto")
+        self.autoWeightingVariable = tk.StringVar(self, "Modulus")
         self.errorAlphaCheckboxVariableAuto = tk.IntVar(self, 0)
         self.errorAlphaVariableAuto = tk.StringVar(self, "0.1")
         self.errorBetaCheckboxVariableAuto = tk.IntVar(self, 0)
@@ -400,7 +399,7 @@ class mmF(tk.Frame):
         self.errorGammaVariableAuto = tk.StringVar(self, "0.1")
         self.errorDeltaCheckboxVariableAuto = tk.IntVar(self, 1)
         self.errorDeltaVariableAuto = tk.StringVar(self, "0.1")
-        self.radioVal = tk.IntVar(self, 3)
+        self.radioVal = tk.IntVar(self, 2)
         self.freqWindow = tk.Toplevel(background=self.backgroundColor)
         self.freqWindow.withdraw()
         self.freqWindow.title("Change Frequency Range")
@@ -422,6 +421,33 @@ class mmF(tk.Frame):
         self.autoPercent = []
         self.ellipsisPercent = 0
         self.currentThreads = []
+        self.magicPlot = tk.Toplevel()
+        self.magicPlot.withdraw()
+        self.magicPlot.title("Magic Finger Nyquist Plot")     #Plot window title
+        self.magicPlot.iconbitmap(resource_path('img/elephant3.ico'))
+        self.magicElementFrame = tk.Frame(self.magicPlot, background=self.backgroundColor)
+        self.magicElementRVariable = tk.StringVar(self, '0')
+        self.magicElementTVariable = tk.StringVar(self, '0')
+        self.magicElementREntry = ttk.Entry(self.magicElementFrame, textvariable=self.magicElementRVariable, width=10)
+        self.magicElementRLabel = tk.Label(self.magicElementFrame, background=self.backgroundColor, foreground=self.foregroundColor, text="R: ")
+        self.magicElementTEntry = ttk.Entry(self.magicElementFrame, textvariable=self.magicElementTVariable, width=10)
+        self.magicElementTLabel = tk.Label(self.magicElementFrame, background=self.backgroundColor, foreground=self.foregroundColor, text="T: ")
+        self.magicElementEnterButton = ttk.Button(self.magicElementFrame, text="Add")
+        self.magicElementRLabel.grid(row=0, column=2, padx=(5, 0))
+        self.magicElementREntry.grid(row=0, column=3)
+        self.magicElementTLabel.grid(row=0, column=4)
+        self.magicElementTEntry.grid(row=0, column=5, padx=(0, 5))
+        self.magicElementEnterButton.grid(row=0, column=6, padx=5)
+        self.magicElementFrame.pack(side=tk.BOTTOM, fill=tk.X, pady=10, expand=True)
+        self.magicInput = Figure(figsize=(5,4), dpi=100)
+        toolbarFrame = tk.Frame(master=self.magicPlot)
+        toolbarFrame.pack(side=tk.BOTTOM, fill=tk.X, expand=False)
+        self.magicCanvasInput = FigureCanvasTkAgg(self.magicInput, self.magicPlot)
+        self.magicCanvasInput.get_tk_widget().pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
+        
+        toolbar = NavigationToolbar2Tk(self.magicCanvasInput, toolbarFrame)    #Enables the zoom and move toolbar for the plot
+        toolbar.update()
+        self.magicCanvasInput._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
         def OpenFile():
             name = askopenfilename(initialdir=self.topGUI.getCurrentDirectory, filetypes = [("Measurement model files", "*.mmfile *.mmfitting"), ("Measurement model data (*.mmfile)", "*.mmfile"), ("Measurement model fit (*.mmfitting)", "*.mmfitting")], title = "Choose a file")
@@ -465,19 +491,41 @@ class mmF(tk.Frame):
                                     self.jdataRaw[i] = self.jdataRaw[i+1]
                                     self.jdataRaw[i+1] = tempJ
                                     doneSorting = False
-                        try:
-                            if (self.upDelete == 0):
-                                self.wdata = self.wdataRaw.copy()[self.lowDelete:]
-                                self.rdata = self.rdataRaw.copy()[self.lowDelete:]
-                                self.jdata = self.jdataRaw.copy()[self.lowDelete:]
-                            else:
-                                self.wdata = self.wdataRaw.copy()[self.lowDelete:-1*self.upDelete]
-                                self.rdata = self.rdataRaw.copy()[self.lowDelete:-1*self.upDelete]
-                                self.jdata = self.jdataRaw.copy()[self.lowDelete:-1*self.upDelete]
-                            self.lowerSpinboxVariable.set(str(self.lowDelete))
-                            self.upperSpinboxVariable.set(str(self.upDelete))
-                        except:
-                            messagebox.showwarning("Frequency error", "There are more frequencies set to be deleted than data points. The number of frequencies to delete has been reset to 0.")
+                        if (self.topGUI.getFreqLoad() == 1):
+                            try:
+                                if (self.upDelete == 0):
+                                    self.wdata = self.wdataRaw.copy()[self.lowDelete:]
+                                    self.rdata = self.rdataRaw.copy()[self.lowDelete:]
+                                    self.jdata = self.jdataRaw.copy()[self.lowDelete:]
+                                else:
+                                    self.wdata = self.wdataRaw.copy()[self.lowDelete:-1*self.upDelete]
+                                    self.rdata = self.rdataRaw.copy()[self.lowDelete:-1*self.upDelete]
+                                    self.jdata = self.jdataRaw.copy()[self.lowDelete:-1*self.upDelete]
+                                self.lowerSpinboxVariable.set(str(self.lowDelete))
+                                self.upperSpinboxVariable.set(str(self.upDelete))
+                            except:
+                                messagebox.showwarning("Frequency error", "There are more frequencies set to be deleted than data points. The number of frequencies to delete has been reset to 0.")
+                                self.upDelete = 0
+                                self.lowDelete = 0
+                                self.lowerSpinboxVariable.set(str(self.lowDelete))
+                                self.upperSpinboxVariable.set(str(self.upDelete))
+                                self.wdata = self.wdataRaw.copy()
+                                self.rdata = self.rdataRaw.copy()
+                                self.jdata = self.jdataRaw.copy()
+                            self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
+                            self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
+                            #self.rs.setMajorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
+                            self.rs.setNumberOfMajorTicks(10)
+                            self.rs.showMinorTicks(False)
+                            #self.rs.setMinorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
+                            self.rs.setLower(np.log10(min(self.wdata)))
+                            self.rs.setUpper(np.log10(max(self.wdata)))
+                            self.lowestUndeleted.configure(text="Lowest remaining frequency: {:.4e}".format(min(self.wdata))) #%f" % round_to_n(min(self.wdata), 6)).strip("0"))
+                            self.highestUndeleted.configure(text="Highest remaining frequency: {:.4e}".format(max(self.wdata))) #%f" % round_to_n(max(self.wdata), 6)).strip("0"))
+                            #self.wdata = self.wdataRaw.copy()
+                            #self.rdata = self.rdataRaw.copy()
+                            #self.jdata = self.jdataRaw.copy()
+                        else:
                             self.upDelete = 0
                             self.lowDelete = 0
                             self.lowerSpinboxVariable.set(str(self.lowDelete))
@@ -485,17 +533,14 @@ class mmF(tk.Frame):
                             self.wdata = self.wdataRaw.copy()
                             self.rdata = self.rdataRaw.copy()
                             self.jdata = self.jdataRaw.copy()
-                        self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
-                        self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
-                        #self.rs.setMajorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
-                        self.rs.setNumberOfMajorTicks(10)
-                        self.rs.showMinorTicks(False)
-                        #self.rs.setMinorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
-                        self.rs.setLower(np.log10(min(self.wdata)))
-                        self.rs.setUpper(np.log10(max(self.wdata)))
-                        #self.wdata = self.wdataRaw.copy()
-                        #self.rdata = self.rdataRaw.copy()
-                        #self.jdata = self.jdataRaw.copy()
+                            self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
+                            self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
+                            self.rs.setNumberOfMajorTicks(10)
+                            self.rs.showMinorTicks(False)
+                            self.rs.setLower(np.log10(min(self.wdata)))
+                            self.rs.setUpper(np.log10(max(self.wdata)))
+                            self.lowestUndeleted.configure(text="Lowest remaining frequency: {:.4e}".format(min(self.wdata))) #%f" % round_to_n(min(self.wdata), 6)).strip("0"))
+                            self.highestUndeleted.configure(text="Highest remaining frequency: {:.4e}".format(max(self.wdata))) #%f" % round_to_n(max(self.wdata), 6)).strip("0"))
                         self.lengthOfData = len(self.wdata)
                         self.tauDefault = 1/((max(w_in)-min(w_in))/(np.log10(abs(max(w_in)/min(w_in)))))
                         self.rDefault = (max(r_in)+min(r_in))/2
@@ -1077,7 +1122,7 @@ class mmF(tk.Frame):
                 def populate(frame):
                     self.reFrame = tk.Frame(frame, bg=self.backgroundColor)
                     self.reLabel = tk.Label(self.reFrame, text="Re (Rsol) = ", bg=self.backgroundColor, fg=self.foregroundColor)
-                    reCombobox = ttk.Combobox(self.reFrame, value=("+", "+ or -", "fixed"),  textvariable=self.paramComboboxVariables[0], justify=tk.CENTER, state="readonly", exportselection=0, width=6)
+                    reCombobox = ttk.Combobox(self.reFrame, value=("+", "+ or -", "fixed"),  textvariable=self.paramComboboxVariables[0], justify=tk.CENTER, state="readonly", width=6)
                     reEntry = ttk.Entry(self.reFrame, width=10, textvariable=self.paramEntryVariables[0], validate="all", validatecommand=valcom)
                     self.capacitanceCheckbox = ttk.Checkbutton(self.reFrame, text="Capacitance", variable=self.capacitanceCheckboxVariable, command=capCommand)
                     self.capacitanceCombobox = ttk.Combobox(self.reFrame, value=("+", "+ or -", "-", "fixed"), textvariable=self.capacitanceComboboxVariable, justify=tk.CENTER, state="disabled", exportselection=0, width=6)
@@ -1191,6 +1236,7 @@ class mmF(tk.Frame):
                         if (self.paramEntryVariables[i+1].get() == ''):
                             self.paramEntryVariables[i+1].set(str(round(self.tauDefault, -int(np.floor(np.log10(self.tauDefault))) + (4 - 1))))
             else:
+                self.paramPopup.deiconify()
                 self.paramPopup.lift()  
         
         def advancedParamsPopup():
@@ -1343,9 +1389,9 @@ class mmF(tk.Frame):
                 self.advancedParamFrame.grid(column=2, row=1, padx=10, sticky="NSEW")
                 self.advancedOptionsPopup.deiconify()
             else:
+                self.advancedOptionsPopup.deiconify()
                 self.advancedOptionsPopup.lift()
-
-        
+    
         def loadParams():
             self.paramPopup.withdraw()
             self.advancedOptionsPopup.withdraw()
@@ -1480,7 +1526,7 @@ class mmF(tk.Frame):
                 self.numVoigtVariable.set(str(len(tComboboxes)))
                 self.nVoigt = int(self.numVoigtVariable.get())
             except:
-                messagebox.showerror("File error", "There was an error loading or reading the file")
+                messagebox.showerror("File error", "Error 9: \nThere was an error loading or reading the file")
 
         def checkWeight(event):
             if (self.weightingVariable.get() == "None"):
@@ -1693,7 +1739,7 @@ class mmF(tk.Frame):
                     for i in range(len(r)):
                         if (i != 0):
                             if (i%2 != 0):
-                                if (i/2 - 1 < 10):
+                                if (i/2 + 1 < 10):
                                     self.aR += "R" + str(int(i/2+1)) + "    "
                                 else:
                                     self.aR += "R" + str(int(i/2+1)) + "   "
@@ -1792,11 +1838,88 @@ class mmF(tk.Frame):
                     self.whatFitStack.append(self.whatFit)
                     if (ft == 0):
                         self.whatFit = "C"
+                        self.fitTypeVariable.set("Complex")
                     elif (ft == 1):
                         self.whatFit = "J"
+                        self.fitTypeVariable.set("Imaginary")
                     elif (ft == 3):
                         self.whatFit = "R"
-                #print(r)
+                        self.fitTypeVariable.set("Real")
+                    if (self.magicPlot.state() != "withdrawn"):
+                        self.magicInput.clf()
+                        Zfit = np.zeros(len(self.wdata), dtype=np.complex128)
+                        if (not self.capUsed):
+                            for i in range(len(self.wdata)):
+                                Zfit[i] = self.fits[0]
+                                for k in range(1, len(self.fits), 2):
+                                    Zfit[i] += (self.fits[k]/(1+(1j*self.wdata[i]*2*np.pi*self.fits[k+1])))
+                        else:
+                            for i in range(len(self.wdata)):
+                                Zfit[i] = self.fits[0] + 1/(1j*2*np.pi*self.wdata[i]*self.resultCap)
+                                for k in range(1, len(self.fits), 2):
+                                    Zfit[i] += (self.fits[k]/(1+(1j*self.wdata[i]*2*np.pi*self.fits[k+1])))
+                        
+                        x = np.array(self.rdata)    #Doesn't plot without this
+                        y = np.array(self.jdata)
+                        dataColor = "tab:blue"
+                        fitColor = "orange"
+                        if (self.topGUI.getTheme() == "dark"):
+                            dataColor = "cyan"
+                            fitColor = "gold"
+                        else:
+                            dataColor = "tab:blue"
+                            fitColor = "orange"
+                        with plt.rc_context({'axes.edgecolor':self.foregroundColor, 'xtick.color':self.foregroundColor, 'ytick.color':self.foregroundColor, 'figure.facecolor':self.backgroundColor}):
+                            self.magicSubplot = self.magicInput.add_subplot(111)
+                            self.magicSubplot.set_facecolor(self.backgroundColor)
+                            self.magicSubplot.yaxis.set_ticks_position("both")
+                            self.magicSubplot.yaxis.set_tick_params(direction="in", color=self.foregroundColor)     #Make the ticks point inwards
+                            self.magicSubplot.xaxis.set_ticks_position("both")
+                            self.magicSubplot.xaxis.set_tick_params(direction="in", color=self.foregroundColor)     #Make the ticks point inwards
+                            pointsPlot, = self.magicSubplot.plot(x, -1*y, "o", color=dataColor)
+                            topPoint = max(-1*y)
+                            rightPoint = max(x)
+                            if (len(self.fits) > 0):
+                                self.magicSubplot.plot(np.array(Zfit.real), np.array(-1*Zfit.imag), color=fitColor)
+                            self.magicSubplot.axis("equal")
+                            self.magicSubplot.set_title("Magic Finger Nyquist Plot", color=self.foregroundColor)
+                            self.magicSubplot.set_xlabel("Zr / Ω", color=self.foregroundColor)
+                            self.magicSubplot.set_ylabel("-Zj / Ω", color=self.foregroundColor)
+                            self.magicInput.subplots_adjust(left=0.14)   #Allows the y axis label to be more easily seen
+                        self.magicCanvasInput.draw()
+                        annot = self.magicSubplot.annotate("", xy=(0,0), xytext=(10,10),textcoords="offset points", bbox=dict(boxstyle="round", fc="w", alpha=1), arrowprops=dict(arrowstyle="-"))
+                        annot.set_visible(False)
+                        def update_annot(ind):
+                            x,y = pointsPlot.get_data()
+                            xval = x[ind["ind"][0]]
+                            yval = y[ind["ind"][0]]
+                            annot.xy = (xval, yval)
+                            text = "Zr=%.3g"%xval + "\nZj=-%.3g"%yval + "\nf=%.5g"%self.wdata[np.where(self.rdata == xval)][0]
+                            annot.set_text(text)
+                            #---Check if we're within 5% of the right or top edges, and adjust label positions accordingly
+                            if (rightPoint != 0):
+                                if (abs(xval - rightPoint)/rightPoint <= 0.2):
+                                    annot.set_position((-90, -10))
+                            if (topPoint != 0):
+                                if (abs(yval - topPoint)/topPoint <= 0.05):
+                                    annot.set_position((10, -20))
+                            else:
+                                annot.set_position((10, -20))
+                        def hover(event):
+                            vis = annot.get_visible()
+                            if event.inaxes == self.magicSubplot:
+                                cont, ind = pointsPlot.contains(event)
+                                if cont:
+                                    update_annot(ind)
+                                    annot.set_visible(True)
+                                    self.magicInput.canvas.draw_idle()
+                                else:
+                                    if vis:
+                                        annot.set_position((10,10))
+                                        annot.set_visible(False)
+                                        self.magicInput.canvas.draw_idle()
+                        self.magicInput.canvas.mpl_connect("motion_notify_event", hover)
+                    runMeasurementModel()
             except queue.Empty:
                 if (len(self.autoPercent) > 0):
                     currentVal = self.autoPercent[len(self.autoPercent) - 1]
@@ -2013,7 +2136,7 @@ class mmF(tk.Frame):
                     for i in range(len(r)):
                         if (i != 0):
                             if (i%2 != 0):
-                                if (i/2 - 1 < 10):
+                                if (int(i/2 + 1) < 10):
                                     self.aR += "R" + str(int(i/2+1)) + "    "
                                 else:
                                     self.aR += "R" + str(int(i/2+1)) + "   "
@@ -2119,6 +2242,80 @@ class mmF(tk.Frame):
                         self.whatFit = "J"
                     elif (self.fitTypeVariable.get() == "Real"):
                         self.whatFit = "R"
+                    if (self.magicPlot.state() != "withdrawn"):
+                        self.magicInput.clf()
+                        Zfit = np.zeros(len(self.wdata), dtype=np.complex128)
+                        if (not self.capUsed):
+                            for i in range(len(self.wdata)):
+                                Zfit[i] = self.fits[0]
+                                for k in range(1, len(self.fits), 2):
+                                    Zfit[i] += (self.fits[k]/(1+(1j*self.wdata[i]*2*np.pi*self.fits[k+1])))
+                        else:
+                            for i in range(len(self.wdata)):
+                                Zfit[i] = self.fits[0] + 1/(1j*2*np.pi*self.wdata[i]*self.resultCap)
+                                for k in range(1, len(self.fits), 2):
+                                    Zfit[i] += (self.fits[k]/(1+(1j*self.wdata[i]*2*np.pi*self.fits[k+1])))
+                        
+                        x = np.array(self.rdata)
+                        y = np.array(self.jdata)
+                        dataColor = "tab:blue"
+                        fitColor = "orange"
+                        if (self.topGUI.getTheme() == "dark"):
+                            dataColor = "cyan"
+                            fitColor = "gold"
+                        else:
+                            dataColor = "tab:blue"
+                            fitColor = "orange"
+                        with plt.rc_context({'axes.edgecolor':self.foregroundColor, 'xtick.color':self.foregroundColor, 'ytick.color':self.foregroundColor, 'figure.facecolor':self.backgroundColor}):
+                            self.magicSubplot = self.magicInput.add_subplot(111)
+                            self.magicSubplot.set_facecolor(self.backgroundColor)
+                            self.magicSubplot.yaxis.set_ticks_position("both")
+                            self.magicSubplot.yaxis.set_tick_params(direction="in", color=self.foregroundColor)     #Make the ticks point inwards
+                            self.magicSubplot.xaxis.set_ticks_position("both")
+                            self.magicSubplot.xaxis.set_tick_params(direction="in", color=self.foregroundColor)     #Make the ticks point inwards
+                            pointsPlot, = self.magicSubplot.plot(x, -1*y, "o", color=dataColor)
+                            rightPoint = max(x)
+                            topPoint = max(-1*y)
+                            if (len(self.fits) > 0):
+                                self.magicSubplot.plot(np.array(Zfit.real), np.array(-1*Zfit.imag), color=fitColor)
+                            self.magicSubplot.axis("equal")
+                            self.magicSubplot.set_title("Magic Finger Nyquist Plot", color=self.foregroundColor)
+                            self.magicSubplot.set_xlabel("Zr / Ω", color=self.foregroundColor)
+                            self.magicSubplot.set_ylabel("-Zj / Ω", color=self.foregroundColor)
+                            self.magicInput.subplots_adjust(left=0.14)   #Allows the y axis label to be more easily seen
+                        self.magicCanvasInput.draw()
+                        annot = self.magicSubplot.annotate("", xy=(0,0), xytext=(10,10),textcoords="offset points", bbox=dict(boxstyle="round", fc="w", alpha=1), arrowprops=dict(arrowstyle="-"))
+                        annot.set_visible(False)
+                        def update_annot(ind):
+                            x,y = pointsPlot.get_data()
+                            xval = x[ind["ind"][0]]
+                            yval = y[ind["ind"][0]]
+                            annot.xy = (xval, yval)
+                            text = "Zr=%.3g"%xval + "\nZj=-%.3g"%yval + "\nf=%.5g"%self.wdata[np.where(self.rdata == xval)][0]
+                            annot.set_text(text)
+                            #---Check if we're within 5% of the right or top edges, and adjust label positions accordingly
+                            if (rightPoint != 0):
+                                if (abs(xval - rightPoint)/rightPoint <= 0.2):
+                                    annot.set_position((-90, -10))
+                            if (topPoint != 0):
+                                if (abs(yval - topPoint)/topPoint <= 0.05):
+                                    annot.set_position((10, -20))
+                            else:
+                                annot.set_position((10, -20))
+                        def hover(event):
+                            vis = annot.get_visible()
+                            if event.inaxes == self.magicSubplot:
+                                cont, ind = pointsPlot.contains(event)
+                                if cont:
+                                    update_annot(ind)
+                                    annot.set_visible(True)
+                                    self.magicInput.canvas.draw_idle()
+                                else:
+                                    if vis:
+                                        annot.set_position((10,10))
+                                        annot.set_visible(False)
+                                        self.magicInput.canvas.draw_idle()
+                        self.magicInput.canvas.mpl_connect("motion_notify_event", hover)
 #                    self.editReVariable.set("%.4g"%r[0])
 #                    self.needUndo = True
 #                    if (self.justUndid):
@@ -2350,7 +2547,7 @@ class mmF(tk.Frame):
                     for i in range(len(r)):
                         if (i != 0):
                             if (i%2 != 0):
-                                if (i/2 - 1 < 10):
+                                if (i/2 + 1 < 10):
                                     self.aR += "R" + str(int(i/2+1)) + "    "
                                 else:
                                     self.aR += "R" + str(int(i/2+1)) + "   "
@@ -2477,6 +2674,80 @@ class mmF(tk.Frame):
                         self.whatFit = "J"
                     elif (self.fitTypeVariable.get() == "Real"):
                         self.whatFit = "R"
+                    if (self.magicPlot.state() != "withdrawn"):
+                        self.magicInput.clf()
+                        Zfit = np.zeros(len(self.wdata), dtype=np.complex128)
+                        if (not self.capUsed):
+                            for i in range(len(self.wdata)):
+                                Zfit[i] = self.fits[0]
+                                for k in range(1, len(self.fits), 2):
+                                    Zfit[i] += (self.fits[k]/(1+(1j*self.wdata[i]*2*np.pi*self.fits[k+1])))
+                        else:
+                            for i in range(len(self.wdata)):
+                                Zfit[i] = self.fits[0] + 1/(1j*2*np.pi*self.wdata[i]*self.resultCap)
+                                for k in range(1, len(self.fits), 2):
+                                    Zfit[i] += (self.fits[k]/(1+(1j*self.wdata[i]*2*np.pi*self.fits[k+1])))
+                        
+                        x = np.array(self.rdata)    #Doesn't plot without this
+                        y = np.array(self.jdata)
+                        dataColor = "tab:blue"
+                        fitColor = "orange"
+                        if (self.topGUI.getTheme() == "dark"):
+                            dataColor = "cyan"
+                            fitColor = "gold"
+                        else:
+                            dataColor = "tab:blue"
+                            fitColor = "orange"
+                        with plt.rc_context({'axes.edgecolor':self.foregroundColor, 'xtick.color':self.foregroundColor, 'ytick.color':self.foregroundColor, 'figure.facecolor':self.backgroundColor}):
+                            self.magicSubplot = self.magicInput.add_subplot(111)
+                            self.magicSubplot.set_facecolor(self.backgroundColor)
+                            self.magicSubplot.yaxis.set_ticks_position("both")
+                            self.magicSubplot.yaxis.set_tick_params(direction="in", color=self.foregroundColor)     #Make the ticks point inwards
+                            self.magicSubplot.xaxis.set_ticks_position("both")
+                            self.magicSubplot.xaxis.set_tick_params(direction="in", color=self.foregroundColor)     #Make the ticks point inwards
+                            pointsPlot, = self.magicSubplot.plot(x, -1*y, "o", color=dataColor)
+                            rightPoint = max(x)
+                            topPoint = max(-1*y)
+                            if (len(self.fits) > 0):
+                                self.magicSubplot.plot(np.array(Zfit.real), np.array(-1*Zfit.imag), color=fitColor)
+                            self.magicSubplot.axis("equal")
+                            self.magicSubplot.set_title("Magic Finger Nyquist Plot", color=self.foregroundColor)
+                            self.magicSubplot.set_xlabel("Zr / Ω", color=self.foregroundColor)
+                            self.magicSubplot.set_ylabel("-Zj / Ω", color=self.foregroundColor)
+                            self.magicInput.subplots_adjust(left=0.14)   #Allows the y axis label to be more easily seen
+                        self.magicCanvasInput.draw()
+                        annot = self.magicSubplot.annotate("", xy=(0,0), xytext=(10,10),textcoords="offset points", bbox=dict(boxstyle="round", fc="w", alpha=1), arrowprops=dict(arrowstyle="-"))
+                        annot.set_visible(False)
+                        def update_annot(ind):
+                            x,y = pointsPlot.get_data()
+                            xval = x[ind["ind"][0]]
+                            yval = y[ind["ind"][0]]
+                            annot.xy = (xval, yval)
+                            text = "Zr=%.3g"%xval + "\nZj=-%.3g"%yval + "\nf=%.5g"%self.wdata[np.where(self.rdata == xval)][0]
+                            annot.set_text(text)
+                            #---Check if we're within 5% of the right or top edges, and adjust label positions accordingly
+                            if (rightPoint != 0):
+                                if (abs(xval - rightPoint)/rightPoint <= 0.2):
+                                    annot.set_position((-90, -10))
+                            if (topPoint != 0):
+                                if (abs(yval - topPoint)/topPoint <= 0.05):
+                                    annot.set_position((10, -20))
+                            else:
+                                annot.set_position((10, -20))
+                        def hover(event):
+                            vis = annot.get_visible()
+                            if event.inaxes == self.magicSubplot:
+                                cont, ind = pointsPlot.contains(event)
+                                if cont:
+                                    update_annot(ind)
+                                    annot.set_visible(True)
+                                    self.magicInput.canvas.draw_idle()
+                                else:
+                                    if vis:
+                                        annot.set_position((10,10))
+                                        annot.set_visible(False)
+                                        self.magicInput.canvas.draw_idle()
+                        self.magicInput.canvas.mpl_connect("motion_notify_event", hover)
 #                    self.editReVariable.set("%.4g"%r[0])
 #                    self.needUndo = True
 #                    if (self.justUndid):
@@ -2566,7 +2837,7 @@ class mmF(tk.Frame):
                                 messagebox.showerror("Value error", "Error 20:\nOne of the parameters has a negative value but is constrained to be positive")
                                 return
                             elif (ig[i][0] > 0 and bU[i] == 0):
-                                messagebox.showerror("Value error", "One of the parameters has a positive value but is constrained to be negative")
+                                messagebox.showerror("Value error", "Error 20: \nOne of the parameters has a positive value but is constrained to be negative")
                                 return
                         except:
                             messagebox.showerror("Value error", "Error 21:\nOne of the parameters has an invalid value: " + str(possibleVal))
@@ -3026,15 +3297,15 @@ class mmF(tk.Frame):
                 self.errorDeltaEntryAuto.configure(state="disabled")
         self.autoErrorFrame = tk.Frame(self.autoFitWindow, bg=self.backgroundColor)
         self.errorAlphaCheckboxAuto = ttk.Checkbutton(self.autoErrorFrame, variable=self.errorAlphaCheckboxVariableAuto, text="\u03B1 = ", command=checkErrorStructureAuto)
-        self.errorAlphaEntryAuto = ttk.Entry(self.autoErrorFrame, textvariable=self.errorAlphaVariableAuto, state="disabled", exportselection=0, width=6)
+        self.errorAlphaEntryAuto = ttk.Entry(self.autoErrorFrame, textvariable=self.errorAlphaVariableAuto, state="disabled", width=6)
         self.errorBetaCheckboxAuto = ttk.Checkbutton(self.autoErrorFrame, variable=self.errorBetaCheckboxVariableAuto, text="\u03B2 = ", command=checkErrorStructureAuto)
-        self.errorBetaEntryAuto = ttk.Entry(self.autoErrorFrame, textvariable=self.errorBetaVariableAuto, state="disabled", exportselection=0, width=6)
+        self.errorBetaEntryAuto = ttk.Entry(self.autoErrorFrame, textvariable=self.errorBetaVariableAuto, state="disabled", width=6)
         self.errorBetaReCheckboxAuto = ttk.Checkbutton(self.autoErrorFrame, variable=self.errorBetaReCheckboxVariableAuto, text="Re = ", state="disabled", command=checkErrorStructureAuto)
-        self.errorBetaReEntryAuto = ttk.Entry(self.autoErrorFrame, textvariable=self.errorBetaReVariableAuto, state="disabled", exportselection=0, width=6)
+        self.errorBetaReEntryAuto = ttk.Entry(self.autoErrorFrame, textvariable=self.errorBetaReVariableAuto, state="disabled", width=6)
         self.errorGammaCheckboxAuto = ttk.Checkbutton(self.autoErrorFrame, variable=self.errorGammaCheckboxVariableAuto, text="\u03B3 = ", command=checkErrorStructureAuto)
-        self.errorGammaEntryAuto = ttk.Entry(self.autoErrorFrame, textvariable=self.errorGammaVariableAuto, exportselection=0, width=6)
+        self.errorGammaEntryAuto = ttk.Entry(self.autoErrorFrame, textvariable=self.errorGammaVariableAuto, width=6)
         self.errorDeltaCheckboxAuto = ttk.Checkbutton(self.autoErrorFrame, variable=self.errorDeltaCheckboxVariableAuto, text="\u03B4 = ", command=checkErrorStructureAuto)
-        self.errorDeltaEntryAuto = ttk.Entry(self.autoErrorFrame, textvariable=self.errorDeltaVariableAuto, exportselection=0, width=6)
+        self.errorDeltaEntryAuto = ttk.Entry(self.autoErrorFrame, textvariable=self.errorDeltaVariableAuto, width=6)
         self.autoRunButton = ttk.Button(self.autoFitWindow, text="Run", width=10)
         self.autoCancelButton = ttk.Button(self.autoFitWindow, text="Cancel", width=10, state="disabled")
         
@@ -3097,7 +3368,12 @@ class mmF(tk.Frame):
                 if (self.autoWeightingVariable.get() == "Error structure" and errA == 0 and errB == 0 and errG == 0 and errD == 0):
                     messagebox.showerror("Need error variable", "At least one error structure variable must be chosen", parent=self.autoFitWindow)
                     return
-                choice = 1 if self.autoWeightingVariable.get() == "Auto" else 3
+                if (self.autoWeightingVariable.get() == "Modulus"):
+                    choice = 1
+                elif (self.autoWeightingVariable.get() == "Proportional"):
+                    choice = 2
+                else:
+                    choice = 3
                 self.autoStatusLabel.configure(text="Initializing...")
                 self.autoPercent = []
                 self.measureModelButton.configure(state="disabled")
@@ -3151,14 +3427,15 @@ class mmF(tk.Frame):
                     self.autoErrorFrame.grid(column=0, row=2, columnspan=4, sticky="W")
             
             if (self.autoFitWindow.state() != "withdrawn"):
+                self.autoFitWindow.deiconify()
                 self.autoFitWindow.lift()
             
             self.autoMaxLabel = tk.Label(self.autoFitWindow, text="Max Voigt Elements: ", bg=self.backgroundColor, fg=self.foregroundColor)
-            self.autoMaxNVE = ttk.Entry(self.autoFitWindow, textvariable=self.autoMaxNVEVariable, exportselection=0, width=7)
+            self.autoMaxNVE = ttk.Entry(self.autoFitWindow, textvariable=self.autoMaxNVEVariable, width=7)
             self.autoNMCLabel = tk.Label(self.autoFitWindow, text="Number of Simulations: ", bg=self.backgroundColor, fg=self.foregroundColor)
-            self.autoNMC = ttk.Entry(self.autoFitWindow, textvariable=self.autoNMCVariable, exportselection=0, width=7)
+            self.autoNMC = ttk.Entry(self.autoFitWindow, textvariable=self.autoNMCVariable, width=7)
             self.autoWeightingLabel = tk.Label(self.autoFitWindow, text="Weighting: ", bg=self.backgroundColor, fg=self.foregroundColor)
-            self.autoWeighting = ttk.Combobox(self.autoFitWindow, value=("Auto", "Error structure"), textvariable=self.autoWeightingVariable, width=15, state="readonly")
+            self.autoWeighting = ttk.Combobox(self.autoFitWindow, value=("Modulus", "Proportional", "Error structure"), textvariable=self.autoWeightingVariable, width=15, state="readonly")
             self.autoStatusLabel = tk.Label(self.autoFitWindow, text="", bg=self.backgroundColor, fg=self.foregroundColor)
             self.errorAlphaCheckboxAuto.grid(column=0, row=0)
             self.errorAlphaEntryAuto.grid(column=1, row=0, padx=(2, 15))
@@ -3173,20 +3450,20 @@ class mmF(tk.Frame):
             self.autoRunButton.configure(command=runAuto)
             self.autoWeighting.bind("<<ComboboxSelected>>", checkWeightAuto)
             self.autoSliderFrame = tk.Frame(self.autoFitWindow, background=self.backgroundColor)
-            self.autoRadioLabel = tk.Label(self.autoSliderFrame, text="Fitting speed: ", bg=self.backgroundColor, fg=self.foregroundColor)
+            self.autoRadioLabel = tk.Label(self.autoSliderFrame, text="Fit type: ", bg=self.backgroundColor, fg=self.foregroundColor)
             #self.radio1 = ttk.Radiobutton(self.autoSliderFrame, text="Fastest", variable=self.radioVal, value=1)
-            self.radio2 = ttk.Radiobutton(self.autoSliderFrame, text="Fast", variable=self.radioVal, value=2)
-            self.radio3 = ttk.Radiobutton(self.autoSliderFrame, text="Moderate", variable=self.radioVal, value=3)
-            self.radio4 = ttk.Radiobutton(self.autoSliderFrame, text="Robust", variable=self.radioVal, value=4)
+            self.radio2 = ttk.Radiobutton(self.autoSliderFrame, text="Complex", variable=self.radioVal, value=2)
+            self.radio3 = ttk.Radiobutton(self.autoSliderFrame, text="Real", variable=self.radioVal, value=3)
+            self.radio4 = ttk.Radiobutton(self.autoSliderFrame, text="Imaginary", variable=self.radioVal, value=4)
             autoMaxNVE_ttp = CreateToolTip(self.autoMaxNVE, "Number of Voigt elements to stop at")
             autoNMCLabel_ttp = CreateToolTip(self.autoNMC, "Number of Monte Carlo simulations for confidence intervals")
             autoWeighting_ttp = CreateToolTip(self.autoWeighting, "Weighting to be used")
             autoRunButton_ttp = CreateToolTip(self.autoRunButton, "Run automatic fitting")
             autoCancelButton_ttp = CreateToolTip(self.autoCancelButton, "Cancel automatic fitting")
             #radio1_ttp = CreateToolTip(self.radio1, "Use complex fit with modulus weighting only")
-            radio2_ttp = CreateToolTip(self.radio2, "Try complex fit, then imaginary fit, then proportional weighting")
-            radio3_ttp = CreateToolTip(self.radio3, "Try complex fit, then imaginary fit, then proportional weighting, then 5 point multistart")
-            radio4_ttp = CreateToolTip(self.radio4, "Try complex fit, then imaginary fit, then proportional weighting, then 15 point multistart")
+            radio2_ttp = CreateToolTip(self.radio2, "Fit both real and imaginary parts")
+            radio3_ttp = CreateToolTip(self.radio3, "Fit real part only")
+            radio4_ttp = CreateToolTip(self.radio4, "Fit imaginary part only")
             
             self.autoMaxLabel.grid(column=0, row=0, sticky="W", padx=(3, 0))
             self.autoMaxNVE.grid(column=1, row=0, sticky="W", padx=3)
@@ -3215,7 +3492,7 @@ class mmF(tk.Frame):
         def copyVals():
             self.copyButton.configure(text="Copied")
             self.clipboard_clear()
-            stringToCopy = "T\tT Std. Dev.\tR\tR Std. Dev.\tC\tC Std. Dev.\n"
+            stringToCopy = str(self.browseEntry.get()) + "\nT\tT Std. Dev.\tR\tR Std. Dev.\tC\tC Std. Dev.\n"
             resultValues = []
             resultStdDevs = []
             cap = 0
@@ -3495,6 +3772,7 @@ class mmF(tk.Frame):
                     larger.yaxis.set_tick_params(direction="in", which="both", color=self.foregroundColor)
                     larger.xaxis.set_ticks_position("both")
                     larger.xaxis.set_tick_params(direction="in", which="both", color=self.foregroundColor)
+                    whichPlot = "a"
                     dataColor = "tab:blue"
                     fitColor = "orange"
                     if (self.topGUI.getTheme() == "dark"):
@@ -3506,7 +3784,7 @@ class mmF(tk.Frame):
                     
                     if (event.inaxes == self.aplot):
                         resultPlotBig.title("Nyquist Plot")
-                        larger.plot(self.rdata, -1*self.jdata, "o", color=dataColor)
+                        pointsPlot, = larger.plot(self.rdata, -1*self.jdata, "o", color=dataColor)
                         larger.plot(Zfit.real, -1*Zfit.imag, color=fitColor, marker="x", markeredgecolor="black")
                         if (self.confInt):
                             for i in range(len(self.wdata)):
@@ -3514,14 +3792,16 @@ class mmF(tk.Frame):
                                 larger.add_artist(ellipse)
                                 ellipse.set_alpha(0.1)
                                 ellipse.set_facecolor(self.ellipseColor)
+                        rightPoint = max(self.rdata)
+                        topPoint = max(-1*self.jdata)
                         larger.axis("equal")
                         larger.set_title("Nyquist Plot", color=self.foregroundColor)
                         larger.set_xlabel("Zr / Ω", color=self.foregroundColor)
                         larger.set_ylabel("-Zj / Ω", color=self.foregroundColor)
-    
+                        whichPlot = "a"
                     elif (event.inaxes == self.bplot):
                         resultPlotBig.title("Real Impedance Plot")
-                        larger.plot(self.wdata, self.rdata, "o", color=dataColor)
+                        pointsPlot, = larger.plot(self.wdata, self.rdata, "o", color=dataColor, zorder=2)
                         larger.plot(self.wdata, Zfit.real, color=fitColor)
                         if (self.confInt):
                             error_above = np.zeros(len(self.wdata))
@@ -3531,13 +3811,16 @@ class mmF(tk.Frame):
                                 error_below[i] = min(Zfit.real[i] + 2*self.sdrReal[i], Zfit.real[i] - 2*self.sdrReal[i])
                             larger.plot(self.wdata, error_above, "--", color=self.ellipseColor)
                             larger.plot(self.wdata, error_below, "--", color=self.ellipseColor)
+                        rightPoint = max(self.wdata)
+                        topPoint = max(self.rdata)
                         larger.set_xscale("log")
                         larger.set_title("Real Impedance Plot", color=self.foregroundColor)
                         larger.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                         larger.set_ylabel("Zr / Ω", color=self.foregroundColor)
+                        whichPlot = "b"
                     elif (event.inaxes == self.cplot):
                         resultPlotBig.title("Imaginary Impedance Plot")
-                        larger.plot(self.wdata, -1*self.jdata, "o", color=dataColor)
+                        pointsPlot, = larger.plot(self.wdata, -1*self.jdata, "o", color=dataColor)
                         larger.plot(self.wdata, -1*Zfit.imag, color=fitColor)
                         if (self.confInt):
                             error_above = np.zeros(len(self.wdata))
@@ -3547,13 +3830,16 @@ class mmF(tk.Frame):
                                 error_below[i] = min(Zfit.imag[i] + 2*self.sdrImag[i], Zfit.imag[i] - 2*self.sdrImag[i])
                             larger.plot(self.wdata, -1*error_above, "--", color=self.ellipseColor)
                             larger.plot(self.wdata, -1*error_below, "--", color=self.ellipseColor)
+                        rightPoint = max(self.wdata)
+                        topPoint = max(-1*self.jdata)
                         larger.set_xscale("log")
                         larger.set_title("Imaginary Impedance Plot", color=self.foregroundColor)
                         larger.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                         larger.set_ylabel("-Zj / Ω", color=self.foregroundColor)
+                        whichPlot = "c"
                     elif (event.inaxes == self.dplot):
                         resultPlotBig.title("|Z| Bode Plot")
-                        larger.plot(self.wdata, np.sqrt(self.jdata**2 + self.rdata**2), "o", color=dataColor)
+                        pointsPlot, = larger.plot(self.wdata, np.sqrt(self.jdata**2 + self.rdata**2), "o", color=dataColor)
                         larger.plot(self.wdata, np.sqrt(Zfit.imag**2 + Zfit.real**2), color=fitColor)
                         if (self.confInt):
                             error_above = np.zeros(len(self.wdata))
@@ -3563,16 +3849,19 @@ class mmF(tk.Frame):
                                 error_below[i] = np.sqrt(min((Zfit.real[i]+2*self.sdrReal[i])**2, (Zfit.real[i]-2*self.sdrReal[i])**2) + min((Zfit.imag[i]+2*self.sdrImag[i])**2, (Zfit.imag[i]-2*self.sdrImag[i])**2))
                             larger.plot(self.wdata, error_above, "--", color=self.ellipseColor)
                             larger.plot(self.wdata, error_below, "--", color=self.ellipseColor)
+                        rightPoint = max(self.wdata)
+                        topPoint = max(np.sqrt(self.jdata**2 + self.rdata**2))
                         larger.set_xscale("log")
                         larger.set_yscale("log")
                         larger.set_title("|Z| Bode Plot", color=self.foregroundColor)
                         larger.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                         larger.set_ylabel("|Z| / Ω", color=self.foregroundColor)
+                        whichPlot = "d"
                     elif (event.inaxes == self.eplot):
                         phase_fit = np.arctan2(Zfit.imag, Zfit.real) * (180/np.pi)
                         actual_phase = np.arctan2(self.jdata, self.rdata) * (180/np.pi)
                         resultPlotBig.title("Phase Angle Bode Plot")
-                        larger.plot(self.wdata, actual_phase, "o", color=dataColor)
+                        pointsPlot, = larger.plot(self.wdata, actual_phase, "o", color=dataColor)
                         larger.plot(self.wdata, phase_fit, color=fitColor)
                         if (self.confInt):
                             error_above = np.arctan2((Zfit.imag+2*self.sdrImag), (Zfit.real+2*self.sdrReal)) * (180/np.pi)
@@ -3581,34 +3870,43 @@ class mmF(tk.Frame):
                             larger.plot(self.wdata, error_below, "--", color=self.ellipseColor)
                         larger.yaxis.set_ticks([-90, -75, -60, -45, -30, -15, 0])
                         larger.set_ylim(bottom=0, top=-90)
+                        rightPoint = max(self.wdata)
+                        topPoint = -90
                         larger.set_xscale("log")
                         larger.set_title("Phase Angle Bode Plot", color=self.foregroundColor)
                         larger.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                         larger.set_ylabel("Phase Angle / Degrees", color=self.foregroundColor)
+                        whichPlot = "e"
                     elif (event.inaxes == self.fplot):
                         resultPlotBig.title("Re-adjusted |Z| Bode Plot")
-                        larger.plot(self.wdata, np.sqrt(self.jdata**2 + (self.rdata-self.fits[0])**2), "o", color=dataColor)
+                        pointsPlot, = larger.plot(self.wdata, np.sqrt(self.jdata**2 + (self.rdata-self.fits[0])**2), "o", color=dataColor)
                         larger.plot(self.wdata, np.sqrt(Zfit.imag**2 + (Zfit.real-self.fits[0])**2), color=fitColor)
+                        rightPoint = max(self.wdata)
+                        topPoint = max(np.sqrt(self.jdata**2 + (self.rdata-self.fits[0])**2))
                         larger.set_xscale("log")
                         larger.set_yscale("log")
                         larger.set_title("Re-adjusted |Z| Bode Plot", color=self.foregroundColor)
                         larger.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                         larger.set_ylabel(r'$\sqrt{(Zr-Re)^2 + Zj^2}$ / Ω', color=self.foregroundColor)
+                        whichPlot = "f"
                     elif (event.inaxes == self.gplot):
                         phase_fit = np.arctan2(Zfit.imag, (Zfit.real-self.fits[0])) * (180/np.pi)
                         actual_phase = np.arctan2(self.jdata, (self.rdata-self.fits[0])) * (180/np.pi)
                         resultPlotBig.title("Re-adjusted Phase Angle Bode Plot")
-                        larger.plot(self.wdata, actual_phase, "o", color=dataColor)
+                        pointsPlot, = larger.plot(self.wdata, actual_phase, "o", color=dataColor)
                         larger.plot(self.wdata, phase_fit, color=fitColor)
                         larger.yaxis.set_ticks([-90, -75, -60, -45, -30, -15, 0])
                         larger.set_ylim(bottom=0, top=-90)
+                        rightPoint = max(self.wdata)
+                        topPoint = -90
                         larger.set_xscale("log")
                         larger.set_title("Re-adjusted Phase Angle Bode Plot", color=self.foregroundColor)
                         larger.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                         larger.set_ylabel(r'$tan^{-1}({\frac{Zj}{(Zr-Re)}})$ / Degrees', color=self.foregroundColor)
+                        whichPlot = "g"
                     elif (event.inaxes == self.hplot):
-                        resultPlotBig.title("Log(Zr) vs Log|ω|")
-                        larger.plot(self.wdata, np.log10(abs(self.rdata)), "o", color=dataColor)
+                        resultPlotBig.title("Log(Zr) vs f")
+                        pointsPlot, = larger.plot(self.wdata, np.log10(abs(self.rdata)), "o", color=dataColor)
                         larger.plot(self.wdata, np.log10(abs(Zfit.real)), color=fitColor)
                         if (self.confInt):
                             error_above = np.zeros(len(self.wdata))
@@ -3620,13 +3918,16 @@ class mmF(tk.Frame):
     #                            error_below[i] = np.log10(min(abs(Zfit.real[i]+2*self.sdrReal[i]), abs(Zfit.real[i]-2*self.sdrReal[i])))
                             larger.plot(self.wdata, error_above, "--", color=self.ellipseColor)
                             larger.plot(self.wdata, error_below, "--", color=self.ellipseColor)
+                        rightPoint = max(self.wdata)
+                        topPoint = max(np.log10(abs(self.rdata)))
                         larger.set_xscale("log")
                         larger.set_title("Log|Zr|", color=self.foregroundColor)
                         larger.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                         larger.set_ylabel("Log|Zr|", color=self.foregroundColor)
+                        whichPlot = "h"
                     elif (event.inaxes == self.iplot):
-                         resultPlotBig.title("Log|Zj| vs Log|ω|")
-                         larger.plot(self.wdata, np.log10(abs(self.jdata)), "o", color=dataColor)
+                         resultPlotBig.title("Log|Zj| vs f")
+                         pointsPlot, = larger.plot(self.wdata, np.log10(abs(self.jdata)), "o", color=dataColor)
                          larger.plot(self.wdata, np.log10(abs(Zfit.imag)), color=fitColor)
                          if (self.confInt):
                             error_above = np.zeros(len(self.wdata))
@@ -3638,10 +3939,13 @@ class mmF(tk.Frame):
     #                            error_below[i] = np.log10(min(abs(Zfit.imag[i]+2*self.sdrImag[i]), abs(Zfit.imag[i]-2*self.sdrImag[i])))
                             larger.plot(self.wdata, error_above, "--", color=self.ellipseColor)
                             larger.plot(self.wdata, error_below, "--", color=self.ellipseColor)
+                         rightPoint = max(self.wdata)
+                         topPoint = max(np.log10(abs(self.jdata)))
                          larger.set_xscale("log")
                          larger.set_title("Log|Zj|", color=self.foregroundColor)
                          larger.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                          larger.set_ylabel("Log|Zj|", color=self.foregroundColor)
+                         whichPlot = "i"
                     elif (event.inaxes == self.jplot):
                         def logModel(freq):         #Returns the log of the imaginary part of the fitted model at a given frequency
                             if (not self.capUsed):
@@ -3657,12 +3961,12 @@ class mmF(tk.Frame):
                             Dw = self.wdata[i]*1E-6
                             deriv[i] = (logModel(self.wdata[i]+Dw)-logModel(self.wdata[i]))/Dw    #Numerically calculate the derivative
                             deriv[i] *= self.wdata[i]       #Multiply by the frequency as per chain rule of d/dlog(omega)
-                        resultPlotBig.title("dlog|Zj|/dlog(ω)")
+                        resultPlotBig.title("dlog|Zj|/dlog(f)")#ω)")
                         larger.plot(self.wdata, deriv, color=fitColor)
                         larger.set_xscale("log")
-                        larger.set_title("dlog|Zj|/dlog(ω)", color=self.foregroundColor)
+                        larger.set_title("dlog|Zj|/dlog(f)", color=self.foregroundColor)#ω)", color=self.foregroundColor)
                         larger.set_xlabel("Frequency / Hz", color=self.foregroundColor)
-                        larger.set_ylabel(r'$\frac{dlog|Zj|}{dlog(ω)}$', color=self.foregroundColor)
+                        larger.set_ylabel(r'$\frac{dlog|Zj|}{dlog(f)}$', color=self.foregroundColor)#ω)}$', color=self.foregroundColor)
                     elif (event.inaxes == self.kplot):
                         normalized_residuals_real = np.zeros(len(self.wdata))
                         normalized_error_real_below = np.zeros(len(self.wdata))
@@ -3672,15 +3976,18 @@ class mmF(tk.Frame):
                             normalized_error_real_below[i] = 2*self.sdrReal[i]/Zfit[i].real
                             normalized_error_real_above[i] = -2*self.sdrReal[i]/Zfit[i].real
                         resultPlotBig.title("Real Normalized Residuals")
-                        larger.plot(self.wdata, normalized_residuals_real, "o", markerfacecolor="None", color=dataColor)
+                        pointsPlot, = larger.plot(self.wdata, normalized_residuals_real, "o", markerfacecolor="None", color=dataColor)
                         if (self.confInt):
                             larger.plot(self.wdata, normalized_error_real_above, "--", color=self.ellipseColor)
                             larger.plot(self.wdata, normalized_error_real_below, "--", color=self.ellipseColor)
                         larger.axhline(0, color="black", linewidth=1.0)
+                        rightPoint = max(self.wdata)
+                        topPoint = max(normalized_residuals_real)
                         larger.set_xscale("log")
                         larger.set_title("Real Normalized Residuals", color=self.foregroundColor)
                         larger.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                         larger.set_ylabel("(Zr-Z\u0302rmodel)/Zr", color=self.foregroundColor)
+                        whichPlot = "k"
                     elif (event.inaxes == self.lplot):
                         normalized_residuals_imag = np.zeros(len(self.wdata))
                         normalized_error_imag_below = np.zeros(len(self.wdata))
@@ -3690,16 +3997,18 @@ class mmF(tk.Frame):
                             normalized_error_imag_below[i] = 2*self.sdrImag[i]/Zfit[i].imag
                             normalized_error_imag_above[i] = -2*self.sdrImag[i]/Zfit[i].imag
                         resultPlotBig.title("Imaginary Normalized Residuals")
-                        larger.plot(self.wdata, normalized_residuals_imag, "o", markerfacecolor="None", color=dataColor)
+                        pointsPlot, = larger.plot(self.wdata, normalized_residuals_imag, "o", markerfacecolor="None", color=dataColor)
                         if (self.confInt):
                             larger.plot(self.wdata, normalized_error_imag_above, "--", color=self.ellipseColor)
                             larger.plot(self.wdata, normalized_error_imag_below, "--", color=self.ellipseColor)
                         larger.axhline(0, color="black", linewidth=1.0)
+                        rightPoint = max(self.wdata)
+                        topPoint = max(normalized_residuals_imag)
                         larger.set_xscale("log")
                         larger.set_title("Imaginary Normalized Residuals", color=self.foregroundColor)
                         larger.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                         larger.set_ylabel("(Zj-Z\u0302jmodel)/Zj", color=self.foregroundColor)
-
+                        whichPlot = "l"
                     larger.xaxis.label.set_fontsize(20)
                     larger.yaxis.label.set_fontsize(20)
                     larger.title.set_fontsize(30)    
@@ -3709,14 +4018,69 @@ class mmF(tk.Frame):
                 toolbar = NavigationToolbar2Tk(largerCanvas, resultPlotBig)
                 toolbar.update()
                 largerCanvas._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+                if (self.mouseOverCheckboxVariable.get() == 1):
+                    annot = larger.annotate("", xy=(0,0), xytext=(10,10),textcoords="offset points", bbox=dict(boxstyle="round", fc="w", alpha=1), arrowprops=dict(arrowstyle="-"))
+                    annot.set_visible(False)
+                    def update_annot(ind):
+                        x,y = pointsPlot.get_data()
+                        xval = x[ind["ind"][0]]
+                        yval = y[ind["ind"][0]]
+                        annot.xy = (xval, yval)
+                        if (whichPlot == "a"):
+                            text = "Zr=%.5g"%xval + "\nZj=-%.5g"%yval + "\nf=%.5g"%self.wdata[np.where(self.rdata == xval)][0]
+                        elif (whichPlot == "b"):
+                            text = "Zr=%.5g"%yval + "\nZj=-%.5g"%self.jdata[np.where(self.rdata == yval)][0] + "\nf=%.5g"%xval
+                        elif (whichPlot == "c"):
+                            text = "Zr=%.5g"%self.rdata[np.where(-1*self.jdata == yval)][0] + "\nZj=-%.5g"%yval + "\nf=%.5g"%xval
+                        elif (whichPlot == "d"):
+                            text = "|Z|=%.5g"%yval + "\nf=%.5g"%xval
+                        elif (whichPlot == "e"):
+                            text = "\u03D5=%.5g\u00B0"%yval + "\nf=%.5g"%xval
+                        elif (whichPlot == "f"):
+                            text = "R\u2091-adj. |Z|=%.5g"%yval + "\nf=%.5g"%xval
+                        elif (whichPlot == "g"):
+                            text = "R\u2091-adj. \u03D5=%.5g\u00B0"%yval + "\nf=%.5g"%xval
+                        elif (whichPlot == "h"):
+                            text = "Zr=%.5g"%10**yval + "\nf=%.5g"%xval
+                        elif (whichPlot == "i"):
+                            text = "Zj=-%.5g"%10**yval + "\nf=%.5g"%xval
+                        elif (whichPlot == "k"):
+                            text = "Real res.=%.5g"%yval + "\nf=%.5g"%xval
+                        elif (whichPlot == "l"):
+                            text = "Imag. res.=%.5g"%yval + "\nf=%.5g"%xval  
+                        annot.set_text(text)
+                        #---Check if we're within 5% of the right or top edges, and adjust label positions accordingly
+                        if (rightPoint != 0):
+                            if (abs(xval - rightPoint)/rightPoint <= 0.05):
+                                annot.set_position((-10, -20))
+                        if (topPoint != 0):
+                            if (whichPlot != "e" and whichPlot != "g"):
+                                if (abs(yval - topPoint)/topPoint <= 0.05):
+                                    annot.set_position((10, -20))
+                            else:
+                                if (yval <= -85.5):
+                                    annot.set_position((10, -20))
+                        else:
+                            annot.set_position((10, -20))
+                    def hover(event):
+                        vis = annot.get_visible()
+                        if event.inaxes == larger:
+                            nonlocal pointsPlot
+                            cont, ind = pointsPlot.contains(event)
+                            if cont:
+                                update_annot(ind)
+                                annot.set_visible(True)
+                                fig.canvas.draw_idle()
+                            else:
+                                if vis:
+                                    annot.set_position((10,10))
+                                    annot.set_visible(False)
+                                    fig.canvas.draw_idle()
+                    fig.canvas.mpl_connect("motion_notify_event", hover)
                 def on_closing():   #Clear the figure before closing the popup
                     fig.clear()
                     resultPlotBig.destroy()
-                    #self.resultPlot.lift(self.parent)       #Keep other popups open if a lower one is closed
-
-                #self.resultPlot.lift(self.parent)
                 resultPlotBig.protocol("WM_DELETE_WINDOW", on_closing)
-                #print('%s click: button=%d, x=%d, y=%d, xdata=%f, ydata=%f' % ('double' if event.dblclick else 'single', event.button, event.x, event.y, event.xdata, event.ydata))
             except:     #A subplot wasn't clicked
                 pass
         
@@ -3736,6 +4100,7 @@ class mmF(tk.Frame):
         
         def plotResults():
             if (self.alreadyPlotted and self.currentNVEPlotted == self.currentNVEPlotNeeded):
+                self.resultPlot.deiconify()
                 self.resultPlot.lift()
                 return
             elif (self.alreadyPlotted and self.currentNVEPlotted != self.currentNVEPlotNeeded):
@@ -3765,8 +4130,8 @@ class mmF(tk.Frame):
                 phase_fit = np.arctan2(Zfit.imag, Zfit.real) * (180/np.pi)  
             
             with plt.rc_context({'axes.edgecolor':self.foregroundColor, 'xtick.color':self.foregroundColor, 'ytick.color':self.foregroundColor, 'figure.facecolor':self.backgroundColor}):
-                self.f = Figure()#figsize=((5,4), dpi=100)
-                self.f.set_facecolor(self.backgroundColor)
+                pltFig = Figure()#figsize=((5,4), dpi=100)
+                pltFig.set_facecolor(self.backgroundColor)
                 dataColor = "tab:blue"
                 fitColor = "orange"
                 if (self.topGUI.getTheme() == "dark"):
@@ -3776,7 +4141,7 @@ class mmF(tk.Frame):
                     dataColor = "tab:blue"
                     fitColor = "orange"
                 
-                self.aplot = self.f.add_subplot(341)
+                self.aplot = pltFig.add_subplot(341)
                 self.aplot.set_facecolor(self.backgroundColor)
                 self.aplot.yaxis.set_ticks_position("both")
                 self.aplot.yaxis.set_tick_params(color=self.foregroundColor, direction="in")
@@ -3799,7 +4164,7 @@ class mmF(tk.Frame):
                 self.aplot.set_xlabel("Zr / Ω", color=self.foregroundColor)
                 self.aplot.set_ylabel("-Zj / Ω", color=self.foregroundColor)
                 
-                self.bplot = self.f.add_subplot(342)
+                self.bplot = pltFig.add_subplot(342)
                 self.bplot.set_facecolor(self.backgroundColor)
                 self.bplot.yaxis.set_ticks_position("both")
                 self.bplot.yaxis.set_tick_params(color=self.foregroundColor, direction="in")
@@ -3823,7 +4188,7 @@ class mmF(tk.Frame):
                 self.bplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.bplot.set_ylabel("Zr / Ω", color=self.foregroundColor)
                 
-                self.cplot = self.f.add_subplot(343)
+                self.cplot = pltFig.add_subplot(343)
                 self.cplot.set_facecolor(self.backgroundColor)
                 self.cplot.yaxis.set_ticks_position("both")
                 self.cplot.yaxis.set_tick_params(color=self.foregroundColor, direction="in")
@@ -3847,7 +4212,7 @@ class mmF(tk.Frame):
                 self.cplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.cplot.set_ylabel("-Zj / Ω", color=self.foregroundColor)
                 
-                self.dplot = self.f.add_subplot(344)
+                self.dplot = pltFig.add_subplot(344)
                 self.dplot.set_facecolor(self.backgroundColor)
                 self.dplot.yaxis.set_ticks_position("both")
                 self.dplot.yaxis.set_tick_params(color=self.foregroundColor, direction="in", which="both")
@@ -3872,7 +4237,7 @@ class mmF(tk.Frame):
                 self.dplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.dplot.set_ylabel("|Z| / Ω", color=self.foregroundColor)
                 
-                self.eplot = self.f.add_subplot(345)
+                self.eplot = pltFig.add_subplot(345)
                 self.eplot.set_facecolor(self.backgroundColor)
                 self.eplot.yaxis.set_ticks_position("both")
                 self.eplot.yaxis.set_tick_params(color=self.foregroundColor, direction="in")
@@ -3900,7 +4265,7 @@ class mmF(tk.Frame):
                 self.eplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.eplot.set_ylabel("Phase angle / Deg.", color=self.foregroundColor)
                 
-                self.fplot = self.f.add_subplot(346)
+                self.fplot = pltFig.add_subplot(346)
                 self.fplot.set_facecolor(self.backgroundColor)
                 self.fplot.yaxis.set_ticks_position("both")
                 self.fplot.yaxis.set_tick_params(color=self.foregroundColor, direction="in", which="both")
@@ -3917,7 +4282,7 @@ class mmF(tk.Frame):
                 self.fplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.fplot.set_ylabel("Re-adj. |Z| / Ω", color=self.foregroundColor)
                 
-                self.gplot = self.f.add_subplot(347)
+                self.gplot = pltFig.add_subplot(347)
                 self.gplot.set_facecolor(self.backgroundColor)
                 self.gplot.yaxis.set_ticks_position("both")
                 self.gplot.yaxis.set_tick_params(color=self.foregroundColor, direction="in")
@@ -3935,7 +4300,7 @@ class mmF(tk.Frame):
                 self.gplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.gplot.set_ylabel("Re-adj. Phase angle / Deg.", color=self.foregroundColor)
                 
-                self.hplot = self.f.add_subplot(348)
+                self.hplot = pltFig.add_subplot(348)
                 self.hplot.set_facecolor(self.backgroundColor)
                 self.hplot.yaxis.set_ticks_position("both")
                 self.hplot.yaxis.set_tick_params(color=self.foregroundColor, direction="in")
@@ -3959,7 +4324,7 @@ class mmF(tk.Frame):
                 self.hplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.hplot.set_ylabel("Log|Zr|", color=self.foregroundColor)
                 
-                self.iplot = self.f.add_subplot(349)
+                self.iplot = pltFig.add_subplot(349)
                 self.iplot.set_facecolor(self.backgroundColor)
                 self.iplot.yaxis.set_ticks_position("both")
                 self.iplot.yaxis.set_tick_params(color=self.foregroundColor, direction="in")
@@ -3998,7 +4363,7 @@ class mmF(tk.Frame):
                     deriv[i] = (logModel(self.wdata[i]+Dw)-logModel(self.wdata[i]))/Dw    #Numerically calculate the derivative
                     deriv[i] *= self.wdata[i]       #Multiply by the frequency as per chain rule of d/dlog(omega)
                 
-                self.jplot = self.f.add_subplot(3, 4, 10)
+                self.jplot = pltFig.add_subplot(3, 4, 10)
                 self.jplot.set_facecolor(self.backgroundColor)
                 self.jplot.yaxis.set_ticks_position("both")
                 self.jplot.yaxis.set_tick_params(color=self.foregroundColor, direction="in")
@@ -4028,7 +4393,7 @@ class mmF(tk.Frame):
                     normalized_error_imag_below[i] = 2*self.sdrImag[i]/Zfit[i].imag
                     normalized_error_imag_above[i] = -2*self.sdrImag[i]/Zfit[i].imag
                 
-                self.kplot = self.f.add_subplot(3, 4, 11)
+                self.kplot = pltFig.add_subplot(3, 4, 11)
                 self.kplot.set_facecolor(self.backgroundColor)
                 self.kplot.yaxis.set_ticks_position("both")
                 self.kplot.yaxis.set_tick_params(color=self.foregroundColor, direction="in")
@@ -4048,7 +4413,7 @@ class mmF(tk.Frame):
                 self.kplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.kplot.set_ylabel("(Zr-Zrmodel)/Zr", color=self.foregroundColor)
                 
-                self.lplot = self.f.add_subplot(3, 4, 12)
+                self.lplot = pltFig.add_subplot(3, 4, 12)
                 self.lplot.set_facecolor(self.backgroundColor)
                 self.lplot.yaxis.set_ticks_position("both")
                 self.lplot.yaxis.set_tick_params(color=self.foregroundColor, direction="in")
@@ -4068,8 +4433,8 @@ class mmF(tk.Frame):
                 self.lplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.lplot.set_ylabel("(Zj-Zjmodel)/Zj", color=self.foregroundColor)
             
-            self.nyCanvas = FigureCanvasTkAgg(self.f, self.resultPlot)
-            self.f.subplots_adjust(top=0.95, bottom=0.1, right=0.95, left=0.05)
+            self.nyCanvas = FigureCanvasTkAgg(pltFig, self.resultPlot)
+            pltFig.subplots_adjust(top=0.95, bottom=0.1, right=0.95, left=0.05)
             self.nyCanvas.draw()
             self.nyCanvas.get_tk_widget().pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
             self.nyCanvas.mpl_connect('button_press_event', onclick)
@@ -4077,10 +4442,10 @@ class mmF(tk.Frame):
             #toolbar.update()
             self.nyCanvas._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
             #self.nyCanvas._tkcanvas.config(cursor="hand2")
-            enterAxes = self.f.canvas.mpl_connect('axes_enter_event', graphOver)
-            leaveAxes = self.f.canvas.mpl_connect('axes_leave_event', graphOut)
+            enterAxes = pltFig.canvas.mpl_connect('axes_enter_event', graphOver)
+            leaveAxes = pltFig.canvas.mpl_connect('axes_leave_event', graphOut)
             def on_closing():   #Clear the figure before closing the popup
-                self.f.clear()
+                pltFig.clear()
                 self.resultPlot.destroy()
                 self.alreadyPlotted = False
             
@@ -4378,30 +4743,31 @@ class mmF(tk.Frame):
                         self.alphaLabel.grid(column=4, row=0)
                         self.alphaEntry.grid(column=5, row=0)
                         self.errorStructureFrame.grid_remove()
-                    self.upDelete = self.undoUpDeleteStack.pop()
-                    self.lowDelete = self.undoLowDeleteStack.pop()
-                    try:
-                        if (self.upDelete == 0):
-                            self.wdata = self.wdataRaw.copy()[self.lowDelete:]
-                            self.rdata = self.rdataRaw.copy()[self.lowDelete:]
-                            self.jdata = self.jdataRaw.copy()[self.lowDelete:]
-                        else:
-                            self.wdata = self.wdataRaw.copy()[self.lowDelete:-1*self.upDelete]
-                            self.rdata = self.rdataRaw.copy()[self.lowDelete:-1*self.upDelete]
-                            self.jdata = self.jdataRaw.copy()[self.lowDelete:-1*self.upDelete]
-                        self.lowerSpinboxVariable.set(str(self.lowDelete))
-                        self.upperSpinboxVariable.set(str(self.upDelete))
-                    except:
-                        messagebox.showwarning("Frequency error", "There are more frequencies set to be deleted than data points. The number of frequencies to delete has been reset to 0.")
-                        self.upDelete = 0
-                        self.lowDelete = 0
-                        self.lowerSpinboxVariable.set(str(self.lowDelete))
-                        self.upperSpinboxVariable.set(str(self.upDelete))
-                        self.wdata = self.wdataRaw.copy()
-                        self.rdata = self.rdataRaw.copy()
-                        self.jdata = self.jdataRaw.copy()
-                    self.rs.setLower(np.log10(min(self.wdata)))
-                    self.rs.setUpper(np.log10(max(self.wdata)))
+                    if (self.topGUI.getFreqUndo() == 1):
+                        self.upDelete = self.undoUpDeleteStack.pop()
+                        self.lowDelete = self.undoLowDeleteStack.pop()
+                        try:
+                            if (self.upDelete == 0):
+                                self.wdata = self.wdataRaw.copy()[self.lowDelete:]
+                                self.rdata = self.rdataRaw.copy()[self.lowDelete:]
+                                self.jdata = self.jdataRaw.copy()[self.lowDelete:]
+                            else:
+                                self.wdata = self.wdataRaw.copy()[self.lowDelete:-1*self.upDelete]
+                                self.rdata = self.rdataRaw.copy()[self.lowDelete:-1*self.upDelete]
+                                self.jdata = self.jdataRaw.copy()[self.lowDelete:-1*self.upDelete]
+                            self.lowerSpinboxVariable.set(str(self.lowDelete))
+                            self.upperSpinboxVariable.set(str(self.upDelete))
+                        except:
+                            messagebox.showwarning("Frequency error", "There are more frequencies set to be deleted than data points. The number of frequencies to delete has been reset to 0.")
+                            self.upDelete = 0
+                            self.lowDelete = 0
+                            self.lowerSpinboxVariable.set(str(self.lowDelete))
+                            self.upperSpinboxVariable.set(str(self.upDelete))
+                            self.wdata = self.wdataRaw.copy()
+                            self.rdata = self.rdataRaw.copy()
+                            self.jdata = self.jdataRaw.copy()
+                        self.rs.setLower(np.log10(min(self.wdata)))
+                        self.rs.setUpper(np.log10(max(self.wdata)))
                     for i in range(NVE_undo*2 + 1):
                         self.paramEntryVariables[i].set(str(self.undoStack[len(self.undoStack)-1][i]))
                         self.fits.append(self.undoStack[len(self.undoStack)-1][i])
@@ -4497,7 +4863,7 @@ class mmF(tk.Frame):
                     for i in range(len(self.fits)):
                         if (i != 0):
                             if (i%2 != 0):
-                                if (i/2 - 1 < 10):
+                                if (i/2 + 1 < 10):
                                     self.aR += "R" + str(int(i/2+1)) + "    "
                                 else:
                                     self.aR += "R" + str(int(i/2+1)) + "   "
@@ -4591,30 +4957,31 @@ class mmF(tk.Frame):
                         self.alphaLabel.grid(column=4, row=0)
                         self.alphaEntry.grid(column=5, row=0)
                         self.errorStructureFrame.grid_remove()
-                    self.upDelete = self.undoUpDeleteStack.pop()
-                    self.lowDelete = self.undoLowDeleteStack.pop()
-                    try:
-                        if (self.upDelete == 0):
-                            self.wdata = self.wdataRaw.copy()[self.lowDelete:]
-                            self.rdata = self.rdataRaw.copy()[self.lowDelete:]
-                            self.jdata = self.jdataRaw.copy()[self.lowDelete:]
-                        else:
-                            self.wdata = self.wdataRaw.copy()[self.lowDelete:-1*self.upDelete]
-                            self.rdata = self.rdataRaw.copy()[self.lowDelete:-1*self.upDelete]
-                            self.jdata = self.jdataRaw.copy()[self.lowDelete:-1*self.upDelete]
-                        self.lowerSpinboxVariable.set(str(self.lowDelete))
-                        self.upperSpinboxVariable.set(str(self.upDelete))
-                    except:
-                        messagebox.showwarning("Frequency error", "There are more frequencies set to be deleted than data points. The number of frequencies to delete has been reset to 0.")
-                        self.upDelete = 0
-                        self.lowDelete = 0
-                        self.lowerSpinboxVariable.set(str(self.lowDelete))
-                        self.upperSpinboxVariable.set(str(self.upDelete))
-                        self.wdata = self.wdataRaw.copy()
-                        self.rdata = self.rdataRaw.copy()
-                        self.jdata = self.jdataRaw.copy()
-                    self.rs.setLower(np.log10(min(self.wdata)))
-                    self.rs.setUpper(np.log10(max(self.wdata)))
+                    if (self.topGUI.getFreqUndo() == 1):
+                        self.upDelete = self.undoUpDeleteStack.pop()
+                        self.lowDelete = self.undoLowDeleteStack.pop()
+                        try:
+                            if (self.upDelete == 0):
+                                self.wdata = self.wdataRaw.copy()[self.lowDelete:]
+                                self.rdata = self.rdataRaw.copy()[self.lowDelete:]
+                                self.jdata = self.jdataRaw.copy()[self.lowDelete:]
+                            else:
+                                self.wdata = self.wdataRaw.copy()[self.lowDelete:-1*self.upDelete]
+                                self.rdata = self.rdataRaw.copy()[self.lowDelete:-1*self.upDelete]
+                                self.jdata = self.jdataRaw.copy()[self.lowDelete:-1*self.upDelete]
+                            self.lowerSpinboxVariable.set(str(self.lowDelete))
+                            self.upperSpinboxVariable.set(str(self.upDelete))
+                        except:
+                            messagebox.showwarning("Frequency error", "There are more frequencies set to be deleted than data points. The number of frequencies to delete has been reset to 0.")
+                            self.upDelete = 0
+                            self.lowDelete = 0
+                            self.lowerSpinboxVariable.set(str(self.lowDelete))
+                            self.upperSpinboxVariable.set(str(self.upDelete))
+                            self.wdata = self.wdataRaw.copy()
+                            self.rdata = self.rdataRaw.copy()
+                            self.jdata = self.jdataRaw.copy()
+                        self.rs.setLower(np.log10(min(self.wdata)))
+                        self.rs.setUpper(np.log10(max(self.wdata)))
                     for i in range(NVE_undo*2 + 1):
                         self.paramEntryVariables[i].set(str(self.undoStack[len(self.undoStack)-1][i]))
                         self.fits.append(self.undoStack[len(self.undoStack)-1][i])
@@ -4716,7 +5083,7 @@ class mmF(tk.Frame):
                     for i in range(len(self.fits)):
                         if (i != 0):
                             if (i%2 != 0):
-                                if (i/2 - 1 < 10):
+                                if (i/2 + 1 < 10):
                                     self.aR += "R" + str(int(i/2+1)) + "    "
                                 else:
                                     self.aR += "R" + str(int(i/2+1)) + "   "
@@ -5099,8 +5466,9 @@ class mmF(tk.Frame):
                 #print("freq:" + str(1/(2*np.pi*self.wdata[min_index])))
                 #print("R:" + str(-1*self.jdata[min_index]))          
                 #self.numVoigtSpinbox.invoke("buttonup")
-                self.magicElementRVariable.set(-1*self.jdata[min_index])
-                self.magicElementTVariable.set(1/(2*np.pi*self.wdata[min_index]))
+                #round(1/(2*np.pi*self.wdata[min_index]), -int(np.floor(np.log10(abs(1/(2*np.pi*self.wdata[min_index]))))) + (5 - 1))
+                self.magicElementRVariable.set(round(-1*self.jdata[min_index], -int(np.floor(np.log10(abs(-1*self.jdata[min_index])))) + (5 - 1)))
+                self.magicElementTVariable.set(round(1/(2*np.pi*self.wdata[min_index]), -int(np.floor(np.log10(abs(1/(2*np.pi*self.wdata[min_index]))))) + (5 - 1)))
                 self.magicElementRealVariable = self.rdata[min_index]
             else:
                 pass    #clicked outside of plot
@@ -5110,95 +5478,114 @@ class mmF(tk.Frame):
                 float(self.magicElementRVariable.get())
                 float(self.magicElementTVariable.get())
                 self.numVoigtSpinbox.invoke("buttonup")
-                self.paramEntryVariables[len(self.paramEntryVariables)-2].set(self.magicElementRVariable.get())
-                self.paramEntryVariables[len(self.paramEntryVariables)-1].set(self.magicElementTVariable.get())
+                self.paramEntryVariables[len(self.paramEntryVariables)-2].set(round(float(self.magicElementRVariable.get()), -int(np.floor(np.log10(abs(float(self.magicElementRVariable.get()))))) + (5 - 1)))
+                self.paramEntryVariables[len(self.paramEntryVariables)-1].set(round(float(self.magicElementTVariable.get()), -int(np.floor(np.log10(abs(float(self.magicElementTVariable.get()))))) + (5 - 1)))
                 try:
                     self.magicSubplot.plot(self.magicElementRealVariable, float(self.magicElementRVariable.get()), "r+")    #Mark the point that was used
                     self.magicCanvasInput.draw()        #Necessary to refresh the plot
-                    #---Change the button to say "Added" for 0.5 seconds
+                    #---Change the button to say "Added" for 0.5 seconds---
                     self.magicElementEnterButton.configure(text="Added")
                     self.after(500, lambda: self.magicElementEnterButton.configure(text="Add"))
                 except:
                     pass
                 self.magicElementTVariable.set('0')
                 self.magicElementRVariable.set('0')
+                #self.magicInput.clf()
+                #self.magicPlot.withdraw()
             except:
-                messagebox.showwarning("Bad value(s)", "Invalid element or values")
+                messagebox.showwarning("Bad value(s)", "Invalid element or values", parent=self.magicPlot)
+                #self.magicPlot.deiconify()
                 self.magicPlot.lift()
         
         def magicFinger():
-            self.magicPlot = tk.Toplevel()
-            self.magicPlot.title("Magic Finger Nyquist Plot")     #Plot window title
-            self.magicPlot.iconbitmap(resource_path('img/elephant3.ico'))
-            self.magicPlot.configure(background=self.backgroundColor)
-            x = np.array(self.rdata)    #Doesn't plot without this
-            y = np.array(self.jdata)
-            dataColor = "tab:blue"
-            fitColor = "orange"
-            if (self.topGUI.getTheme() == "dark"):
-                dataColor = "cyan"
-                fitColor = "gold"
+            if (self.magicPlot.state() != "withdrawn"):
+                self.magicPlot.deiconify()
+                self.magicPlot.lift()
             else:
+                self.magicInput.set_facecolor(self.backgroundColor)
+                self.magicPlot.deiconify()
+                self.magicPlot.configure(background=self.backgroundColor)
+                x = np.array(self.rdata)    #Doesn't plot without this
+                y = np.array(self.jdata)
                 dataColor = "tab:blue"
                 fitColor = "orange"
-            if (len(self.fits) > 0):
-                Zfit = np.zeros(len(self.wdata), dtype=np.complex128)
-                if (not self.capUsed):
-                    for i in range(len(self.wdata)):
-                        Zfit[i] = self.fits[0]
-                        for k in range(1, len(self.fits), 2):
-                            Zfit[i] += (self.fits[k]/(1+(1j*self.wdata[i]*2*np.pi*self.fits[k+1])))
+                if (self.topGUI.getTheme() == "dark"):
+                    dataColor = "cyan"
+                    fitColor = "gold"
                 else:
-                    for i in range(len(self.wdata)):
-                        Zfit[i] = self.fits[0] + 1/(1j*2*np.pi*self.wdata[i]*self.resultCap)
-                        for k in range(1, len(self.fits), 2):
-                            Zfit[i] += (self.fits[k]/(1+(1j*self.wdata[i]*2*np.pi*self.fits[k+1])))              
-            with plt.rc_context({'axes.edgecolor':self.foregroundColor, 'xtick.color':self.foregroundColor, 'ytick.color':self.foregroundColor, 'figure.facecolor':self.backgroundColor}):
-                self.magicInput = Figure(figsize=(5,4), dpi=100)
-                self.magicInput.set_facecolor(self.backgroundColor)
-                self.magicSubplot = self.magicInput.add_subplot(111)
-                self.magicSubplot.set_facecolor(self.backgroundColor)
-                self.magicSubplot.yaxis.set_ticks_position("both")
-                self.magicSubplot.yaxis.set_tick_params(direction="in", color=self.foregroundColor)     #Make the ticks point inwards
-                self.magicSubplot.xaxis.set_ticks_position("both")
-                self.magicSubplot.xaxis.set_tick_params(direction="in", color=self.foregroundColor)     #Make the ticks point inwards
-                self.magicSubplot.plot(x, -1*y, "o", color=dataColor)
+                    dataColor = "tab:blue"
+                    fitColor = "orange"
                 if (len(self.fits) > 0):
-                    self.magicSubplot.plot(np.array(Zfit.real), np.array(-1*Zfit.imag), color=fitColor)
-                self.magicSubplot.axis("equal")
-                self.magicSubplot.set_title("Magic Finger Nyquist Plot", color=self.foregroundColor)
-                self.magicSubplot.set_xlabel("Zr / Ω", color=self.foregroundColor)
-                self.magicSubplot.set_ylabel("-Zj / Ω", color=self.foregroundColor)
-                self.magicInput.subplots_adjust(left=0.14)   #Allows the y axis label to be more easily seen
-                self.magicCanvasInput = FigureCanvasTkAgg(self.magicInput, self.magicPlot)
-                self.magicCanvasInput.draw()
-                toolbarFrame = tk.Frame(master=self.magicPlot)
-                toolbarFrame.pack(side=tk.BOTTOM, fill=tk.X, expand=False)
-                self.magicCanvasInput.get_tk_widget().pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
+                    Zfit = np.zeros(len(self.wdata), dtype=np.complex128)
+                    if (not self.capUsed):
+                        for i in range(len(self.wdata)):
+                            Zfit[i] = self.fits[0]
+                            for k in range(1, len(self.fits), 2):
+                                Zfit[i] += (self.fits[k]/(1+(1j*self.wdata[i]*2*np.pi*self.fits[k+1])))
+                    else:
+                        for i in range(len(self.wdata)):
+                            Zfit[i] = self.fits[0] + 1/(1j*2*np.pi*self.wdata[i]*self.resultCap)
+                            for k in range(1, len(self.fits), 2):
+                                Zfit[i] += (self.fits[k]/(1+(1j*self.wdata[i]*2*np.pi*self.fits[k+1])))
+                rightPoint = max(self.rdata)
+                topPoint = max(-1*self.jdata)
+                with plt.rc_context({'axes.edgecolor':self.foregroundColor, 'xtick.color':self.foregroundColor, 'ytick.color':self.foregroundColor, 'figure.facecolor':self.backgroundColor}):
+                    self.magicSubplot = self.magicInput.add_subplot(111)
+                    self.magicSubplot.set_facecolor(self.backgroundColor)
+                    self.magicSubplot.yaxis.set_ticks_position("both")
+                    self.magicSubplot.yaxis.set_tick_params(direction="in", color=self.foregroundColor)     #Make the ticks point inwards
+                    self.magicSubplot.xaxis.set_ticks_position("both")
+                    self.magicSubplot.xaxis.set_tick_params(direction="in", color=self.foregroundColor)     #Make the ticks point inwards
+                    pointsPlot, = self.magicSubplot.plot(x, -1*y, "o", color=dataColor)
+                    if (len(self.fits) > 0):
+                        self.magicSubplot.plot(np.array(Zfit.real), np.array(-1*Zfit.imag), color=fitColor)
+                    self.magicSubplot.axis("equal")
+                    self.magicSubplot.set_title("Magic Finger Nyquist Plot", color=self.foregroundColor)
+                    self.magicSubplot.set_xlabel("Zr / Ω", color=self.foregroundColor)
+                    self.magicSubplot.set_ylabel("-Zj / Ω", color=self.foregroundColor)
+                    self.magicInput.subplots_adjust(left=0.14)   #Allows the y axis label to be more easily seen
+                    self.magicCanvasInput.draw()
+                self.magicCanvasInput.callbacks.connect('button_press_event', magic_click)
+                self.magicElementEnterButton.configure(command=magic_update)
+                enterAxes = self.magicCanvasInput.mpl_connect('axes_enter_event', graphOverMagic)
+                leaveAxes = self.magicCanvasInput.mpl_connect('axes_leave_event', graphOutMagic)
+                annot = self.magicSubplot.annotate("", xy=(0,0), xytext=(10,10),textcoords="offset points", bbox=dict(boxstyle="round", fc="w", alpha=1), arrowprops=dict(arrowstyle="-"))
+                annot.set_visible(False)
+                def update_annot(ind):
+                    x,y = pointsPlot.get_data()
+                    xval = x[ind["ind"][0]]
+                    yval = y[ind["ind"][0]]
+                    annot.xy = (xval, yval)
+                    text = "Zr=%.3g"%xval + "\nZj=-%.3g"%yval + "\nf=%.5g"%self.wdata[np.where(self.rdata == xval)][0]
+                    annot.set_text(text)
+                    #---Check if we're within 5% of the right or top edges, and adjust label positions accordingly
+                    if (rightPoint != 0):
+                        if (abs(xval - rightPoint)/rightPoint <= 0.2):
+                            annot.set_position((-90, -10))
+                    if (topPoint != 0):
+                        if (abs(yval - topPoint)/topPoint <= 0.05):
+                            annot.set_position((10, -20))
+                    else:
+                        annot.set_position((10, -20))
+                def hover(event):
+                    vis = annot.get_visible()
+                    if event.inaxes == self.magicSubplot:
+                        cont, ind = pointsPlot.contains(event)
+                        if cont:
+                            update_annot(ind)
+                            annot.set_visible(True)
+                            self.magicInput.canvas.draw_idle()
+                        else:
+                            if vis:
+                                annot.set_position((10,10))
+                                annot.set_visible(False)
+                                self.magicInput.canvas.draw_idle()
+                self.magicInput.canvas.mpl_connect("motion_notify_event", hover)
                 
-                toolbar = NavigationToolbar2Tk(self.magicCanvasInput, toolbarFrame)    #Enables the zoom and move toolbar for the plot
-                toolbar.update()
-            self.magicCanvasInput._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-            self.magicCanvasInput.callbacks.connect('button_press_event', magic_click)
-            enterAxes = self.magicCanvasInput.mpl_connect('axes_enter_event', graphOverMagic)
-            leaveAxes = self.magicCanvasInput.mpl_connect('axes_leave_event', graphOutMagic)
-            magicElementFrame = tk.Frame(self.magicPlot, background=self.backgroundColor)
-            self.magicElementRVariable = tk.StringVar(self, '0')
-            magicElementREntry = ttk.Entry(magicElementFrame, textvariable=self.magicElementRVariable, exportselection=0, width=10)
-            magicElementRLabel = tk.Label(magicElementFrame, background=self.backgroundColor, foreground=self.foregroundColor, text="R: ")
-            self.magicElementTVariable = tk.StringVar(self, '0')
-            magicElementTEntry = ttk.Entry(magicElementFrame, textvariable=self.magicElementTVariable, exportselection=0, width=10)
-            magicElementTLabel = tk.Label(magicElementFrame, background=self.backgroundColor, foreground=self.foregroundColor, text="T: ")
-            self.magicElementEnterButton = ttk.Button(magicElementFrame, text="Add", command=magic_update)
-            magicElementRLabel.grid(row=0, column=2, padx=(5, 0))
-            magicElementREntry.grid(row=0, column=3)
-            magicElementTLabel.grid(row=0, column=4)
-            magicElementTEntry.grid(row=0, column=5, padx=(0, 5))
-            self.magicElementEnterButton.grid(row=0, column=6, padx=5)
-            magicElementFrame.pack(side=tk.BOTTOM, fill=tk.X, pady=10, expand=True)
+                
             def on_closing():   #Clear the figure before closing the popup
-                self.magicInput.clear()
-                self.magicPlot.destroy()
+                self.magicInput.clf()
+                self.magicPlot.withdraw()
             
             self.magicPlot.protocol("WM_DELETE_WINDOW", on_closing)
         
@@ -5206,6 +5593,7 @@ class mmF(tk.Frame):
             if (self.freqWindow.state() == "withdrawn"):
                 self.freqWindow.deiconify()
             else:
+                self.freqWindow.deiconify()
                 self.freqWindow.lift()
             self.lowerSpinboxVariable.set(str(self.lowDelete))
             self.upperSpinboxVariable.set(str(self.upDelete))
@@ -5353,6 +5741,300 @@ class mmF(tk.Frame):
                 self.freqWindow.withdraw()
             self.freqWindow.protocol("WM_DELETE_WINDOW", on_closing)
         
+        def simpleParams():
+            simplePopup = tk.Toplevel()
+            
+            simplePopup.title("Evaluate Simple Parameters")
+            simplePopup.iconbitmap(resource_path('img/elephant3.ico'))
+            simplePopup.configure(background=self.backgroundColor)
+            charFreqLabel = tk.Label(simplePopup, text="Characteristic Frequencies:", bg=self.backgroundColor, fg=self.foregroundColor)
+            rFrame = tk.Frame(simplePopup, bg=self.backgroundColor)
+            r0label = tk.Label(rFrame, text="R\u2080 = ", bg=self.backgroundColor, fg=self.foregroundColor)
+            rplabel = tk.Label(rFrame, text="R\u209A = ", bg=self.backgroundColor, fg=self.foregroundColor)
+            simpleResultsFrame = tk.Frame(simplePopup, bg=self.backgroundColor)
+            simpleResultsScrollbar = ttk.Scrollbar(simpleResultsFrame, orient=tk.VERTICAL)     
+            simpleResults = ttk.Treeview(simpleResultsFrame, columns=("type", "cf", "t", "c"), height=5, selectmode="browse", yscrollcommand=simpleResultsScrollbar.set)
+            simpleResults.heading("type", text="Type")
+            simpleResults.heading("cf", text="Char. Freq.")
+            simpleResults.heading("t", text="Time constant")
+            simpleResults.heading("c", text="Capacitance")
+            simpleResults.column("#0", width=0)
+            simpleResults.column("type", width=120, anchor=tk.CENTER)
+            simpleResults.column("cf", width=120, anchor=tk.CENTER)
+            simpleResults.column("t", width=120, anchor=tk.CENTER)
+            simpleResults.column("c", width=120, anchor=tk.CENTER)
+            simpleResultsScrollbar['command'] = simpleResults.yview
+            simpleResults.grid(column=0, row=0, sticky="NSEW")
+            simpleResultsScrollbar.grid(column=1, row=0, sticky="NS")
+            charFreqLabel.grid(column=1, row=0, sticky="SW")
+            simpleResultsFrame.grid(column=1, row=1, sticky="W")
+            r0label.grid(column=0, row=0, sticky="NW")
+            rplabel.grid(column=0, row=1, sticky="NW")
+            rFrame.grid(column=1, row=2, sticky="NW")
+            
+            simpleFreqsA = np.logspace(-10, 10, 5000)
+            ZfitA = np.zeros(len(simpleFreqsA), dtype=np.complex128)
+            if (not self.capUsed):
+                for i in range(len(simpleFreqsA)):
+                    ZfitA[i] = self.fits[0]
+                    for k in range(1, len(self.fits), 2):
+                        ZfitA[i] += (self.fits[k]/(1+(1j*simpleFreqsA[i]*2*np.pi*self.fits[k+1])))
+                phase_fit = np.arctan2(ZfitA.imag, ZfitA.real) * (180/np.pi)
+            else:
+                for i in range(len(simpleFreqsA)):
+                    ZfitA[i] = self.fits[0] + 1/(1j*2*np.pi*simpleFreqsA[i]*self.resultCap)
+                    for k in range(1, len(self.fits), 2):
+                        ZfitA[i] += (self.fits[k]/(1+(1j*simpleFreqsA[i]*2*np.pi*self.fits[k+1])))
+                phase_fit = np.arctan2(ZfitA.imag, ZfitA.real) * (180/np.pi)
+            Zpolar = self.fits[0]
+            ZpolarSigma = self.sigmas[0]
+            for i in range(1, len(self.fits), 2):
+                Zpolar += self.fits[i]
+                ZpolarSigma += self.sigmas[i]**2
+            ZpolarSigma = np.sqrt(ZpolarSigma)
+            lf = -10
+            hf = 10
+            for i in range(len(simpleFreqsA)):
+                if (abs(ZfitA[i].real - Zpolar)/ZfitA[i].real >= 0.0001):
+                    lf = np.log10(simpleFreqsA[i]) if simpleFreqsA[i] < self.wdata[0] else np.log10(self.wdata[0])
+                    break
+            for i in range(len(simpleFreqsA)-1, 0, -1):
+                if (abs(ZfitA[i].real - self.fits[0])/ZfitA[i].real >= 0.0001):
+                    hf = np.log10(simpleFreqsA[i]) if simpleFreqsA[i] > self.wdata[len(self.wdata)-1] else np.log10(self.wdata[len(self.wdata)-1])
+                    break
+            simpleFreqs = np.logspace(lf, hf, 100000)
+            Zfit = np.zeros(len(simpleFreqs), dtype=np.complex128)
+            if (not self.capUsed):
+                for i in range(len(simpleFreqs)):
+                    Zfit[i] = self.fits[0]
+                    for k in range(1, len(self.fits), 2):
+                        Zfit[i] += (self.fits[k]/(1+(1j*simpleFreqs[i]*2*np.pi*self.fits[k+1])))
+                phase_fit = np.arctan2(Zfit.imag, Zfit.real) * (180/np.pi)
+            else:
+                for i in range(len(simpleFreqs)):
+                    Zfit[i] = self.fits[0] + 1/(1j*2*np.pi*simpleFreqs[i]*self.resultCap)
+                    for k in range(1, len(self.fits), 2):
+                        Zfit[i] += (self.fits[k]/(1+(1j*simpleFreqs[i]*2*np.pi*self.fits[k+1])))
+                phase_fit = np.arctan2(Zfit.imag, Zfit.real) * (180/np.pi)
+            #---Local minima/maxima code from https://tcoil.info/find-peaks-and-valleys-in-dataset-with-python/---
+            b = (np.diff(np.sign(np.diff(-1*Zfit.imag))) > 0).nonzero()[0] + 1         # local min
+            c = (np.diff(np.sign(np.diff(-1*Zfit.imag))) < 0).nonzero()[0] + 1         # local max
+            for val in c:
+                simpleResults.insert("", tk.END, text="", values=("Maximum", "%.5g"%simpleFreqs[val], "%.5g"%(1/(2*np.pi*simpleFreqs[val])), "%.5g"%(1/(2*np.pi*simpleFreqs[val]*Zpolar))))
+            for val in b:
+                simpleResults.insert("", tk.END, text="", values=("Minimum", "%.5g"%simpleFreqs[val], "%.5g"%(1/(2*np.pi*simpleFreqs[val])), "%.5g"%(1/(2*np.pi*simpleFreqs[val]*Zpolar))))
+            
+            r0label.configure(text="R\u2080 = %.5g"%self.fits[0] + " \u00B1 %.3g"%self.sigmas[0])
+            rplabel.configure(text="R\u209A = %.5g"%Zpolar + " \u00B1 %.3g"%ZpolarSigma)
+            dataColor = "tab:blue"
+            fitColor = "orange"
+            if (self.topGUI.getTheme() == "dark"):
+                dataColor = "cyan"
+                fitColor = "gold"
+            else:
+                dataColor = "tab:blue"
+                fitColor = "orange"
+            notebook = ttk.Notebook(simplePopup)
+            tabNyquist = tk.Frame(notebook, background=self.backgroundColor)
+            tabFreq = tk.Frame(notebook, background=self.backgroundColor)
+            tabPhase = tk.Frame(notebook, background=self.backgroundColor)
+            notebook.add(tabNyquist, text="Nyquist")
+            notebook.add(tabFreq, text="-Zj vs. freq.")
+            notebook.add(tabPhase, text="Phase angle")
+            notebook.grid(column=0, row=0, rowspan=4, sticky="NSEW")
+            with plt.rc_context({'axes.edgecolor':self.foregroundColor, 'xtick.color':self.foregroundColor, 'ytick.color':self.foregroundColor, 'figure.facecolor':self.backgroundColor}):
+                simpleFig = Figure()
+                simplePlot = simpleFig.add_subplot(111)
+                simpleFig.set_facecolor(self.backgroundColor)
+                simplePlot.set_facecolor(self.backgroundColor)
+                simplePlot.yaxis.set_ticks_position("both")
+                simplePlot.yaxis.set_tick_params(direction="in", color=self.foregroundColor, which="both")
+                simplePlot.xaxis.set_ticks_position("both")
+                simplePlot.xaxis.set_tick_params(direction="in", color=self.foregroundColor, which="both")
+                simplePlot.plot(self.rdata, -1*self.jdata, "o", color=dataColor, zorder=2)
+                simplePlot.plot(Zfit.real, -1*Zfit.imag, color=fitColor, zorder=1)
+                simplePlot.ticklabel_format(axis="y", style="sci", scilimits=(0,0))
+                pointsX = [self.fits[0], Zpolar]
+                pointsY = [0, 0]
+                pointsFreq = ["\u221E", "0"]
+                for val in c:
+                    pointsX.append(Zfit[val].real)
+                    pointsY.append(-1*Zfit[val].imag)
+                    pointsFreq.append("%.4g"%simpleFreqs[val])
+                for val in b:
+                    pointsX.append(Zfit[val].real)
+                    pointsY.append(-1*Zfit[val].imag)
+                    pointsFreq.append("%.4g"%simpleFreqs[val])
+                pointsPlot = simplePlot.scatter(pointsX[2:], pointsY[2:], s=100, c="red", marker="*", zorder=3)
+                rPlot = simplePlot.scatter(pointsX[:2], pointsY[:2], s=100, c="red", marker="^", zorder=4)
+                simplePlot.axis("equal")
+                simplePlot.set_title("Nyquist", color=self.foregroundColor, y=1.06)
+                simplePlot.set_xlabel("Zr / Ω", color=self.foregroundColor)
+                simplePlot.set_ylabel("-Zj / Ω", color=self.foregroundColor)
+            topPoint = max(-1*Zfit.imag)    
+            simpleCanvas = FigureCanvasTkAgg(simpleFig, tabNyquist)
+            simpleCanvas.draw()
+            simpleCanvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, pady=5, padx=5, expand=True)
+            toolbar = NavigationToolbar2Tk(simpleCanvas, tabNyquist)
+            simpleCanvas._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+            annot = simplePlot.annotate("", xy=(0,0), xytext=(10,10),textcoords="offset points", bbox=dict(boxstyle="round", fc="w", alpha=1), arrowprops=dict(arrowstyle="-"))
+            annot.set_visible(False)
+            def update_annot(ind, which):
+                if which == 0:
+                    pos = pointsPlot.get_offsets()[ind["ind"][0]]
+                else:
+                   pos = rPlot.get_offsets()[ind["ind"][0]] 
+                annot.xy = pos
+                if which == 0:
+                    text = "Zr=%.4g"%pos[0] + "\nZj=-%.4g"%pos[1] + "\nf=" + pointsFreq[pointsX.index(pos[0])]
+                else:
+                    text = "Zr=%.4g"%pos[0] + "\nZj=%.4g"%pos[1] + "\nf=" + pointsFreq[pointsX.index(pos[0])]
+                annot.set_text(text)
+                if (abs(pos[0] - Zpolar)/Zpolar <= 0.05):
+                    annot.set_position((-20, 10))
+                if (abs(pos[1] - topPoint)/topPoint <= 0.05):
+                    annot.set_position((0, 10))
+            def hover(event):
+                vis = annot.get_visible()
+                if event.inaxes == simplePlot:
+                    cont, ind = pointsPlot.contains(event)
+                    cont2, ind2 = rPlot.contains(event)
+                    if cont:
+                        update_annot(ind, 0)
+                        annot.set_visible(True)
+                        simpleFig.canvas.draw_idle()
+                    elif cont2:
+                        update_annot(ind2, 1)
+                        annot.set_visible(True)
+                        simpleFig.canvas.draw_idle()
+                    else:
+                        if vis:
+                            annot.set_visible(False)
+                            annot.set_position((10,10))
+                            simpleFig.canvas.draw_idle()       
+            simpleFig.canvas.mpl_connect("motion_notify_event", hover)
+            
+            with plt.rc_context({'axes.edgecolor':self.foregroundColor, 'xtick.color':self.foregroundColor, 'ytick.color':self.foregroundColor, 'figure.facecolor':self.backgroundColor}):
+                simpleFig3 = Figure()
+                simplePlot3 = simpleFig3.add_subplot(111)
+                simpleFig3.set_facecolor(self.backgroundColor)
+                simplePlot3.set_facecolor(self.backgroundColor)
+                simplePlot3.yaxis.set_ticks_position("both")
+                simplePlot3.yaxis.set_tick_params(direction="in", color=self.foregroundColor, which="both")
+                simplePlot3.xaxis.set_ticks_position("both")
+                simplePlot3.xaxis.set_tick_params(direction="in", color=self.foregroundColor, which="both")
+                simplePlot3.plot(self.wdata, -1*self.jdata, "o", color=dataColor, zorder=2)
+                simplePlot3.plot(simpleFreqs, -1*Zfit.imag, color=fitColor, zorder=1)
+                simplePlot3.ticklabel_format(axis="y", style="sci", scilimits=(0,0))
+                pointsX3 = []
+                pointsY3 = []
+                for val in c:
+                    pointsX3.append(simpleFreqs[val])
+                    pointsY3.append(-1*Zfit[val].imag)
+                for val in b:
+                    pointsX3.append(simpleFreqs[val])
+                    pointsY3.append(-1*Zfit[val].imag)
+                pointsPlot3 = simplePlot3.scatter(pointsX3, pointsY3, s=100, c="red", marker="*", zorder=3)
+                simplePlot3.set_xscale("log")
+                simplePlot3.set_title("Imaginary impedance", color=self.foregroundColor, y=1.06)
+                simplePlot3.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                simplePlot3.set_ylabel("-Zj / Ω", color=self.foregroundColor)   
+            simpleCanvas3 = FigureCanvasTkAgg(simpleFig3, tabFreq)
+            simpleCanvas3.draw()
+            simpleCanvas3.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, pady=5, padx=5, expand=True)
+            toolbar3 = NavigationToolbar2Tk(simpleCanvas3, tabFreq)
+            simpleCanvas3._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+            annot3 = simplePlot3.annotate("", xy=(0,0), xytext=(10,10), textcoords="offset points", bbox=dict(boxstyle="round", fc="w", alpha=1), arrowprops=dict(arrowstyle="-"))
+            annot3.set_visible(False)
+            topPoint3 = max(-1*Zfit.imag)
+            rightPoint3 = min(simpleFreqs)
+            def update_annot3(ind):
+                pos = pointsPlot3.get_offsets()[ind["ind"][0]]
+                annot3.xy = pos
+                text = "Zj=-%.4g"%pos[1] + "\nf=%.4g"%pos[0]
+                annot3.set_text(text)
+                if (abs(pos[0] - rightPoint3)/rightPoint3 <= 0.05):
+                    annot3.set_position((-20, 10))
+                if (abs(pos[1] - topPoint3)/topPoint3 <= 0.05):
+                    annot3.set_position((15, 0))
+            def hover3(event):
+                vis3 = annot3.get_visible()
+                if event.inaxes == simplePlot3:
+                    cont3, ind3 = pointsPlot3.contains(event)
+                    if cont3:
+                        update_annot3(ind3)
+                        annot3.set_visible(True)
+                        simpleFig3.canvas.draw_idle()
+                    else:
+                        if vis3:
+                            annot3.set_visible(False)
+                            annot3.set_position((10, 10))
+                            simpleFig3.canvas.draw_idle()       
+            simpleFig3.canvas.mpl_connect("motion_notify_event", hover3)
+            
+            with plt.rc_context({'axes.edgecolor':self.foregroundColor, 'xtick.color':self.foregroundColor, 'ytick.color':self.foregroundColor, 'figure.facecolor':self.backgroundColor}):
+                simpleFig2 = Figure()
+                simplePlot2 = simpleFig2.add_subplot(111)
+                simpleFig2.set_facecolor(self.backgroundColor)
+                simplePlot2.set_facecolor(self.backgroundColor)
+                simplePlot2.yaxis.set_ticks_position("both")
+                simplePlot2.yaxis.set_tick_params(direction="in", color=self.foregroundColor, which="both")
+                simplePlot2.xaxis.set_ticks_position("both")
+                simplePlot2.xaxis.set_tick_params(direction="in", color=self.foregroundColor, which="both")
+                simplePlot2.plot(self.wdata, np.arctan2(self.jdata, self.rdata)*(180/np.pi), "o", color=dataColor)
+                simplePlot2.plot(simpleFreqs, phase_fit, color=fitColor)
+                pointsX2 = []
+                pointsY2 = []
+                for val in c:
+                    pointsX2.append(simpleFreqs[val])
+                    pointsY2.append(np.arctan2(Zfit[val].imag, Zfit[val].real)*(180/np.pi))
+                for val in b:
+                    pointsX2.append(simpleFreqs[val])
+                    pointsY2.append(np.arctan2(Zfit[val].imag, Zfit[val].real)*(180/np.pi))
+                pointsPlot2 = simplePlot2.scatter(pointsX2, pointsY2, s=100, c="red", marker="*", zorder=3)
+                simplePlot2.yaxis.set_ticks([-90, -75, -60, -45, -30, -15, 0])
+                simplePlot2.set_ylim(bottom=0, top=-90)
+                simplePlot2.set_xscale("log")
+                simplePlot2.set_title("Phase Angle", color=self.foregroundColor, y=1.06)
+                simplePlot2.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                simplePlot2.set_ylabel("Phase angle / degrees", color=self.foregroundColor)
+            simpleCanvas2 = FigureCanvasTkAgg(simpleFig2, tabPhase)
+            simpleCanvas2.draw()
+            simpleCanvas2.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, pady=5, padx=5, expand=True)#.grid(column=0, row=0, pady=5, padx=5, sticky="NSEW")
+            topPoint2 = min(np.arctan2(Zfit.imag, Zfit.real)*(180/np.pi))
+            rightPoint2 = min(simpleFreqs)
+            annot2 = simplePlot2.annotate("", xy=(0,0), xytext=(10,15), textcoords="offset points", bbox=dict(boxstyle="round", fc="w", alpha=1), arrowprops=dict(arrowstyle="-"))
+            annot2.set_visible(False)
+            def update_annot2(ind):
+                pos = pointsPlot2.get_offsets()[ind["ind"][0]]
+                annot2.xy = pos
+                text = "\u03D5=%.4g\u00B0"%pos[1] + "\nf=%.4g"%pos[0]
+                annot2.set_text(text)
+                if (abs(pos[0] - rightPoint2)/rightPoint2 <= 0.05):
+                    annot2.set_position((-20, 15))
+                if (abs(pos[1] - topPoint2)/topPoint2 <= 0.05):
+                    annot2.set_position((10, 0))
+            def hover2(event):
+                vis2 = annot2.get_visible()
+                if event.inaxes == simplePlot2:
+                    cont2, ind2 = pointsPlot2.contains(event)
+                    if cont2:
+                        update_annot2(ind2)
+                        annot2.set_visible(True)
+                        simpleFig2.canvas.draw_idle()
+                    else:
+                        if vis2:
+                            annot2.set_visible(False)
+                            annot2.set_position((10,15))
+                            simpleFig2.canvas.draw_idle()      
+            simpleFig2.canvas.mpl_connect("motion_notify_event", hover2)
+            toolbar2 = NavigationToolbar2Tk(simpleCanvas2, tabPhase)
+            simpleCanvas2._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)#.grid(column=0, row=0, sticky="NSEW")
+            tabNyquist.pack_propagate(False)
+            tabFreq.pack_propagate(False)
+            tabPhase.pack_propagate(False)
+            simplePopup.resizable(False, False)
+            
         #---The file browse field---
         self.browseFrame = tk.Frame(self, bg=self.backgroundColor)
         self.browseEntry = ttk.Entry(self.browseFrame, state="readonly", width=40)
@@ -5379,7 +6061,7 @@ class mmF(tk.Frame):
         self.numMonteLabel = tk.Label(self.numVoigtFrame, text="     Number of Simulations:   ", bg=self.backgroundColor, fg=self.foregroundColor)
         self.numMonteVariable = tk.StringVar(self, self.topGUI.getMC())
         vcmd3 = (self.register(validateMC), '%P')
-        self.numMonteEntry = ttk.Entry(self.numVoigtFrame, textvariable=self.numMonteVariable, exportselection=0, validate="all", validatecommand=vcmd3, width=6)
+        self.numMonteEntry = ttk.Entry(self.numVoigtFrame, textvariable=self.numMonteVariable, validate="all", validatecommand=vcmd3, width=6)
         self.numVoigtLabel.grid(column=0, row=0)
         self.numVoigtMinus.grid(column=1, row=0)
         self.numVoigtNumber.grid(column=2, row=0)
@@ -5401,7 +6083,7 @@ class mmF(tk.Frame):
         self.weightingCombobox.bind("<<ComboboxSelected>>", checkWeight)
         self.alphaLabel = tk.Label(self.optionsFrame, text="   α: ", bg=self.backgroundColor, fg=self.foregroundColor)  #Assumed noise
         self.alphaVariable = tk.StringVar(self, self.topGUI.getAlpha())
-        self.alphaEntry = ttk.Entry(self.optionsFrame, textvariable=self.alphaVariable, exportselection=0, width=5)
+        self.alphaEntry = ttk.Entry(self.optionsFrame, textvariable=self.alphaVariable, width=5)
         self.alphaEntry.bind("<FocusIn>", lambda e: self.alphaEntry.selection_range(0, tk.END))
         self.fitTypeLabel.grid(column=0, row=0, sticky="W")
         self.fitTypeCombobox.grid(column=1, row=0)
@@ -5419,23 +6101,23 @@ class mmF(tk.Frame):
         self.errorAlphaCheckboxVariable = tk.IntVar(self, 0)
         self.errorAlphaCheckbox = ttk.Checkbutton(self.errorStructureFrame, variable=self.errorAlphaCheckboxVariable, text="\u03B1 = ", command=checkErrorStructure)
         self.errorAlphaVariable = tk.StringVar(self, "0.1")
-        self.errorAlphaEntry = ttk.Entry(self.errorStructureFrame, textvariable=self.errorAlphaVariable, state="disabled", exportselection=0, width=6)
+        self.errorAlphaEntry = ttk.Entry(self.errorStructureFrame, textvariable=self.errorAlphaVariable, state="disabled", width=6)
         self.errorBetaCheckboxVariable = tk.IntVar(self, 0)
         self.errorBetaCheckbox = ttk.Checkbutton(self.errorStructureFrame, variable=self.errorBetaCheckboxVariable, text="\u03B2 = ", command=checkErrorStructure)
         self.errorBetaVariable = tk.StringVar(self, "0.1")
-        self.errorBetaEntry = ttk.Entry(self.errorStructureFrame, textvariable=self.errorBetaVariable, state="disabled", exportselection=0, width=6)
+        self.errorBetaEntry = ttk.Entry(self.errorStructureFrame, textvariable=self.errorBetaVariable, state="disabled", width=6)
         self.errorBetaReCheckboxVariable = tk.IntVar(self, 0)
         self.errorBetaReVariable = tk.StringVar(self, "1")
         self.errorBetaReCheckbox = ttk.Checkbutton(self.errorStructureFrame, variable=self.errorBetaReCheckboxVariable, text="Re = ", state="disabled", command=checkErrorStructure)
-        self.errorBetaReEntry = ttk.Entry(self.errorStructureFrame, textvariable=self.errorBetaReVariable, state="disabled", exportselection=0, width=6)
+        self.errorBetaReEntry = ttk.Entry(self.errorStructureFrame, textvariable=self.errorBetaReVariable, state="disabled", width=6)
         self.errorGammaCheckboxVariable = tk.IntVar(self, 1)
         self.errorGammaCheckbox = ttk.Checkbutton(self.errorStructureFrame, variable=self.errorGammaCheckboxVariable, text="\u03B3 = ", command=checkErrorStructure)
         self.errorGammaVariable = tk.StringVar(self, "0.1")
-        self.errorGammaEntry = ttk.Entry(self.errorStructureFrame, textvariable=self.errorGammaVariable, exportselection=0, width=6)
+        self.errorGammaEntry = ttk.Entry(self.errorStructureFrame, textvariable=self.errorGammaVariable, width=6)
         self.errorDeltaCheckboxVariable = tk.IntVar(self, 1)
         self.errorDeltaCheckbox = ttk.Checkbutton(self.errorStructureFrame, variable=self.errorDeltaCheckboxVariable, text="\u03B4 = ", command=checkErrorStructure)
         self.errorDeltaVariable = tk.StringVar(self, "0.1")
-        self.errorDeltaEntry = ttk.Entry(self.errorStructureFrame, textvariable=self.errorDeltaVariable, exportselection=0, width=6)
+        self.errorDeltaEntry = ttk.Entry(self.errorStructureFrame, textvariable=self.errorDeltaVariable, width=6)
         self.errorAlphaCheckbox.grid(column=0, row=0)
         self.errorAlphaEntry.grid(column=1, row=0, padx=(2, 15))
         self.errorBetaCheckbox.grid(column=2, row=0)
@@ -5446,6 +6128,122 @@ class mmF(tk.Frame):
         self.errorGammaEntry.grid(column=7, row=0, padx=(2, 15))
         self.errorDeltaCheckbox.grid(column=8, row=0)
         self.errorDeltaEntry.grid(column=9, row=0, padx=(2, 15))
+        
+        def popup_alpha(event):
+            try:
+                self.popup_menuA.tk_popup(event.x_root, event.y_root, 0)
+            finally:
+                self.popup_menuA.grab_release()
+        def paste_alpha():
+            if (self.focus_get() != self.errorAlphaEntry):
+                self.errorAlphaEntry.insert(tk.END, pyperclip.paste())
+            else:
+                self.errorAlphaEntry.insert(tk.INSERT, pyperclip.paste())
+        def copy_alpha():
+            if (self.focus_get() != self.errorAlphaEntry):
+                pyperclip.copy(self.errorAlphaEntry.get())
+            else:
+                try:
+                    stringToCopy = self.errorAlphaEntry.selection_get()
+                except:
+                    stringToCopy = self.errorAlphaEntry.get()
+                pyperclip.copy(stringToCopy)
+        self.popup_menuA = tk.Menu(self.errorAlphaEntry, tearoff=0)
+        self.popup_menuA.add_command(label="Copy", command=copy_alpha)
+        self.popup_menuA.add_command(label="Paste", command=paste_alpha)
+        self.errorAlphaEntry.bind("<Button-3>", popup_alpha)
+        def popup_beta(event):
+            try:
+                self.popup_menuB.tk_popup(event.x_root, event.y_root, 0)
+            finally:
+                self.popup_menuB.grab_release()
+        def paste_beta():
+            if (self.focus_get() != self.errorBetaEntry):
+                self.errorBetaEntry.insert(tk.END, pyperclip.paste())
+            else:
+                self.errorBetaEntry.insert(tk.INSERT, pyperclip.paste())
+        def copy_beta():
+            if (self.focus_get() != self.errorBetaEntry):
+                pyperclip.copy(self.errorBetaEntry.get())
+            else:
+                try:
+                    stringToCopy = self.errorBetaEntry.selection_get()
+                except:
+                    stringToCopy = self.errorBetaEntry.get()
+                pyperclip.copy(stringToCopy)
+        self.popup_menuB = tk.Menu(self.errorBetaEntry, tearoff=0)
+        self.popup_menuB.add_command(label="Copy", command=copy_beta)
+        self.popup_menuB.add_command(label="Paste", command=paste_beta)
+        self.errorBetaEntry.bind("<Button-3>", popup_beta)
+        def popup_re(event):
+            try:
+                self.popup_menuR.tk_popup(event.x_root, event.y_root, 0)
+            finally:
+                self.popup_menuR.grab_release()
+        def paste_re():
+            if (self.focus_get() != self.errorBetaReEntry):
+                self.errorBetaReEntry.insert(tk.END, pyperclip.paste())
+            else:
+                self.errorBetaEntry.insert(tk.INSERT, pyperclip.paste())
+        def copy_re():
+            if (self.focus_get() != self.errorBetaReEntry):
+                pyperclip.copy(self.errorBetaReEntry.get())
+            else:
+                try:
+                    stringToCopy = self.errorBetaReEntry.selection_get()
+                except:
+                    stringToCopy = self.errorBetaReEntry.get()
+                pyperclip.copy(stringToCopy)
+        self.popup_menuR = tk.Menu(self.errorBetaReEntry, tearoff=0)
+        self.popup_menuR.add_command(label="Copy", command=copy_re)
+        self.popup_menuR.add_command(label="Paste", command=paste_re)
+        self.errorBetaReEntry.bind("<Button-3>", popup_re)
+        def popup_gamma(event):
+            try:
+                self.popup_menuG.tk_popup(event.x_root, event.y_root, 0)
+            finally:
+                self.popup_menuG.grab_release()
+        def paste_gamma():
+            if (self.focus_get() != self.errorBetaEntry):
+                self.errorGammaEntry.insert(tk.END, pyperclip.paste())
+            else:
+                self.errorGammaEntry.insert(tk.INSERT, pyperclip.paste())
+        def copy_gamma():
+            if (self.focus_get() != self.errorGammaEntry):
+                pyperclip.copy(self.errorGammaEntry.get())
+            else:
+                try:
+                    stringToCopy = self.errorGammaEntry.selection_get()
+                except:
+                    stringToCopy = self.errorGammaEntry.get()
+                pyperclip.copy(stringToCopy)
+        self.popup_menuG = tk.Menu(self.errorGammaEntry, tearoff=0)
+        self.popup_menuG.add_command(label="Copy", command=copy_gamma)
+        self.popup_menuG.add_command(label="Paste", command=paste_gamma)
+        self.errorGammaEntry.bind("<Button-3>", popup_gamma)
+        def popup_delta(event):
+            try:
+                self.popup_menuD.tk_popup(event.x_root, event.y_root, 0)
+            finally:
+                self.popup_menuD.grab_release()
+        def paste_delta():
+            if (self.focus_get() != self.errorDeltaEntry):
+                self.errorDeltaEntry.insert(tk.END, pyperclip.paste())
+            else:
+                self.errorDeltaEntry.insert(tk.INSERT, pyperclip.paste())
+        def copy_delta():
+            if (self.focus_get() != self.errorDeltaEntry):
+                pyperclip.copy(self.errorDeltaEntry.get())
+            else:
+                try:
+                    stringToCopy = self.errorDeltaEntry.selection_get()
+                except:
+                    stringToCopy = self.errorDeltaEntry.get()
+                pyperclip.copy(stringToCopy)
+        self.popup_menuD = tk.Menu(self.errorDeltaEntry, tearoff=0)
+        self.popup_menuD.add_command(label="Copy", command=copy_delta)
+        self.popup_menuD.add_command(label="Paste", command=paste_delta)
+        self.errorDeltaEntry.bind("<Button-3>", popup_delta)
         
         #---The fitting parameters---
         self.parametersFrame = tk.Frame(self, bg=self.backgroundColor)
@@ -5519,28 +6317,30 @@ class mmF(tk.Frame):
         
         #---The plotting options---
         self.graphFrame = tk.Frame(self, bg=self.backgroundColor)
+        self.simpleButton = ttk.Button(self.graphFrame, text="Evaluate Simple Parameters", command=simpleParams)
         self.includeFrame = tk.Frame(self.graphFrame, bg=self.backgroundColor)
 #        self.includeLabel = tk.Label(self.includeFrame, text="Include: ", bg=self.backgroundColor, fg=self.foregroundColor)
         self.confidenceIntervalCheckboxVariable = tk.IntVar(self, 0)
-        self.confidenceIntervalCheckbox = ttk.Checkbutton(self.includeFrame, text="Include Confidence Interval", variable=self.confidenceIntervalCheckboxVariable)
-#        self.errorStructureCheckboxVariable = tk.IntVar(self, 0)
-#        self.errorStructureCheckbox = ttk.Checkbutton(self.graphFrame, text="Error Structure", variable=self.errorStructureCheckboxVariable)
-#        self.editReLabel = tk.Label(self.includeFrame, text="    Ohmic Reistance (R\u2091) = ", bg=self.backgroundColor, fg=self.foregroundColor)
-#        self.editReVariable = tk.StringVar(self, "")
-#        self.editRe = ttk.Entry(self.includeFrame, textvariable=self.editReVariable, width=5, exportselection=0)
+        self.confidenceIntervalCheckbox = ttk.Checkbutton(self.includeFrame, text="Include CI", variable=self.confidenceIntervalCheckboxVariable)
+        self.mouseOverCheckboxVariable = tk.IntVar(self, 1)
+        self.mouseOverCheckbox = ttk.Checkbutton(self.includeFrame, text="Mouseover labels", variable=self.mouseOverCheckboxVariable)
         self.editReButton = ttk.Button(self.includeFrame, text="Update R\u2091", command=updateRe)
         self.plotButton = ttk.Button(self.graphFrame, text="Plot", command=plotResults)
-        self.plotButton.grid(column=0, row=0, sticky="W", pady=(8,5))
+        self.simpleButton.grid(column=0, row=0, sticky="W", columnspan=2, pady=(8, 5))
+        self.plotButton.grid(column=0, row=1, sticky="W", pady=(5,5))
 #        self.includeLabel.grid(column=0, row=0, sticky="W")
-        self.confidenceIntervalCheckbox.grid(column=1, row=0, sticky="W")
+        self.confidenceIntervalCheckbox.grid(column=1, row=1, sticky="W")
+        self.mouseOverCheckbox.grid(column=2, row=1, sticky="W", padx=(20, 5))
 #        self.editReLabel.grid(column=2, row=0, sticky="E")
 #        self.editRe.grid(column=3, row=0, sticky="E")
-        self.editReButton.grid(column=2, row=0, sticky="E", padx=(20,0))
-        self.includeFrame.grid(column=1, row=0, sticky="W")
+        self.editReButton.grid(column=3, row=1, sticky="E", padx=(20,0))
+        self.includeFrame.grid(column=1, row=1, sticky="W")
 #        self.errorStructureCheckbox.grid(column=3, row=0)
         plot_ttp = CreateToolTip(self.plotButton, 'Opens a window with plots using data and fitted parameters')
         editRe_ttp = CreateToolTip(self.editReButton, 'Opens a window to change ohmic resistance')
         include_ttp = CreateToolTip(self.confidenceIntervalCheckbox, 'Include confidence interval ellipses and bars when plotting')
+        mouseover_ttp = CreateToolTip(self.mouseOverCheckbox, 'Show data label on mouseover when viewing larger popup plots')
+        simple_ttp = CreateToolTip(self.simpleButton, 'Opens a window to analyze characteristic frequencies')
         
         #---The save buttons---
         self.saveFrame = tk.Frame(self.graphFrame, bg=self.backgroundColor)
@@ -5550,7 +6350,7 @@ class mmF(tk.Frame):
         self.saveResiduals.grid(column=1, row=0, padx=5)
         self.saveAll = ttk.Button(self.saveFrame, text="Export All Results", width=20, command=saveAll)
         self.saveAll.grid(column=0, row=1, sticky="W", pady=5)
-        self.saveFrame.grid(column=0, row=1, columnspan=4, pady=10, sticky="W")
+        self.saveFrame.grid(column=0, row=2, columnspan=4, pady=10, sticky="W")
         saveParams_ttp = CreateToolTip(self.saveCurrent, 'Saves current options and parameters as a .mmfitting file')
         saveResiduals_ttp = CreateToolTip(self.saveResiduals, 'Saves current residuals as a .mmresiduals file for use in the Error File Preparation tab')
         saveAll_ttp = CreateToolTip(self.saveAll, 'Saves all results as a .txt file, including data, fits, confidence intervals, parameters, and standard deviatons')
@@ -5830,6 +6630,58 @@ class mmF(tk.Frame):
             self.wdata = self.wdataRaw.copy()
             self.rdata = self.rdataRaw.copy()
             self.jdata = self.jdataRaw.copy()
+            
+            if (self.browseEntry.get() != "" and self.topGUI.getFreqLoad() == 1):
+                try:
+                    if (self.upDelete == 0):
+                        self.wdata = self.wdataRaw.copy()[self.lowDelete:]
+                        self.rdata = self.rdataRaw.copy()[self.lowDelete:]
+                        self.jdata = self.jdataRaw.copy()[self.lowDelete:]
+                    else:
+                        self.wdata = self.wdataRaw.copy()[self.lowDelete:-1*self.upDelete]
+                        self.rdata = self.rdataRaw.copy()[self.lowDelete:-1*self.upDelete]
+                        self.jdata = self.jdataRaw.copy()[self.lowDelete:-1*self.upDelete]
+                    self.lowerSpinboxVariable.set(str(self.lowDelete))
+                    self.upperSpinboxVariable.set(str(self.upDelete))
+                except:
+                    messagebox.showwarning("Frequency error", "There are more frequencies set to be deleted than data points. The number of frequencies to delete has been reset to 0.")
+                    self.upDelete = 0
+                    self.lowDelete = 0
+                    self.lowerSpinboxVariable.set(str(self.lowDelete))
+                    self.upperSpinboxVariable.set(str(self.upDelete))
+                    self.wdata = self.wdataRaw.copy()
+                    self.rdata = self.rdataRaw.copy()
+                    self.jdata = self.jdataRaw.copy()
+                self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
+                self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
+                #self.rs.setMajorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
+                self.rs.setNumberOfMajorTicks(10)
+                self.rs.showMinorTicks(False)
+                #self.rs.setMinorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
+                self.rs.setLower(np.log10(min(self.wdata)))
+                self.rs.setUpper(np.log10(max(self.wdata)))
+                self.lowestUndeleted.configure(text="Lowest remaining frequency: {:.4e}".format(min(self.wdata))) #%f" % round_to_n(min(self.wdata), 6)).strip("0"))
+                self.highestUndeleted.configure(text="Highest remaining frequency: {:.4e}".format(max(self.wdata))) #%f" % round_to_n(max(self.wdata), 6)).strip("0"))
+                #self.wdata = self.wdataRaw.copy()
+                #self.rdata = self.rdataRaw.copy()
+                #self.jdata = self.jdataRaw.copy()
+            else:
+                self.upDelete = 0
+                self.lowDelete = 0
+                self.lowerSpinboxVariable.set(str(self.lowDelete))
+                self.upperSpinboxVariable.set(str(self.upDelete))
+                self.wdata = self.wdataRaw.copy()
+                self.rdata = self.rdataRaw.copy()
+                self.jdata = self.jdataRaw.copy()
+                self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
+                self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
+                self.rs.setNumberOfMajorTicks(10)
+                self.rs.showMinorTicks(False)
+                self.rs.setLower(np.log10(min(self.wdata)))
+                self.rs.setUpper(np.log10(max(self.wdata)))
+                self.lowestUndeleted.configure(text="Lowest remaining frequency: {:.4e}".format(min(self.wdata))) #%f" % round_to_n(min(self.wdata), 6)).strip("0"))
+                self.highestUndeleted.configure(text="Highest remaining frequency: {:.4e}".format(max(self.wdata))) #%f" % round_to_n(max(self.wdata), 6)).strip("0"))
+            
             self.lengthOfData = len(self.wdata)
             self.tauDefault = 1/((max(w_in)-min(w_in))/(np.log10(abs(max(w_in)/min(w_in)))))
             self.rDefault = (max(r_in)+min(r_in))/2

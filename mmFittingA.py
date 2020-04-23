@@ -514,7 +514,7 @@ class fitter:
             randomParams[i] = normal(result[i], abs(sigma[i]), numMonteCarlo)
         
         #---Calculate impedance values based on the random paramaters---
-        with np.errstate(divide='ignore', invalid='ignore'):
+        with np.errstate(divide='ignore', invalid='ignore'):    #Ignore results with divide-by-zero errors and whatnot
             for i in range(numMonteCarlo):
                 for j in range(len(w)):
                     randomlyCalculated[j][i] = randomParams[0][i] + (randomParams[1][i]/(1+(1j*w[j]*2*np.pi*randomParams[2][i])))

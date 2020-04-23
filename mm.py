@@ -20,6 +20,7 @@ import formulaFrame
 import configparser
 import os
 import re
+import multiprocessing
 from PIL import ImageTk, Image
 
 class CreateToolTip(object):
@@ -129,13 +130,17 @@ class myGUI:
         self.errorDeltaDefault = 1
         self.errorWeightingDefault = "Variance"     #Default weighting for error structure fitting; options are "Variance" and "None"
         self.errorMADefault = "5 point"             #Default moving average for variance weighting; options are "5 point", "3 point", and "None"
-        self.detrendDefault = "Off"                #Default detrending; options are "Off" and "On"
+        self.detrendDefault = "Off"                 #Default detrending; options are "Off" and "On"
         self.ellipseColor = "#FF0000"               #Default ellipse color
         self.currentDirectory = "C:\\"              #The current directory; used in various other classes, but not a default setting
         self.defaultDirectory = "C:\\"              #The default directory
         self.inputExitAlert = 0                     #Whether or not to alert before closing the input tab
         self.customFormulaExitAlert = 0             #Whether or not to alert before closing the custom fitting tab
         self.defaultTab = 0                         #The default tab when the program is opened
+        self.freqLoad = 0                           #Whether or not frequency range stays the same when a new file is loaded (mm tab)
+        self.freqUndo = 0                           #Whether or not frequency range is undone with undo button
+        self.freqLoadCustom = 0                     #Whether or not frequency rnge stays the same when a new file is loaded (custom tab)
+        self.defaultScroll = 1                      #Whether or not to use the mousewheel to scroll through tabs when mouse is over the navigation pane
         
         #---Initialize settings---
         if (os.path.exists(os.getenv('LOCALAPPDATA')+r"\MeasurementModel\settings.ini")):   #Check if the settings file exists under LOCALAPPDATA
@@ -184,10 +189,17 @@ class myGUI:
                 elif (config['settings']['tab'] == "Help and about"):
                     self.defaultTab = 6
                 else:
+                    self.defaultTab = 0
+                    raise Exception
+                
+                self.defaultScroll = int(config['settings']['scroll'])
+                if (self.defaultScroll != 0 and self.defaultScroll != 1):
+                    self.defaultScroll = 1
                     raise Exception
                 
                 self.detectCommentsDefault = int(config['input']['detect'])
                 if (self.detectCommentsDefault != 0 and self.detectCommentsDefault != 1):       #Value must be true or false
+                    self.detectCommentsDefault = 1
                     raise Exception
                 
                 self.commentsDefault = int(config['input']['comments'])
@@ -202,6 +214,7 @@ class myGUI:
                 
                 iEA = int(config['input']['askInputExit'])
                 if (iEA != 0 and iEA != 1): #Value must be true or false
+                    self.inputExitAlert = 0
                     raise Exception
                 self.inputExitAlert = iEA
                 
@@ -225,25 +238,41 @@ class myGUI:
                 else:
                     raise Exception
                 
+                self.freqLoad = int(config['model']['freqLoad'])
+                if (self.freqLoad != 0 and self.freqLoad != 1):
+                    self.freqLoad = 0
+                    raise Exception
+                
+                self.freqUndo = int(config['model']['freqUndo'])
+                if (self.freqUndo != 0 and self.freqUndo != 1):
+                    self.freqUndo = 0
+                    raise Exception
+                
                 self.detrendDefault = config['error']['detrend']
                 if (self.detrendDefault != "Off" and self.detrendDefault != "On"):
+                    self.detrendDefault = "Off"
                     raise Exception
                 
                 #---Default error structure options---
                 self.errorAlphaDefault = int(config['error']['alphaError'])
                 if (self.errorAlphaDefault != 0 and self.errorAlphaDefault != 1):
+                    self.errorAlphaDefault = 0
                     raise Exception
                 self.errorBetaDefault = int(config['error']['betaError'])
                 if (self.errorBetaDefault != 0 and self.errorBetaDefault != 1):
+                    self.errorBetaDefault = 0
                     raise Exception
                 self.errorReDefault = int(config['error']['reError'])
                 if (self.errorReDefault != 0 and self.errorREDefault != 1):
+                    self.errorReDefault = 0
                     raise Exception
                 self.errorGammaDefault = int(config['error']['gammaError'])
-                if (self.errorAlphaDefault != 0 and self.errorAlphaDefault != 1):
+                if (self.errorGammaDefault != 0 and self.errorGammaDefault != 1):
+                    self.errorGammaDefault = 1
                     raise Exception
                 self.errorDeltaDefault = int(config['error']['deltaError'])
-                if (self.errorAlphaDefault != 0 and self.errorAlphaDefault != 1):
+                if (self.errorDeltaDefault != 0 and self.errorDeltaDefault != 1):
+                    self.errorDeltaDefault = 1
                     raise Exception
                                     
                 if (config['error']['errorWeighting'] == "None" or config['error']['errorWeighting'] == "Variance"):
@@ -265,6 +294,11 @@ class myGUI:
                 if (aCE != 0 and aCE != 1):
                     raise Exception
                 self.customFormulaExitAlert = aCE
+                
+                self.freqLoadCustom = int(config['custom']['freqLoadCustom'])
+                if (self.freqLoadCustom != 0 and self.freqLoadCustom != 1):
+                    self.freqLoadCustom = 0
+                    raise Exception
                 
             except:     #If there's an error loading settings
                 pass    #Ignore the error  
@@ -355,6 +389,54 @@ class myGUI:
         self.left_frame.columnconfigure(1, weight=1)
         self.left_frame.rowconfigure(4, weight=1)        #Makes the help label go to the bottom of the window
         self.left_frame.grid(row=1, column = 1, sticky="nsew")
+        
+        def on_mouse_wheel(event, overTab):
+            if (self.currentTab == 0):
+                if (event.delta < 0):
+                    self.measureModelDown(None)
+            elif (self.currentTab == 1):
+                if (event.delta > 0):
+                    self.inputFileDown(None)
+                else:
+                    self.errorFileDown(None)
+            elif (self.currentTab == 2):
+                if (event.delta > 0):
+                    self.measureModelDown(None)
+                else:
+                    self.errorDown(None)
+            elif (self.currentTab == 3):
+                if (event.delta > 0):
+                    self.errorFileDown(None)
+                else:
+                    self.formulaDown(None)
+            elif (self.currentTab == 6):
+                if (event.delta > 0):
+                    self.errorDown(None)
+                else:
+                    self.settingsDown(None)
+            elif (self.currentTab == 4):
+                if (event.delta > 0):
+                    self.formulaDown(None)
+                else:
+                    self.helpDown(None)
+            elif (self.currentTab == 5):
+                if (event.delta > 0):
+                    self.settingsDown(None)
+            
+            if (overTab == 0):
+                self.fileOpen.configure(image=self.imgFile2 if self.currentTab != 0 else self.imgFile4)
+            elif (overTab == 1):
+                self.runModel.configure(image=self.imgModel2 if self.currentTab != 1 else self.imgModel4)
+            elif (overTab == 2):
+                self.errorFileLabel.configure(image=self.imgErrorFile2 if self.currentTab != 2 else self.imgErrorFile4)
+            elif (overTab == 3):
+                self.errorLabel.configure(image=self.imgError2 if self.currentTab != 3 else self.imgError4)
+            elif (overTab == 4):
+                self.settingsLabel.configure(image=self.imgSettings2 if self.currentTab != 4 else self.imgSettings4)
+            elif (overTab == 5):
+                self.helpLabel.configure(image=self.imgHelp2 if self.currentTab != 5 else self.imgHelp4)
+            elif (overTab == 6):
+                self.formulaLabel.configure(image=self.imgFormula2 if self.currentTab != 6 else self.imgFormula4)
         
         #---The icons used in the navigation pane---
         self.imgFile = ImageTk.PhotoImage(Image.open(resource_path("img/filedarkgray.png")))
@@ -470,6 +552,16 @@ class myGUI:
         self.settingsLabel.grid(column=0, row=5, sticky="S")
         self.helpLabel.grid(column=0, row=6, sticky="S")
         
+        if (self.defaultScroll == 1):
+            self.left_frame.bind("<MouseWheel>", lambda e: on_mouse_wheel(e, -1))
+            self.fileOpen.bind("<MouseWheel>", lambda e: on_mouse_wheel(e, 0))
+            self.runModel.bind("<MouseWheel>", lambda e: on_mouse_wheel(e, 1))
+            self.errorFileLabel.bind("<MouseWheel>", lambda e: on_mouse_wheel(e, 2))
+            self.errorLabel.bind("<MouseWheel>", lambda e: on_mouse_wheel(e, 3))
+            self.formulaLabel.bind("<MouseWheel>", lambda e: on_mouse_wheel(e, 6))
+            self.settingsLabel.bind("<MouseWheel>", lambda e: on_mouse_wheel(e, 4))
+            self.helpLabel.bind("<MouseWheel>", lambda e: on_mouse_wheel(e, 5))
+        
         self.input_frame = inputFrame.iF(root, self)
         #input_frame.grid(row = 0, column=1, sticky="N", padx=20, pady=20)
         self.help_frame = helpFrame.hF(root, self)
@@ -481,16 +573,19 @@ class myGUI:
         
         if (self.defaultTab == 0):
             self.input_frame.grid(row=1, column=2, sticky="NW", padx=20, pady=20)
+            self.input_frame.bindIt()
         elif (self.defaultTab == 1):
             self.model_frame.grid(row=1, column=2, sticky="NW", padx=20, pady=20)
         elif (self.defaultTab == 2):
             self.error_file_frame.grid(row=1, column=2, sticky="NW", padx=20, pady=20)
+            self.error_file_frame.bindIt()
         elif (self.defaultTab == 3):
             self.error_frame.grid(row=1, column=2, sticky="NW", padx=20, pady=20)
         elif (self.defaultTab == 4):
             self.formula_frame.grid(row=1, column=2, sticky="NW", padx=20, pady=20)
         elif (self.defaultTab == 5):
             self.settings_frame.grid(row=1, column=2, sticky="NW", padx=20, pady=20)
+            self.settings_frame.bindIt()
         elif (self.defaultTab == 6):
             self.help_frame.grid(row=1, column=2, sticky="NW", padx=20, pady=20)
         
@@ -593,6 +688,9 @@ class myGUI:
         self.formula_frame.grid_remove()
         self.frame_label.configure(text="File Tools and Conversion")        #Change the title
         self.input_frame.grid(row=1, column=2, sticky="NW", padx=20, pady=20)   #Grid the new tab
+        self.error_file_frame.unbindIt()
+        self.settings_frame.unbindIt()
+        self.input_frame.bindIt()
             
     def inputFileUp(self, event):
         self.fileOpen.configure(image=self.imgFile4)             #Change the tab's color so it looks good
@@ -624,6 +722,9 @@ class myGUI:
         self.formula_frame.grid_remove()
         self.frame_label.configure(text="Measurement Model")
         self.model_frame.grid(row=1, column=2, sticky="NW", padx=20, pady=20)
+        self.error_file_frame.unbindIt()
+        self.input_frame.unbindIt()
+        self.settings_frame.unbindIt()
         
     def measureModelUp(self, event):
         self.runModel.configure(image=self.imgModel4)
@@ -654,6 +755,9 @@ class myGUI:
         self.formula_frame.grid_remove()
         self.frame_label.configure(text="Error File Preparation")
         self.error_file_frame.grid(row=1, column=2, sticky="NW", padx=20, pady=20)
+        self.input_frame.unbindIt()
+        self.settings_frame.unbindIt()
+        self.error_file_frame.bindIt()
     
     def errorFileUp(self, event):
         self.errorFileLabel.configure(image=self.imgErrorFile4)
@@ -683,6 +787,9 @@ class myGUI:
         self.formula_frame.grid_remove()
         self.frame_label.configure(text="Error Analysis")
         self.error_frame.grid(row=1, column=2, sticky="NW", padx=20, pady=20)
+        self.error_file_frame.unbindIt()
+        self.input_frame.unbindIt()
+        self.settings_frame.unbindIt()
     
     def errorUp(self, event):
         self.errorLabel.configure(image=self.imgError4)
@@ -712,6 +819,9 @@ class myGUI:
         self.error_frame.grid_remove()
         self.frame_label.configure(text="Custom Formula Fitting")
         self.formula_frame.grid(row=1, column=2, sticky="NW", padx=20, pady=20)
+        self.error_file_frame.unbindIt()
+        self.input_frame.unbindIt()
+        self.settings_frame.unbindIt()
     
     def formulaUp(self, event):
         self.formulaLabel.configure(image=self.imgFormula4)
@@ -742,6 +852,9 @@ class myGUI:
         self.formula_frame.grid_remove()
         self.settings_frame.grid(row=1, column=2, sticky="NW", padx=20, pady=20)
         self.frame_label.configure(text="Settings")
+        self.error_file_frame.unbindIt()
+        self.input_frame.unbindIt()
+        self.settings_frame.bindIt()
     
     def settingsUp(self, event):
         self.settingsLabel.configure(image=self.imgSettings4)
@@ -772,6 +885,9 @@ class myGUI:
         self.formula_frame.grid_remove()
         self.frame_label.configure(text="Help and About")
         self.help_frame.grid(row=1, column=2, sticky="NW", padx=20, pady=20)
+        self.error_file_frame.unbindIt()
+        self.input_frame.unbindIt()
+        self.settings_frame.unbindIt()
         
     def helpUp(self, event):
         self.helpLabel.configure(image=self.imgHelp4)
@@ -1154,6 +1270,48 @@ class myGUI:
     def getDefaultTab(self):
         return self.defaultTab
     
+    def setFreqLoad(self, val):
+        self.freqLoad = val
+    
+    def getFreqLoad(self):
+        return self.freqLoad
+    
+    def setFreqUndo(self, val):
+        self.freqUndo = val
+        
+    def getFreqUndo(self):
+        return self.freqUndo
+    
+    def setFreqLoadCustom(self, val):
+        self.freqLoadCustom = val
+    
+    def getFreqLoadCustom(self):
+        return self.freqLoadCustom
+    
+    def setScroll(self, val):
+        if (val == 1):
+            self.left_frame.bind("<MouseWheel>", lambda e: self.on_mouse_wheel(e, -1))
+            self.fileOpen.bind("<MouseWheel>", lambda e: self.on_mouse_wheel(e, 0))
+            self.runModel.bind("<MouseWheel>", lambda e: self.on_mouse_wheel(e, 1))
+            self.errorFileLabel.bind("<MouseWheel>", lambda e: self.on_mouse_wheel(e, 2))
+            self.errorLabel.bind("<MouseWheel>", lambda e: self.on_mouse_wheel(e, 3))
+            self.formulaLabel.bind("<MouseWheel>", lambda e: self.on_mouse_wheel(e, 6))
+            self.settingsLabel.bind("<MouseWheel>", lambda e: self.on_mouse_wheel(e, 4))
+            self.helpLabel.bind("<MouseWheel>", lambda e: self.on_mouse_wheel(e, 5))
+        else:
+            self.left_frame.unbind("<MouseWheel>")
+            self.fileOpen.unbind("<MouseWheel>")
+            self.runModel.unbind("<MouseWheel>")
+            self.errorFileLabel.unbind("<MouseWheel>")
+            self.errorLabel.unbind("<MouseWheel>")
+            self.formulaLabel.unbind("<MouseWheel>")
+            self.settingsLabel.unbind("<MouseWheel>")
+            self.helpLabel.unbind("<MouseWheel>")
+        self.defaultScroll = val
+    
+    def getScroll(self):
+        return self.defaultScroll
+    
     #---Change the colors/appearance---
     def setBarColor(self, color):
         self.backgroundColor = color
@@ -1210,8 +1368,57 @@ class myGUI:
         self.model_frame.setThemeDark()
         self.error_file_frame.setThemeDark()
         self.formula_frame.setThemeDark()
+    
+    def on_mouse_wheel(self, event, overTab):
+        if (self.currentTab == 0):
+            if (event.delta < 0):
+                self.measureModelDown(None)
+        elif (self.currentTab == 1):
+            if (event.delta > 0):
+                self.inputFileDown(None)
+            else:
+                self.errorFileDown(None)
+        elif (self.currentTab == 2):
+            if (event.delta > 0):
+                self.measureModelDown(None)
+            else:
+                self.errorDown(None)
+        elif (self.currentTab == 3):
+            if (event.delta > 0):
+                self.errorFileDown(None)
+            else:
+                self.formulaDown(None)
+        elif (self.currentTab == 6):
+            if (event.delta > 0):
+                self.errorDown(None)
+            else:
+                self.settingsDown(None)
+        elif (self.currentTab == 4):
+            if (event.delta > 0):
+                self.formulaDown(None)
+            else:
+                self.helpDown(None)
+        elif (self.currentTab == 5):
+            if (event.delta > 0):
+                self.settingsDown(None)
+                
+        if (overTab == 0):
+            self.fileOpen.configure(image=self.imgFile2 if self.currentTab != 0 else self.imgFile4)
+        elif (overTab == 1):
+            self.runModel.configure(image=self.imgModel2 if self.currentTab != 1 else self.imgModel4)
+        elif (overTab == 2):
+            self.errorFileLabel.configure(image=self.imgErrorFile2 if self.currentTab != 2 else self.imgErrorFile4)
+        elif (overTab == 3):
+            self.errorLabel.configure(image=self.imgError2 if self.currentTab != 3 else self.imgError4)
+        elif (overTab == 4):
+            self.settingsLabel.configure(image=self.imgSettings2 if self.currentTab != 4 else self.imgSettings4)
+        elif (overTab == 5):
+            self.helpLabel.configure(image=self.imgHelp2 if self.currentTab != 5 else self.imgHelp4)
+        elif (overTab == 6):
+            self.formulaLabel.configure(image=self.imgFormula2 if self.currentTab != 6 else self.imgFormula4)
 
 if (__name__ == "__main__"):        #If the code is being run as the main module
+    multiprocessing.freeze_support()    #Allows multiprocessing to work on Windows
     try:
         if 'win' in sys.platform:   #Makes the program sharper on Windows
             ctypes.windll.shcore.SetProcessDpiAwareness(1)

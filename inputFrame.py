@@ -676,7 +676,7 @@ class iF(tk.Frame):
         self.commentLabel = tk.Label(self.commentFrame, text="Number of comment lines:", bg=self.backgroundColor, fg=self.foregroundColor)  
         self.commentVariable = tk.StringVar(self, self.topGUI.getComments())
         vcmd1 = (self.register(validateComment), '%P')
-        self.commentNum = ttk.Entry(self.commentFrame, exportselection=0, textvariable=self.commentVariable, width=3, validate="all", validatecommand=vcmd1)
+        self.commentNum = ttk.Entry(self.commentFrame, textvariable=self.commentVariable, width=3, validate="all", validatecommand=vcmd1)
         self.commentNum.bind("<FocusIn>", lambda e: self.commentNum.selection_range(0, tk.END))
         self.delimiterLabel = tk.Label(self.commentFrame, text="     Delimiter:", bg=self.backgroundColor, fg=self.foregroundColor)
         self.delimiterVariable = tk.StringVar(self, self.topGUI.getDelimiter())
@@ -694,24 +694,24 @@ class iF(tk.Frame):
         self.columnsFrame = tk.Frame(self, bg=self.backgroundColor)
         self.freqColLabel = tk.Label(self.columnsFrame, text="Frequencies:      Column", bg=self.backgroundColor, fg=self.foregroundColor)
         self.freqColVariable = tk.StringVar(self, "1")
-        self.freqCol = ttk.Entry(self.columnsFrame, exportselection=0, textvariable=self.freqColVariable, width=2, validate="all", validatecommand=valCol)
+        self.freqCol = ttk.Entry(self.columnsFrame, textvariable=self.freqColVariable, width=2, validate="all", validatecommand=valCol)
         self.freqCol.bind("<FocusIn>", lambda e: self.freqCol.selection_range(0, tk.END))
         self.freqUnitVariable = tk.StringVar(self, "1")
-        self.freqUnitCombobox = ttk.Combobox(self.columnsFrame, textvariable=self.freqUnitVariable, values=("-1", "0.01", "0.1", "1", "1000", "1000000"), exportselection=0, validate="all", validatecommand=valUnit, width=8)
+        self.freqUnitCombobox = ttk.Combobox(self.columnsFrame, textvariable=self.freqUnitVariable, values=("-1", "0.01", "0.1", "1", "1000", "1000000"), validate="all", validatecommand=valUnit, width=8)
         self.freqUnitLabel = tk.Label(self.columnsFrame, text=" Scaling:  ", bg=self.backgroundColor, fg=self.foregroundColor)
         self.realColLabel = tk.Label(self.columnsFrame, text="Real part:           Column", bg=self.backgroundColor, fg=self.foregroundColor)
         self.realColVariable = tk.StringVar(self, "2")
-        self.realCol = ttk.Entry(self.columnsFrame, exportselection=0, textvariable=self.realColVariable, width=2, validate="all", validatecommand=valCol)
+        self.realCol = ttk.Entry(self.columnsFrame, textvariable=self.realColVariable, width=2, validate="all", validatecommand=valCol)
         self.realCol.bind("<FocusIn>", lambda e: self.realCol.selection_range(0, tk.END))
         self.realUnitVariable = tk.StringVar(self, "1")
-        self.realUnitCombobox = ttk.Combobox(self.columnsFrame, textvariable=self.realUnitVariable, values=("-1", "0.01", "0.1", "1", "1000", "1000000"), exportselection=0, validate="all", validatecommand=valUnit, width=8)
+        self.realUnitCombobox = ttk.Combobox(self.columnsFrame, textvariable=self.realUnitVariable, values=("-1", "0.01", "0.1", "1", "1000", "1000000"), validate="all", validatecommand=valUnit, width=8)
         self.realUnitLabel = tk.Label(self.columnsFrame, text=" Scaling:  ", bg=self.backgroundColor, fg=self.foregroundColor)
         self.imagColLabel = tk.Label(self.columnsFrame, text="Imaginary part: Column", bg=self.backgroundColor, fg=self.foregroundColor)
         self.imagColVariable = tk.StringVar(self, "3")
-        self.imagCol = ttk.Entry(self.columnsFrame, exportselection=0, textvariable=self.imagColVariable, width=2, validate="all", validatecommand=valCol)
+        self.imagCol = ttk.Entry(self.columnsFrame, textvariable=self.imagColVariable, width=2, validate="all", validatecommand=valCol)
         self.imagCol.bind("<FocusIn>", lambda e: self.imagCol.selection_range(0, tk.END))
         self.imagUnitVariable = tk.StringVar(self, "1")
-        self.imagUnitCombobox = ttk.Combobox(self.columnsFrame, textvariable=self.imagUnitVariable, values=("-1", "0.01", "0.1", "1", "1000", "1000000"), exportselection=0, validate="all", validatecommand=valUnit, width=8)
+        self.imagUnitCombobox = ttk.Combobox(self.columnsFrame, textvariable=self.imagUnitVariable, values=("-1", "0.01", "0.1", "1", "1000", "1000000"), validate="all", validatecommand=valUnit, width=8)
         self.imagUnitLabel = tk.Label(self.columnsFrame, text=" Scaling:  ", bg=self.backgroundColor, fg=self.foregroundColor)
 #        self.rmCheckboxVariable = tk.IntVar(self, 0)
 #        self.rmCheckbox = ttk.Checkbutton(self.columnsFrame, text="Rm", variable=self.rmCheckboxVariable)
@@ -751,7 +751,7 @@ class iF(tk.Frame):
         self.plusMinusLabel = tk.Label(self.lineFrequencyFrame, text="±", bg=self.backgroundColor, fg=self.foregroundColor)
         self.plusMinusVariable = tk.StringVar(self, "3")
         
-        self.plusMinus = ttk.Entry(self.lineFrequencyFrame, exportselection=0, textvariable=self.plusMinusVariable, width=3, validate="all", validatecommand=vcmd)
+        self.plusMinus = ttk.Entry(self.lineFrequencyFrame, textvariable=self.plusMinusVariable, width=3, validate="all", validatecommand=vcmd)
         self.plusMinus.bind("<FocusIn>", lambda e: self.plusMinus.selection_range(0, tk.END))
         self.plusMinusUnits = tk.Label(self.lineFrequencyFrame, text="Hz", bg=self.backgroundColor, fg=self.foregroundColor)
         self.whichLineFrequencies.grid(column=0, row=0)
@@ -772,10 +772,10 @@ class iF(tk.Frame):
         self.otherFrequencyListboxScrollbar['command'] = self.otherFrequencyListbox.yview
         self.otherFrequencyAddFrame = tk.Frame(self.otherFrequencyFrame, bg=self.backgroundColor)
         self.otherFrequencyNumVariable = tk.StringVar(self, "")
-        self.otherFrequencyNum = ttk.Entry(self.otherFrequencyAddFrame, textvariable=self.otherFrequencyNumVariable, exportselection=0, width=8, validate="all", validatecommand=vcmd)
+        self.otherFrequencyNum = ttk.Entry(self.otherFrequencyAddFrame, textvariable=self.otherFrequencyNumVariable, width=8, validate="all", validatecommand=vcmd)
         self.otherFrequencyLabel = tk.Label(self.otherFrequencyAddFrame, text="±", bg=self.backgroundColor, fg=self.foregroundColor)
         self.otherFrequencyErrorVariable = tk.StringVar(self, "")
-        self.otherFrequencyError = ttk.Entry(self.otherFrequencyAddFrame, textvariable=self.otherFrequencyErrorVariable, exportselection=0, width=4, validate="all", validatecommand=vcmd)
+        self.otherFrequencyError = ttk.Entry(self.otherFrequencyAddFrame, textvariable=self.otherFrequencyErrorVariable, width=4, validate="all", validatecommand=vcmd)
         self.otherFrequencyListboxAdd = ttk.Button(self.otherFrequencyAddFrame, text="Add", command=addFreq)
         self.otherFrequencyListboxDelete = ttk.Button(self.otherFrequencyFrame, text="Remove", command=lambda lb=self.otherFrequencyListbox: lb.delete(tk.ANCHOR))
         self.otherFrequencyListbox.grid(column=0,row=0,rowspan=2)
@@ -915,7 +915,33 @@ class iF(tk.Frame):
         except:     #If there's a problem with the file
             messagebox.showerror("File error", "Error 5:\nThere was an error opening the file.")
             return "+", "+"
-                
+    
+    def saveAs(self, e=None):
+        if (len(self.real_data) == 0):
+            return
+        continueThoughDiff = True
+        if (self.currentFile != self.inputFileText.get()):
+            continueThoughDiff = messagebox.askokcancel("Different files", "The current file under \"Browse\" has not been loaded, and so will not be saved. If you continue, only the currently loaded data will be saved.")
+        if (continueThoughDiff):
+            defaultSaveName, ext = os.path.splitext(os.path.basename(self.inputFileText.get()))
+            saveName = asksaveasfile(mode='w', defaultextension=".mmfile", initialfile=defaultSaveName, initialdir=self.topGUI.getCurrentDirectory, filetypes=[("Measurement model file", ".mmfile")])
+            directory = os.path.dirname(str(saveName))
+            self.topGUI.setCurrentDirectory(directory)
+            if saveName is None:     #If save is cancelled
+                return
+            for i in range(len(self.freq_data)):
+                saveName.write(str(self.freq_data[i]) + "\t" + str(self.real_data[i]) + "\t" + str(self.imag_data[i]) + "\n")
+            saveName.close()
+            self.savedNeeded = False
+            self.saveButton.configure(text="Saved")
+            self.after(1000, lambda : self.saveButton.configure(text="Save as"))
+    
+    def bindIt(self, e=None):
+        self.bind_all("<Control-s>", self.saveAs)
+    
+    def unbindIt(self, e=None):
+        self.unbind_all("<Control-s>")
+            
     def inputEnter(self, fileName):
         n, filetext = self.OpenFileNoPrompt(fileName)
         fname, fext = os.path.splitext(fileName)
@@ -956,3 +982,4 @@ class iF(tk.Frame):
                             self.delimiterVariable.set(":")
                     break #reached the end of comment lines
             self.commentVariable.set(numLinesOfComments)
+    

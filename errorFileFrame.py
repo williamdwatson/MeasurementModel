@@ -214,13 +214,13 @@ class eFF(tk.Frame):
                         self.statsView.delete(*self.statsView.get_children())
                         for i in range(self.wdataLength):
                             self.statsView.insert("", tk.END, text="", values=(str(self.wdata[0][i]), "%.6g"%meansReal[i], "%.6g"%standardDevsReal[i], "%.6g"%meansImag[i], "%.6g"%standardDevsImag[i]))
-                        self.reAvgLabel.configure(text="Average R\u2091 = %.5g"%re_avg)
+                        self.reAvgLabel.configure(text="Average R\u2091 = %.5g "%re_avg)
                         if (cap_avg != 0):
                             self.capAvgLabel.configure(text="|  Average Capacitance = %.5g"%cap_avg)
                         self.standardDevsR = standardDevsReal
                         self.standardDevsI = standardDevsImag
                     elif (self.numFiles == 1):
-                        self.reAvgLabel.configure(text="Average R\u2091 = %.5g"%self.re[0])
+                        self.reAvgLabel.configure(text="Average R\u2091 = %.5g "%self.re[0])
                         if (self.cap[0] != 0):
                             self.capAvgLabel.configure(text="|  Average Capacitance = %.5g"%self.cap[0])
                         
@@ -254,74 +254,75 @@ class eFF(tk.Frame):
             else:
                 items = list(map(int, self.fileListbox.curselection()))
                 if (len(items) != 0):
-                    del self.wdata[items[0]]
-                    del self.rres[items[0]]
-                    del self.jres[items[0]]
-                    del self.zr[items[0]]
-                    del self.zj[items[0]]
-                    del self.re[items[0]]
-                    del self.cap[items[0]]
-                    self.fileListbox.delete(tk.ANCHOR)
-                    self.numFiles -= 1
-                    if (self.numFiles == 1):
-                        self.statsView.delete(*self.statsView.get_children())
-                        self.reAvgLabel.configure(text="Average R\u2091 = %.5g"%self.re[0])
-                        if (self.cap[0] != 0):
-                            self.capAvgLabel.configure(text="|  Average Capacitance = %.5g"%self.cap[0])
-                        self.saveButton.configure(state="disabled")
-                        self.plotButton.configure(state="disabled")
-                    elif (self.numFiles == 0):
-                        self.statsView.delete(*self.statsView.get_children())
-                        self.reAvgLabel.configure(text="")
-                        self.capAvgLabel.configure(text="")
-                        self.saveButton.configure(state="disabled")
-                        self.plotButton.configure(state="disabled")
-                    else:
-                        re_avg = 0
-                        for i in range(len(self.zr)):
-                            re_avg += self.re[i]
-                        re_avg /= len(self.zr)
-                        
-                        cap_avg = 0
-                        for i in range(len(self.zr)):
-                            cap_avg += self.cap[i]
-                        cap_avg /= len(self.zr)
-                        
-                        meansReal = np.zeros(self.wdataLength)
-                        for i in range(self.wdataLength):
-                            for j in range(len(self.rres)):
-                                meansReal[i] += self.rres[j][i]
-                            meansReal[i] /= len(self.rres)
-            
-                        meansImag = np.zeros(self.wdataLength)
-                        for i in range(self.wdataLength):
-                            for j in range(len(self.jres)):
-                                meansImag[i] += self.jres[j][i]
-                            meansImag[i] /= len(self.jres)
-                        
-                        standardDevsReal = np.zeros(self.wdataLength)
-                        for i in range(self.wdataLength):
-                            for j in range(len(self.rres)):
-                                standardDevsReal[i] += (self.rres[j][i] - meansReal[i])**2
-                            standardDevsReal[i] /= len(self.rres)-1
-                            standardDevsReal[i] = np.sqrt(standardDevsReal[i])
-                        
-                        standardDevsImag = np.zeros(self.wdataLength)
-                        for i in range(self.wdataLength):
-                            for j in range(len(self.jres)):
-                                standardDevsImag[i] += (self.jres[j][i] - meansImag[i])**2
-                            standardDevsImag[i] /= len(self.jres)-1
-                            standardDevsImag[i] = np.sqrt(standardDevsImag[i])
-                        
-                        self.statsView.delete(*self.statsView.get_children())
-                        for i in range(self.wdataLength):
-                            self.statsView.insert("", tk.END, text="", values=(str(self.wdata[0][i]), "%.6g"%meansReal[i], "%.6g"%standardDevsReal[i], "%.6g"%meansImag[i], "%.6g"%standardDevsImag[i]))
-                        self.reAvgLabel.configure(text="Average R\u2091 = %.5g"%re_avg)
-                        if (cap_avg != 0):
-                            self.capAvgLabel.configure(text="|  Average Capacitance = %.5g"%cap_avg)
-                        
-                        self.standardDevsR = standardDevsReal
-                        self.standardDevsI = standardDevsImag
+                    if (items[0] < len(self.wdata)):
+                        del self.wdata[items[0]]
+                        del self.rres[items[0]]
+                        del self.jres[items[0]]
+                        del self.zr[items[0]]
+                        del self.zj[items[0]]
+                        del self.re[items[0]]
+                        del self.cap[items[0]]
+                        self.fileListbox.delete(tk.ANCHOR)
+                        self.numFiles -= 1
+                        if (self.numFiles == 1):
+                            self.statsView.delete(*self.statsView.get_children())
+                            self.reAvgLabel.configure(text="Average R\u2091 = %.5g "%self.re[0])
+                            if (self.cap[0] != 0):
+                                self.capAvgLabel.configure(text="|  Average Capacitance = %.5g"%self.cap[0])
+                            self.saveButton.configure(state="disabled")
+                            self.plotButton.configure(state="disabled")
+                        elif (self.numFiles == 0):
+                            self.statsView.delete(*self.statsView.get_children())
+                            self.reAvgLabel.configure(text="")
+                            self.capAvgLabel.configure(text="")
+                            self.saveButton.configure(state="disabled")
+                            self.plotButton.configure(state="disabled")
+                        else:
+                            re_avg = 0
+                            for i in range(len(self.zr)):
+                                re_avg += self.re[i]
+                            re_avg /= len(self.zr)
+                            
+                            cap_avg = 0
+                            for i in range(len(self.zr)):
+                                cap_avg += self.cap[i]
+                            cap_avg /= len(self.zr)
+                            
+                            meansReal = np.zeros(self.wdataLength)
+                            for i in range(self.wdataLength):
+                                for j in range(len(self.rres)):
+                                    meansReal[i] += self.rres[j][i]
+                                meansReal[i] /= len(self.rres)
+                
+                            meansImag = np.zeros(self.wdataLength)
+                            for i in range(self.wdataLength):
+                                for j in range(len(self.jres)):
+                                    meansImag[i] += self.jres[j][i]
+                                meansImag[i] /= len(self.jres)
+                            
+                            standardDevsReal = np.zeros(self.wdataLength)
+                            for i in range(self.wdataLength):
+                                for j in range(len(self.rres)):
+                                    standardDevsReal[i] += (self.rres[j][i] - meansReal[i])**2
+                                standardDevsReal[i] /= len(self.rres)-1
+                                standardDevsReal[i] = np.sqrt(standardDevsReal[i])
+                            
+                            standardDevsImag = np.zeros(self.wdataLength)
+                            for i in range(self.wdataLength):
+                                for j in range(len(self.jres)):
+                                    standardDevsImag[i] += (self.jres[j][i] - meansImag[i])**2
+                                standardDevsImag[i] /= len(self.jres)-1
+                                standardDevsImag[i] = np.sqrt(standardDevsImag[i])
+                            
+                            self.statsView.delete(*self.statsView.get_children())
+                            for i in range(self.wdataLength):
+                                self.statsView.insert("", tk.END, text="", values=(str(self.wdata[0][i]), "%.6g"%meansReal[i], "%.6g"%standardDevsReal[i], "%.6g"%meansImag[i], "%.6g"%standardDevsImag[i]))
+                            self.reAvgLabel.configure(text="Average R\u2091 = %.5g "%re_avg)
+                            if (cap_avg != 0):
+                                self.capAvgLabel.configure(text="|  Average Capacitance = %.5g"%cap_avg)
+                            
+                            self.standardDevsR = standardDevsReal
+                            self.standardDevsI = standardDevsImag
                 if (self.fileListbox.size() == 0):
                     self.statsView.delete(*self.statsView.get_children())
                     self.reAvgLabel.configure(text="")
@@ -342,7 +343,9 @@ class eFF(tk.Frame):
             finally:
                 self.popup_menu.grab_release()
         
-        def saveErrors():
+        def saveErrors(e=None):
+            if (len(self.zr) == 0):
+                return
             avgRe = 0
             avgR = np.zeros(self.wdataLength)
             avgJ = np.zeros(self.wdataLength)
@@ -367,7 +370,8 @@ class eFF(tk.Frame):
             stringToSave += str(avgRe) + "\t" + "0" + "\t" + "0" + "\t" + "0" + "\t" + "0" + "\t" + "0" + "\t" + "0" + "\n" 
             for i in range(self.wdataLength):
                 stringToSave += str(self.wdata[0][i]) + "\t" + str(self.standardDevsR[i]) + "\t" + str(self.standardDevsI[i]) + "\t" + str(avgR[i]) + "\t" + str(avgJ[i]) + "\t" + str(avgZ[i]) + "\t" + str(sigmasigma[i]) + "\n"
-            saveName = asksaveasfile(mode='w', defaultextension=".mmerrors", initialdir=self.topGUI.getCurrentDirectory, filetypes=[("Measurement model errors", ".mmerrors")])
+            defaultSaveName = os.path.splitext(os.path.basename(self.fileListbox.get(0)))[0]
+            saveName = asksaveasfile(mode='w', defaultextension=".mmerrors", initialfile=defaultSaveName, initialdir=self.topGUI.getCurrentDirectory, filetypes=[("Measurement model errors", ".mmerrors")])
             directory = os.path.dirname(str(saveName))
             self.topGUI.setCurrentDirectory(directory)
             if saveName is None:     #If save is cancelled
@@ -384,7 +388,7 @@ class eFF(tk.Frame):
             resPlot.iconbitmap(resource_path("img/elephant3.ico"))
             
             with plt.rc_context({'axes.edgecolor':self.foregroundColor, 'xtick.color':self.foregroundColor, 'ytick.color':self.foregroundColor, 'figure.facecolor':self.backgroundColor}):
-                figError = Figure()#figsize=(5,4), dpi=100)
+                figError = Figure(figsize=(5,4), dpi=100)
                 a = figError.add_subplot(111)
                 figError.set_facecolor(self.backgroundColor)
                 a.set_facecolor(self.backgroundColor)
@@ -511,7 +515,51 @@ class eFF(tk.Frame):
         self.reAvgLabel.configure(background="#424242", foreground="#FFFFFF")
         self.capAvgLabel.configure(background="#424242", foreground="#FFFFFF")
         self.averageLabelFrame.configure(background="#424242")
-                                  
+    
+    def saveErrors(self, e=None):
+        if (len(self.zr) == 0):
+            return
+        avgRe = 0
+        avgR = np.zeros(self.wdataLength)
+        avgJ = np.zeros(self.wdataLength)
+        avgZ = np.zeros(self.wdataLength)
+        for i in range(len(self.zr)):
+            avgRe += self.re[i]
+            for k in range(self.wdataLength):
+                avgR[k] += abs(self.zr[i][k])
+                avgJ[k] += abs(self.zj[i][k])
+                avgZ[k] += np.sqrt(self.zr[i][k]**2 + self.zj[i][k]**2)
+        avgR /= len(self.zr)
+        avgJ /= len(self.zj)
+        avgZ /= len(self.zr)
+        avgRe /= len(self.zr)
+        
+        sigmasigma = np.zeros(self.wdataLength)
+        for i in range(self.wdataLength):
+            avgSigma = (self.standardDevsI[i] + self.standardDevsR[i])/2
+            sigmasigma[i] = np.sqrt((self.standardDevsI[i]-avgSigma)**2 + (self.standardDevsR[i]-avgSigma)**2)
+
+        stringToSave = str(self.numFiles) + "\t" + "0" + "\t" + "0" + "\t" + "0" + "\t" + "0" + "\t" + "0" + "\t" + "0" + "\n"
+        stringToSave += str(avgRe) + "\t" + "0" + "\t" + "0" + "\t" + "0" + "\t" + "0" + "\t" + "0" + "\t" + "0" + "\n" 
+        for i in range(self.wdataLength):
+            stringToSave += str(self.wdata[0][i]) + "\t" + str(self.standardDevsR[i]) + "\t" + str(self.standardDevsI[i]) + "\t" + str(avgR[i]) + "\t" + str(avgJ[i]) + "\t" + str(avgZ[i]) + "\t" + str(sigmasigma[i]) + "\n"
+        defaultSaveName = os.path.splitext(os.path.basename(self.fileListbox.get(0)))[0]
+        saveName = asksaveasfile(mode='w', defaultextension=".mmerrors", initialfile=defaultSaveName, initialdir=self.topGUI.getCurrentDirectory, filetypes=[("Measurement model errors", ".mmerrors")])
+        directory = os.path.dirname(str(saveName))
+        self.topGUI.setCurrentDirectory(directory)
+        if saveName is None:     #If save is cancelled
+            return
+        saveName.write(stringToSave)
+        saveName.close()
+        self.saveButton.configure(text="Saved")
+        self.after(1000, lambda : self.saveButton.configure(text="Save errors"))
+    
+    def bindIt(self, e=None):
+        self.bind_all("<Control-s>", self.saveErrors)
+    
+    def unbindIt(self, e=None):
+        self.unbind_all("<Control-s>")
+                             
     def residualEnter(self, n):
         try:
             data = np.loadtxt(n)
@@ -556,9 +604,9 @@ class eFF(tk.Frame):
             self.zr.append(r_in)
             self.zj.append(j_in)
             self.numFiles += 1
-            self.reAvgLabel.configure(text="Average R\u2091 = %.5g"%self.re[0])
+            self.reAvgLabel.configure(text="Average R\u2091 = %.5g "%self.re[0])
             if (self.cap[0] != 0):
-                self.capAvgLabel.configure(text="|  Average Capacitance = %.5g"%self.cap[0])
+                self.capAvgLabel.configure(text="|  Average Capacitance = %.5g "%self.cap[0])
         except FileLengthError:
             messagebox.showerror("Length error", "Error 27:\nThe number of data do not match")
         except FrequencyMismatchError:
@@ -656,13 +704,13 @@ class eFF(tk.Frame):
                 self.statsView.delete(*self.statsView.get_children())
                 for i in range(self.wdataLength):
                     self.statsView.insert("", tk.END, text="", values=(str(self.wdata[0][i]), "%.6g"%meansReal[i], "%.6g"%standardDevsReal[i], "%.6g"%meansImag[i], "%.6g"%standardDevsImag[i]))
-                self.reAvgLabel.configure(text="Average R\u2091 = %.5g"%re_avg)
+                self.reAvgLabel.configure(text="Average R\u2091 = %.5g "%re_avg)
                 if (cap_avg != 0):
                     self.capAvgLabel.configure(text="|  Average Capacitance = %.5g"%cap_avg)
                 self.standardDevsR = standardDevsReal
                 self.standardDevsI = standardDevsImag
             elif (self.numFiles == 1):
-                self.reAvgLabel.configure(text="Average R\u2091 = %.5g"%self.re[0])
+                self.reAvgLabel.configure(text="Average R\u2091 = %.5g "%self.re[0])
                 if (self.cap[0] != 0):
                     self.capAvgLabel.configure(text="|  Average Capacitance = %.5g"%self.cap[0])
                 
