@@ -8,7 +8,7 @@ Created on Mon Jul  9 16:30:37 2018
 import tkinter as tk
 import tkinter.ttk as ttk
 import tkinter.scrolledtext as scrolledtext
-from tkinter.filedialog import askopenfilename, asksaveasfile
+from tkinter.filedialog import askopenfilename, asksaveasfile, askdirectory
 from tkinter import messagebox
 import mmFittingA
 import mmFittingCap
@@ -29,9 +29,11 @@ import os.path
 import sys
 import os
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
+#from matplotlib.transforms import Bbox
 from rangeSlider import RangeSlider
 #------------------------------Range Slider----------------------------------
 #  Source: https://github.com/halsafar/rangeslider
@@ -2847,10 +2849,10 @@ class mmF(tk.Frame):
                             if (self.multistartEnabled[i].get()):
                                 if (self.multistartSelection[i].get() == "Logarithmic"):
                                     if (np.sign(float(self.multistartLower[i].get())) != np.sign(float(self.multistartUpper[i].get()))):
-                                        messagebox.showerror("Value error", "For logarithmic spacing, the lower and upper bound must have the same sign and both be nonzero")
+                                        messagebox.showerror("Value error", "Error 58: \nFor logarithmic spacing, the lower and upper bound must have the same sign and both be nonzero")
                                         return
                                     if (float(self.multistartLower[i].get()) == 0 or float(self.multistartUpper[i].get()) == 0):
-                                        messagebox.showerror("Value error", "For logarithmic spacing, 0 cannot be the upper or lower bound")
+                                        messagebox.showerror("Value error", "Error 59: \nFor logarithmic spacing, 0 cannot be the upper or lower bound")
                                         return
                                     ig[i].extend(np.geomspace(float(self.multistartLower[i].get()), float(self.multistartUpper[i].get()), int(self.multistartNumber[i].get())))
                                 if (self.multistartSelection[i].get() == "Linear"):
@@ -2858,7 +2860,7 @@ class mmF(tk.Frame):
                                 if (self.multistartSelection[i].get() == "Random"):
                                     ig[i].extend((float(self.multistartUpper[i].get())-float(self.multistartLower[i].get()))*np.random.rand(int(self.multistartNumber[i].get()))+float(self.multistartLower[i].get()))
                                 if (self.multistartSelection[i].get() == "Custom"):
-                                    ig[i].extend(int(val) for val in [x.strip() for x in self.multistartCustom[i].get().split(',')])
+                                    ig[i].extend(float(val) for val in [x.strip() for x in self.multistartCustom[i].get().split(',')])
                     except:
                         messagebox.showerror("Value error", "There was an invalid value in the multistart options")
                         return
@@ -2973,6 +2975,7 @@ class mmF(tk.Frame):
                             import comtypes.gen.TaskbarLib as tbl
                             self.taskbar = cc.CreateObject('{56FDF344-FD6D-11d0-958A-006097C9A090}', interface=tbl.ITaskbarList3)
                             self.taskbar.HrInit()
+                            self.taskbar.ActivateTab(self.masterWindowId)
                             self.taskbar.SetProgressState(self.masterWindowId, 0x2)
                         except:
                             pass
@@ -2983,6 +2986,7 @@ class mmF(tk.Frame):
                             import comtypes.gen.TaskbarLib as tbl
                             self.taskbar = cc.CreateObject('{56FDF344-FD6D-11d0-958A-006097C9A090}', interface=tbl.ITaskbarList3)
                             self.taskbar.HrInit()
+                            self.taskbar.ActivateTab(self.masterWindowId)
                             self.taskbar.SetProgressState(self.masterWindowId, 0x1)
                         except:
                             pass
@@ -3237,6 +3241,7 @@ class mmF(tk.Frame):
                             import comtypes.gen.TaskbarLib as tbl
                             self.taskbar = cc.CreateObject('{56FDF344-FD6D-11d0-958A-006097C9A090}', interface=tbl.ITaskbarList3)
                             self.taskbar.HrInit()
+                            self.taskbar.ActivateTab(self.masterWindowId)
                             self.taskbar.SetProgressState(self.masterWindowId, 0x2)
                         except:
                             pass
@@ -3247,6 +3252,7 @@ class mmF(tk.Frame):
                             import comtypes.gen.TaskbarLib as tbl
                             self.taskbar = cc.CreateObject('{56FDF344-FD6D-11d0-958A-006097C9A090}', interface=tbl.ITaskbarList3)
                             self.taskbar.HrInit()
+                            self.taskbar.ActivateTab(self.masterWindowId)
                             self.taskbar.SetProgressState(self.masterWindowId, 0x1)
                         except:
                             pass
@@ -3411,6 +3417,7 @@ class mmF(tk.Frame):
                     import comtypes.gen.TaskbarLib as tbl
                     self.taskbar = cc.CreateObject('{56FDF344-FD6D-11d0-958A-006097C9A090}', interface=tbl.ITaskbarList3)
                     self.taskbar.HrInit()
+                    self.taskbar.ActivateTab(self.masterWindowId)
                     self.taskbar.SetProgressState(self.masterWindowId, 0x1)
                 except:
                     pass
@@ -4156,12 +4163,12 @@ class mmF(tk.Frame):
                         ellipse.set_alpha(0.1)
                         ellipse.set_facecolor(self.ellipseColor)
                 self.aplot.axis("equal")
-                #self.aplot.set_title("Nyquist")
-                extra = patches.Rectangle((0, 0), 1, 1, fc="w", fill=False, edgecolor='none', linewidth=0)
-                legA = self.aplot.legend([extra], ["Nyquist"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                for text in legA.get_texts():
-                    text.set_color(self.foregroundColor)
-                self.aplot.set_xlabel("Zr / Ω", color=self.foregroundColor)
+                self.aplot.set_title("Nyquist", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                #extra = patches.Rectangle((0, 0), 1, 1, fc="w", fill=False, edgecolor='none', linewidth=0)
+                #legA = self.aplot.legend([extra], ["Nyquist"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
+                #for text in legA.get_texts():
+                #    text.set_color(self.foregroundColor)
+                #self.aplot.set_xlabel("Zr / Ω", color=self.foregroundColor)
                 self.aplot.set_ylabel("-Zj / Ω", color=self.foregroundColor)
                 
                 self.bplot = pltFig.add_subplot(342)
@@ -4181,11 +4188,11 @@ class mmF(tk.Frame):
                     self.bplot.plot(self.wdata, error_above, "--", color=self.ellipseColor)
                     self.bplot.plot(self.wdata, error_below, "--", color=self.ellipseColor)
                 self.bplot.set_xscale('log')
-                #self.bplot.set_title("Real Impedance")
-                legB = self.bplot.legend([extra], ["Real Impedance"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                for text in legB.get_texts():
-                    text.set_color(self.foregroundColor)
-                self.bplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                self.bplot.set_title("Real Impedance", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                #legB = self.bplot.legend([extra], ["Real Impedance"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
+                #for text in legB.get_texts():
+                #    text.set_color(self.foregroundColor)
+                #self.bplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.bplot.set_ylabel("Zr / Ω", color=self.foregroundColor)
                 
                 self.cplot = pltFig.add_subplot(343)
@@ -4205,11 +4212,11 @@ class mmF(tk.Frame):
                     self.cplot.plot(self.wdata, -1*error_above, "--", color=self.ellipseColor)
                     self.cplot.plot(self.wdata, -1*error_below, "--", color=self.ellipseColor)
                 self.cplot.set_xscale('log')
-                #self.cplot.set_title("Imaginary Impedance")
-                legC = self.cplot.legend([extra], ["Imaginary Impedance"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                for text in legC.get_texts():
-                    text.set_color(self.foregroundColor)
-                self.cplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                self.cplot.set_title("Imaginary Impedance", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                #legC = self.cplot.legend([extra], ["Imaginary Impedance"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
+                #for text in legC.get_texts():
+                #    text.set_color(self.foregroundColor)
+                #self.cplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.cplot.set_ylabel("-Zj / Ω", color=self.foregroundColor)
                 
                 self.dplot = pltFig.add_subplot(344)
@@ -4230,11 +4237,11 @@ class mmF(tk.Frame):
                     self.dplot.plot(self.wdata, error_below, "--", color=self.ellipseColor)
                 self.dplot.set_xscale('log')
                 self.dplot.set_yscale('log')
-                #self.dplot.set_title("|Z| Bode")
-                legD = self.dplot.legend([extra], ["|Z| Bode"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                for text in legD.get_texts():
-                    text.set_color(self.foregroundColor)
-                self.dplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                self.dplot.set_title("|Z| Bode", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                #legD = self.dplot.legend([extra], ["|Z| Bode"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
+                #for text in legD.get_texts():
+                #    text.set_color(self.foregroundColor)
+                #self.dplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.dplot.set_ylabel("|Z| / Ω", color=self.foregroundColor)
                 
                 self.eplot = pltFig.add_subplot(345)
@@ -4258,11 +4265,11 @@ class mmF(tk.Frame):
                 self.eplot.yaxis.set_ticks([-90, -75, -60, -45, -30, -15, 0])
                 self.eplot.set_ylim(bottom=0, top=-90)
                 self.eplot.set_xscale('log')
-                #self.eplot.set_title("Phase Angle Bode")
-                legE = self.eplot.legend([extra], ["Phase Angle Bode"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                for text in legE.get_texts():
-                    text.set_color(self.foregroundColor)
-                self.eplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                self.eplot.set_title("Phase Angle Bode", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                #legE = self.eplot.legend([extra], ["Phase Angle Bode"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
+                #for text in legE.get_texts():
+                #    text.set_color(self.foregroundColor)
+                #self.eplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.eplot.set_ylabel("Phase angle / Deg.", color=self.foregroundColor)
                 
                 self.fplot = pltFig.add_subplot(346)
@@ -4275,11 +4282,11 @@ class mmF(tk.Frame):
                 self.fplot.plot(self.wdata, np.sqrt((Zfit.real-self.fits[0])**2 + Zfit.imag**2), color=fitColor)
                 self.fplot.set_xscale('log')
                 self.fplot.set_yscale('log')
-                #self.fplot.set_title("Re-adj. |Z| Bode")
-                legF = self.fplot.legend([extra], ["Re-adj. |Z| Bode"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                for text in legF.get_texts():
-                    text.set_color(self.foregroundColor)
-                self.fplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                self.fplot.set_title("Re-adj. |Z| Bode", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                #legF = self.fplot.legend([extra], ["Re-adj. |Z| Bode"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
+                #for text in legF.get_texts():
+                #    text.set_color(self.foregroundColor)
+                #self.fplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.fplot.set_ylabel("Re-adj. |Z| / Ω", color=self.foregroundColor)
                 
                 self.gplot = pltFig.add_subplot(347)
@@ -4293,11 +4300,11 @@ class mmF(tk.Frame):
                 self.gplot.yaxis.set_ticks([-90, -75, -60, -45, -30, -15, 0])
                 self.gplot.set_ylim(bottom=0, top=-90)
                 self.gplot.set_xscale('log')
-                #self.gplot.set_title("Re-adj. Phase Angle Bode")
-                legG = self.gplot.legend([extra], ["Re-adj. Phase Angle Bode"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                for text in legG.get_texts():
-                    text.set_color(self.foregroundColor)
-                self.gplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                self.gplot.set_title("Re-adj. Phase Angle Bode", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                #legG = self.gplot.legend([extra], ["Re-adj. Phase Angle Bode"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
+                #for text in legG.get_texts():
+                #    text.set_color(self.foregroundColor)
+                #self.gplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.gplot.set_ylabel("Re-adj. Phase angle / Deg.", color=self.foregroundColor)
                 
                 self.hplot = pltFig.add_subplot(348)
@@ -4317,11 +4324,11 @@ class mmF(tk.Frame):
                     self.hplot.plot(self.wdata, error_above, "--", color=self.ellipseColor)
                     self.hplot.plot(self.wdata, error_below, "--", color=self.ellipseColor)
                 self.hplot.set_xscale('log')
-                #self.hplot.set_title("Log|Zr|")
-                legH = self.hplot.legend([extra], ["Log|Zr|"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                for text in legH.get_texts():
-                    text.set_color(self.foregroundColor)
-                self.hplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                self.hplot.set_title("Log|Zr|", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                #legH = self.hplot.legend([extra], ["Log|Zr|"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
+                #for text in legH.get_texts():
+                #    text.set_color(self.foregroundColor)
+                #self.hplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.hplot.set_ylabel("Log|Zr|", color=self.foregroundColor)
                 
                 self.iplot = pltFig.add_subplot(349)
@@ -4341,11 +4348,11 @@ class mmF(tk.Frame):
                     self.iplot.plot(self.wdata, error_above, "--", color=self.ellipseColor)
                     self.iplot.plot(self.wdata, error_below, "--", color=self.ellipseColor)
                 self.iplot.set_xscale('log')
-                #self.iplot.set_title("Log|Zj|")
-                legI = self.iplot.legend([extra], ["Log|Zj|"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                for text in legI.get_texts():
-                    text.set_color(self.foregroundColor)
-                self.iplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                self.iplot.set_title("Log|Zj|", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                #legI = self.iplot.legend([extra], ["Log|Zj|"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
+                #for text in legI.get_texts():
+                #    text.set_color(self.foregroundColor)
+                #self.iplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.iplot.set_ylabel("Log|Zj|", color=self.foregroundColor)
                 
                 def logModel(freq):
@@ -4372,12 +4379,12 @@ class mmF(tk.Frame):
                 #jplot.plot(self.wdata, np.log10(-1*self.jdata), "o")
                 self.jplot.plot(self.wdata, deriv, color=fitColor)
                 self.jplot.set_xscale('log')
-                #self.jplot.set_title("dlog|Zj|/dlog(ω)")
-                legJ = self.jplot.legend([extra], ["dlog|Zj|/dlog(ω)"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                for text in legJ.get_texts():
-                    text.set_color(self.foregroundColor)
-                self.jplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
-                self.jplot.set_ylabel(r'$\frac{dlog|Zj|}{dlog(ω)}$', color=self.foregroundColor)
+                self.jplot.set_title("dlog|Zj|/dlog(f)", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                #legJ = self.jplot.legend([extra], ["dlog|Zj|/dlog(ω)"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
+                #for text in legJ.get_texts():
+                #    text.set_color(self.foregroundColor)
+                #self.jplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                self.jplot.set_ylabel(r'$\frac{dlog|Zj|}{dlog(f)}$', color=self.foregroundColor)
                 
                 normalized_residuals_real = np.zeros(len(self.wdata))
                 normalized_error_real_above = np.zeros(len(self.wdata))
@@ -4406,11 +4413,11 @@ class mmF(tk.Frame):
                 #fplot.plot(self.wdata, phase_fit, color="orange")
                 self.kplot.axhline(0, color="black", linewidth=1.0)
                 self.kplot.set_xscale('log')
-                #self.kplot.set_title("Real Residuals")
-                legK = self.kplot.legend([extra], ["Real Residuals"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                for text in legK.get_texts():
-                    text.set_color(self.foregroundColor)
-                self.kplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                self.kplot.set_title("Real Residuals", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                #legK = self.kplot.legend([extra], ["Real Residuals"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
+                #for text in legK.get_texts():
+                #    text.set_color(self.foregroundColor)
+                #self.kplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.kplot.set_ylabel("(Zr-Zrmodel)/Zr", color=self.foregroundColor)
                 
                 self.lplot = pltFig.add_subplot(3, 4, 12)
@@ -4426,11 +4433,11 @@ class mmF(tk.Frame):
                 #fplot.plot(self.wdata, phase_fit, color="orange")
                 self.lplot.axhline(0, color="black", linewidth=1.0)
                 self.lplot.set_xscale('log')
-                #self.lplot.set_title("Imaginary Residuals")
-                legL = self.lplot.legend([extra], ["Imaginary Residuals"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                for text in legL.get_texts():
-                    text.set_color(self.foregroundColor)
-                self.lplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                self.lplot.set_title("Imaginary Residuals", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                #legL = self.lplot.legend([extra], ["Imaginary Residuals"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
+                #for text in legL.get_texts():
+                #    text.set_color(self.foregroundColor)
+                #self.lplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.lplot.set_ylabel("(Zj-Zjmodel)/Zj", color=self.foregroundColor)
             
             self.nyCanvas = FigureCanvasTkAgg(pltFig, self.resultPlot)
@@ -4441,12 +4448,252 @@ class mmF(tk.Frame):
             #toolbar = NavigationToolbar2Tk(nyCanvas, resultPlot)
             #toolbar.update()
             self.nyCanvas._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+            def saveAllPlots():
+                folder = askdirectory(parent=self.resultPlot, initialdir=self.topGUI.getCurrentDirectory())
+                folder_str = str(folder)
+                if (len(folder_str) == 0):
+                    pass
+                else:
+                    self.saveNyCanvasButton.configure(text="Saving...")
+                    defaultSaveName, ext = os.path.splitext(os.path.basename(self.browseEntry.get()))
+                    defaultSaveName += "-" + self.whatFit + str((len(self.fits)-1)//2)
+                    pltSaveFig = plt.Figure()
+                    pltSaveFig.set_facecolor(self.backgroundColor)
+                    dataColor = "tab:blue"
+                    fitColor = "orange"
+                    if (self.topGUI.getTheme() == "dark"):
+                        dataColor = "cyan"
+                        fitColor = "gold"
+                    else:
+                        dataColor = "tab:blue"
+                        fitColor = "orange"
+
+                    save_canvas = FigureCanvas(pltSaveFig)
+                    ax_save = pltSaveFig.add_subplot(111)
+                    ax_save.set_facecolor(self.backgroundColor)
+                    #---aplot---
+                    ax_save.yaxis.set_ticks_position("both")
+                    ax_save.yaxis.set_tick_params(color=self.foregroundColor, direction="in")
+                    ax_save.xaxis.set_ticks_position("both")
+                    ax_save.xaxis.set_tick_params(color=self.foregroundColor, direction="in")
+                    ax_save.plot(self.rdata, -1*self.jdata, "o",  color=dataColor)
+                    ax_save.plot(Zfit.real, -1*Zfit.imag, color=fitColor, marker="x", markeredgecolor="black")
+                    if (self.confInt):
+                        for i in range(len(self.wdata)):
+                            ellipse = patches.Ellipse(xy=(Zfit[i].real, -1*Zfit[i].imag), width=4*self.sdrReal[i], height=4*self.sdrImag[i])
+                            ax_save.add_artist(ellipse)
+                            ellipse.set_alpha(0.1)
+                            ellipse.set_facecolor(self.ellipseColor)
+                    ax_save.axis("equal")
+                    ax_save.set_title("Nyquist", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                    ax_save.set_xlabel("Zr / Ω", color=self.foregroundColor)
+                    ax_save.set_ylabel("-Zj / Ω", color=self.foregroundColor)
+                    pltSaveFig.savefig(str(os.path.join(folder, defaultSaveName)) + "_nyquist.png", dpi=300)
+                    ax_save.clear()
+                    ax_save.axis("auto")
+                    #---bplot---
+                    ax_save.set_facecolor(self.backgroundColor)
+                    ax_save.yaxis.set_ticks_position("both")
+                    ax_save.yaxis.set_tick_params(color=self.foregroundColor, direction="in")
+                    ax_save.xaxis.set_ticks_position("both")
+                    ax_save.xaxis.set_tick_params(color=self.foregroundColor, direction="in", which="both")
+                    ax_save.plot(self.wdata, self.rdata, "o", color=dataColor)
+                    ax_save.plot(self.wdata, Zfit.real, color=fitColor)
+                    if (self.confInt):
+                        error_above = np.zeros(len(self.wdata))
+                        error_below = np.zeros(len(self.wdata))
+                        for i in range(len(self.wdata)):
+                            error_above[i] = max(Zfit.real[i] + 2*self.sdrReal[i], Zfit.real[i] - 2*self.sdrReal[i])
+                            error_below[i] = min(Zfit.real[i] + 2*self.sdrReal[i], Zfit.real[i] - 2*self.sdrReal[i])
+                        ax_save.plot(self.wdata, error_above, "--", color=self.ellipseColor)
+                        ax_save.plot(self.wdata, error_below, "--", color=self.ellipseColor)
+                    ax_save.set_xscale('log')
+                    ax_save.set_title("Real Impedance", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                    ax_save.set_ylabel("Zr / Ω", color=self.foregroundColor)
+                    ax_save.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                    pltSaveFig.savefig(str(os.path.join(folder, defaultSaveName)) + "_real_impedance.png", dpi=300)
+                    ax_save.clear()
+                    #---cplot---
+                    ax_save.plot(self.wdata, -1*self.jdata, "o", color=dataColor)
+                    ax_save.plot(self.wdata, -1*Zfit.imag, color=fitColor)
+                    if (self.confInt):
+                        error_above = np.zeros(len(self.wdata))
+                        error_below = np.zeros(len(self.wdata))
+                        for i in range(len(self.wdata)):
+                            error_above[i] = max(Zfit.imag[i] + 2*self.sdrImag[i], Zfit.imag[i] - 2*self.sdrImag[i])
+                            error_below[i] = min(Zfit.imag[i] + 2*self.sdrImag[i], Zfit.imag[i] - 2*self.sdrImag[i])
+                        ax_save.plot(self.wdata, -1*error_above, "--", color=self.ellipseColor)
+                        ax_save.plot(self.wdata, -1*error_below, "--", color=self.ellipseColor)
+                    ax_save.set_xscale('log')
+                    ax_save.set_title("Imaginary Impedance", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                    ax_save.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                    ax_save.set_ylabel("-Zj / Ω", color=self.foregroundColor)
+                    pltSaveFig.savefig(str(os.path.join(folder, defaultSaveName)) + "_imag_impedance.png", dpi=300)
+                    ax_save.clear()
+                    #---dplot---
+                    ax_save.yaxis.set_ticks_position("both")
+                    ax_save.yaxis.set_tick_params(color=self.foregroundColor, direction="in", which="both")
+                    ax_save.xaxis.set_ticks_position("both")
+                    ax_save.xaxis.set_tick_params(color=self.foregroundColor, direction="in", which="both")
+                    ax_save.plot(self.wdata, np.sqrt(self.rdata**2 + self.jdata**2), "o", color=dataColor)
+                    ax_save.plot(self.wdata, np.sqrt(Zfit.real**2 + Zfit.imag**2), color=fitColor)
+                    if (self.confInt):
+                        error_above = np.zeros(len(self.wdata))
+                        error_below = np.zeros(len(self.wdata))
+                        for i in range(len(self.wdata)):
+                            error_above[i] = np.sqrt(max((Zfit.real[i]+2*self.sdrReal[i])**2, (Zfit.real[i]-2*self.sdrReal[i])**2) + max((Zfit.imag[i]+2*self.sdrImag[i])**2, (Zfit.imag[i]-2*self.sdrImag[i])**2))
+                            error_below[i] = np.sqrt(min((Zfit.real[i]+2*self.sdrReal[i])**2, (Zfit.real[i]-2*self.sdrReal[i])**2) + min((Zfit.imag[i]+2*self.sdrImag[i])**2, (Zfit.imag[i]-2*self.sdrImag[i])**2))
+                        ax_save.plot(self.wdata, error_above, "--", color=self.ellipseColor)
+                        ax_save.plot(self.wdata, error_below, "--", color=self.ellipseColor)
+                    ax_save.set_xscale('log')
+                    ax_save.set_yscale('log')
+                    ax_save.set_title("|Z| Bode", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                    ax_save.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                    ax_save.set_ylabel("|Z| / Ω", color=self.foregroundColor)
+                    pltSaveFig.savefig(str(os.path.join(folder, defaultSaveName)) + "_Z_bode.png", dpi=300)
+                    ax_save.clear()
+                    #---eplot---
+                    ax_save.yaxis.set_ticks_position("both")
+                    ax_save.yaxis.set_tick_params(color=self.foregroundColor, direction="in")
+                    ax_save.xaxis.set_ticks_position("both")
+                    ax_save.xaxis.set_tick_params(color=self.foregroundColor, direction="in", which="both")
+                    ax_save.plot(self.wdata, np.arctan2(self.jdata, self.rdata)*(180/np.pi), "o", color=dataColor)
+                    ax_save.plot(self.wdata, phase_fit, color=fitColor)
+                    if (self.confInt):
+        #                error_above = np.zeros(len(self.wdata))
+        #                error_below = np.zeros(len(self.wdata))
+        #                for i in range(len(self.wdata)):
+        #                    error_above[i] = np.arctan2(max((Zfit.imag[i]+2*self.sdrImag[i]), (Zfit.imag[i]-2*self.sdrImag[i])), min((Zfit.real[i]+2*self.sdrReal[i]), (Zfit.real[i]-2*self.sdrReal[i])))
+        #                    error_below[i] = np.arctan2(min((Zfit.imag[i]+2*self.sdrImag[i]), (Zfit.imag[i]-2*self.sdrImag[i])), max((Zfit.real[i]+2*self.sdrReal[i]), (Zfit.real[i]-2*self.sdrReal[i])))
+                        error_above = np.arctan2((Zfit.imag+2*self.sdrImag) , (Zfit.real+2*self.sdrReal)) * (180/np.pi)
+                        error_below = np.arctan2((Zfit.imag-2*self.sdrImag) , (Zfit.real-2*self.sdrReal)) * (180/np.pi)
+                        ax_save.plot(self.wdata, error_above, "--", color=self.ellipseColor)
+                        ax_save.plot(self.wdata, error_below, "--", color=self.ellipseColor)
+                    ax_save.yaxis.set_ticks([-90, -75, -60, -45, -30, -15, 0])
+                    ax_save.set_ylim(bottom=0, top=-90)
+                    ax_save.set_xscale('log')
+                    ax_save.set_title("Phase Angle Bode", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                    ax_save.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                    ax_save.set_ylabel("Phase angle / Deg.", color=self.foregroundColor)
+                    pltSaveFig.savefig(str(os.path.join(folder, defaultSaveName)) + "_phase_angle_bode.png", dpi=300)
+                    ax_save.clear()
+                    #---fplot---
+                    ax_save.plot(self.wdata, np.sqrt((self.rdata-self.fits[0])**2 + self.jdata**2), "o", color=dataColor)
+                    ax_save.plot(self.wdata, np.sqrt((Zfit.real-self.fits[0])**2 + Zfit.imag**2), color=fitColor)
+                    ax_save.set_xscale('log')
+                    ax_save.set_yscale('log')
+                    ax_save.set_title("Re-adj. |Z| Bode", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                    ax_save.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                    ax_save.set_ylabel("Re-adj. |Z| / Ω", color=self.foregroundColor)
+                    pltSaveFig.savefig(str(os.path.join(folder, defaultSaveName)) + "_re-adj_Z_bode.png", dpi=300)
+                    ax_save.clear()
+                    #---gplot---
+                    ax_save.plot(self.wdata, np.arctan2(self.jdata, (self.rdata-self.fits[0]))*(180/np.pi), "o", color=dataColor)
+                    ax_save.plot(self.wdata, np.arctan2(Zfit.imag, (Zfit.real-self.fits[0]))*(180/np.pi), color=fitColor)
+                    ax_save.yaxis.set_ticks([-90, -75, -60, -45, -30, -15, 0])
+                    ax_save.set_ylim(bottom=0, top=-90)
+                    ax_save.set_xscale('log')
+                    ax_save.set_title("Re-adj. Phase Angle Bode", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                    ax_save.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                    ax_save.set_ylabel("Re-adj. Phase angle / Deg.", color=self.foregroundColor)
+                    pltSaveFig.savefig(str(os.path.join(folder, defaultSaveName)) + "_re-adj_phase_angle_bode.png", dpi=300)
+                    ax_save.clear()
+                    #---hplot---
+                    ax_save.plot(self.wdata, np.log10(abs(self.rdata)), "o", color=dataColor)
+                    ax_save.plot(self.wdata, np.log10(abs(Zfit.real)), color=fitColor)
+                    if (self.confInt):
+                        error_above = np.zeros(len(self.wdata))
+                        error_below = np.zeros(len(self.wdata))
+                        for i in range(len(self.wdata)):
+                            error_above[i] = max(np.log10(abs(Zfit.real[i]+2*self.sdrReal[i])), np.log10(abs(Zfit.real[i]-2*self.sdrReal[i]))) #np.log10(max(abs(Zfit.real[i]+2*self.sdrReal[i]), abs(Zfit.real[i]-2*self.sdrReal[i])))
+                            error_below[i] = min(np.log10(abs(Zfit.real[i]+2*self.sdrReal[i])), np.log10(abs(Zfit.real[i]-2*self.sdrReal[i])))#np.log10(min(abs(Zfit.real[i]+2*self.sdrReal[i]), abs(Zfit.real[i]-2*self.sdrReal[i])))
+                        ax_save.plot(self.wdata, error_above, "--", color=self.ellipseColor)
+                        ax_save.plot(self.wdata, error_below, "--", color=self.ellipseColor)
+                    ax_save.set_xscale('log')
+                    ax_save.set_title("Log|Zr|", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                    ax_save.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                    ax_save.set_ylabel("Log|Zr|", color=self.foregroundColor)
+                    pltSaveFig.savefig(str(os.path.join(folder, defaultSaveName)) + "_log_zr.png", dpi=300)
+                    ax_save.clear()
+                    #---iplot---
+                    ax_save.plot(self.wdata, np.log10(abs(self.jdata)), "o", color=dataColor)
+                    ax_save.plot(self.wdata, np.log10(abs(Zfit.imag)), color=fitColor)
+                    if (self.confInt):
+                        error_above = np.zeros(len(self.wdata))
+                        error_below = np.zeros(len(self.wdata))
+                        for i in range(len(self.wdata)):
+                            error_above[i] = max(np.log10(abs(Zfit.imag[i]+2*self.sdrImag[i])), np.log10(abs(Zfit.imag[i]-2*self.sdrImag[i])))#np.log10(max(abs(Zfit.imag[i]+2*self.sdrImag[i]), abs(Zfit.imag[i]-2*self.sdrImag[i])))
+                            error_below[i] = min(np.log10(abs(Zfit.imag[i]+2*self.sdrImag[i])), np.log10(abs(Zfit.imag[i]-2*self.sdrImag[i])))#np.log10(min(abs(Zfit.imag[i]+2*self.sdrImag[i]), abs(Zfit.imag[i]-2*self.sdrImag[i])))
+                        ax_save.plot(self.wdata, error_above, "--", color=self.ellipseColor)
+                        ax_save.plot(self.wdata, error_below, "--", color=self.ellipseColor)
+                    ax_save.set_xscale('log')
+                    ax_save.set_title("Log|Zj|", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                    ax_save.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                    ax_save.set_ylabel("Log|Zj|", color=self.foregroundColor)
+                    pltSaveFig.savefig(str(os.path.join(folder, defaultSaveName)) + "_log_zj.png", dpi=300)
+                    ax_save.clear()
+                    #---jplot---
+                    def logModel(freq):
+                        if (not self.capUsed):
+                            calculated = self.fits[0]
+                        else:
+                            calculated = self.fits[0] + 1/(1j*2*np.pi*freq*self.resultCap)
+                        for k in range(1, len(self.fits), 2):
+                            calculated += (self.fits[k]/(1+(1j*2*np.pi*freq*self.fits[k+1])))
+                        return np.log(abs(calculated.imag))
+                    
+                    deriv = np.zeros(len(self.wdata))
+                    for i in range(len(self.wdata)):
+                        Dw = self.wdata[i]*1E-6
+                        deriv[i] = (logModel(self.wdata[i]+Dw)-logModel(self.wdata[i]))/Dw    #Numerically calculate the derivative
+                        deriv[i] *= self.wdata[i]       #Multiply by the frequency as per chain rule of d/dlog(omega)
+                    
+                    ax_save.plot(self.wdata, deriv, color=fitColor)
+                    ax_save.set_xscale('log')
+                    ax_save.set_title("dlog|Zj|/dlog(f)", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                    ax_save.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                    ax_save.set_ylabel("dlog|Zj|/dlog(f)", color=self.foregroundColor)
+                    pltSaveFig.savefig(str(os.path.join(folder, defaultSaveName)) + "_dlogzj_dlogf.png", dpi=300)
+                    ax_save.clear()
+                    #---kplot---
+                    ax_save.plot(self.wdata, normalized_residuals_real, "o", markerfacecolor="None", color=dataColor)
+                    if (self.confInt):
+                        ax_save.plot(self.wdata, normalized_error_real_above, "--", color=self.ellipseColor)
+                        ax_save.plot(self.wdata, normalized_error_real_below, "--", color=self.ellipseColor)
+                    #fplot.plot(self.wdata, phase_fit, color="orange")
+                    ax_save.axhline(0, color="black", linewidth=1.0)
+                    ax_save.set_xscale('log')
+                    ax_save.set_title("Real Residuals", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                    ax_save.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                    ax_save.set_ylabel("(Zr-Zrmodel)/Zr", color=self.foregroundColor)
+                    pltSaveFig.savefig(str(os.path.join(folder, defaultSaveName)) + "_real_residuals.png", dpi=300)
+                    ax_save.clear()
+                    #---lplot---
+                    ax_save.plot(self.wdata, normalized_residuals_imag, "o", markerfacecolor="None", color=dataColor)
+                    if (self.confInt):
+                        ax_save.plot(self.wdata, normalized_error_imag_above, "--", color=self.ellipseColor)
+                        ax_save.plot(self.wdata, normalized_error_imag_below, "--", color=self.ellipseColor)
+                    ax_save.axhline(0, color="black", linewidth=1.0)
+                    ax_save.set_xscale('log')
+                    ax_save.set_title("Imaginary Residuals", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                    ax_save.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                    ax_save.set_ylabel("(Zj-Zjmodel)/Zj", color=self.foregroundColor)
+                    pltSaveFig.savefig(str(os.path.join(folder, defaultSaveName)) + "_imag_residuals.png", dpi=300)
+                    ax_save.clear()
+                    self.saveNyCanvasButton.configure(text="Saved")
+                    self.after(500, lambda: self.saveNyCanvasButton.configure(text="Save All"))
+            self.saveNyCanvasButton = ttk.Button(self.resultPlot, text="Save All", command=saveAllPlots)
+            saveNyCanvasButton_ttp = CreateToolTip(self.saveNyCanvasButton, "Save all plots")
+            self.saveNyCanvasButton.pack(side=tk.BOTTOM, pady=5, expand=False)
             #self.nyCanvas._tkcanvas.config(cursor="hand2")
             enterAxes = pltFig.canvas.mpl_connect('axes_enter_event', graphOver)
             leaveAxes = pltFig.canvas.mpl_connect('axes_leave_event', graphOut)
             def on_closing():   #Clear the figure before closing the popup
                 pltFig.clear()
                 self.resultPlot.destroy()
+                self.saveNyCanvasButton.destroy()
+                nonlocal saveNyCanvasButton_ttp
+                del saveNyCanvasButton_ttp
                 self.alreadyPlotted = False
             
             self.resultPlot.protocol("WM_DELETE_WINDOW", on_closing)

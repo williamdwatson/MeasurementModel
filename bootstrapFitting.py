@@ -6,31 +6,28 @@ Created on Tue Oct  8 16:19:24 2019
 """
 
 import numpy as np
+#from scipy.optimize import least_squares
 from numpy.random import normal
 import lmfit
-#import cmath
-import itertools
+#import matplotlib.pyplot as plt
+#import time
 import multiprocessing as mp
 import threading
 
-def mp_complex(guesses, sharedList, index, parameters, numParams, weight, assumedNoise, formula, w, ZrIn, ZjIn, Z_append, percentVal, paramNames, fitType, errorParams):
-    def diffComplex(params):
-        return (Z_append - model(params))/weightCode(params)
-    def model(p):
-        p.valuesdict()
-        Zr = ZrIn.copy()
-        Zj = ZjIn.copy()
-        Zreal = [] #np.zeros(len(w))
-        Zimag = [] #np.zeros(len(w))
-        freq = w.copy()
-        for i in range(numParams):
-            #print(paramNames[i] + " = " + str(float(p[paramNames[i]])))
-            exec(paramNames[i] + " = " + str(float(p[paramNames[i]])))
-        ldict = locals()
-        exec(formula, globals(), ldict)
-        Zreal = ldict['Zreal']
-        Zimag = ldict['Zimag']
-        return np.append(Zreal, Zimag)
+def mp_complex(sharedList, numBootstrap, perVal, numParams, paramNames, r_in, Z_append, paramGuesses, paramBounds, w, weight, assumedNoise, ZrIn, ZjIn, fitType, formula, errorParams):
+    parameters = lmfit.Parameters()
+    for i in range(numParams):
+        parameters.add(paramNames[i], value=paramGuesses[i])
+        if (paramBounds[i] == "-"):
+            parameters[paramNames[i]].max = 0
+        elif (paramBounds[i] == "+"):
+            parameters[paramNames[i]].min = 0
+        elif (paramBounds[i] == "f"):
+            parameters[paramNames[i]].vary = False    
+    parametersRes = lmfit.Parameters()
+    for i in range(numParams):
+        parametersRes.add(paramNames[i], value=r_in[i])
+    #---Used to calculate weights---
     def weightCode(p):
         V = np.ones(len(w))     #Default - no weighting
         if (weight == 1):       #Modulus weighting
@@ -64,24 +61,128 @@ def mp_complex(guesses, sharedList, index, parameters, numParams, weight, assume
             return np.append(V, Vj)
         else:
             return np.append(V, V)
-    current_best_val = 1E308
-    current_best_params = guesses[0]
-    current_best_result = 0
-    for i in range(len(guesses)):
-        with percentVal.get_lock():
-            percentVal.value += 1
-        for j in range(numParams):
-            parameters.get(paramNames[j]).set(value=guesses[i][j])
-        minimized = lmfit.minimize(diffComplex, parameters)
-        if (minimized.chisqr < current_best_val):
-            current_best_val = minimized.chisqr
-            current_best_params = guesses
-            current_best_result = minimized
-    sharedList[index] = [current_best_val, current_best_result, current_best_params]
-        
-def mp_real(guesses, sharedList, index, parameters, numParams, weight, assumedNoise, formula, w, ZrIn, ZjIn, Z_append, percentVal, paramNames, fitType, errorParams):
-    def diffReal(params):
-        return (ZrIn - modelReal(params))/weightCodeHalf(params)
+    #---Model used in complex fitting; returns appendation of real and imaginary parts---
+    def model(p):
+        p.valuesdict()
+        Zr = ZrIn.copy()
+        Zj = ZjIn.copy()
+        Zreal = [] #np.zeros(len(w))
+        Zimag = [] #np.zeros(len(w))
+        freq = w.copy()
+        for i in range(numParams):
+            #print(paramNames[i] + " = " + str(float(p[paramNames[i]])))
+            exec(paramNames[i] + " = " + str(float(p[paramNames[i]])))
+        ldict = locals()
+        exec(formula, globals(), ldict)
+        Zreal = ldict['Zreal']
+        Zimag = ldict['Zimag']
+        return np.append(Zreal, Zimag)
+    def diffComplex(params, yVals):
+        return (yVals - model(params))/weightCode(params)
+    residuals = diffComplex(parametersRes, Z_append)
+    residualsStdDevR = np.std(residuals[:len(residuals)//2])
+    residualsStdDevJ = np.std(residuals[len(residuals)//2:])
+    for i in range(numBootstrap):
+        with perVal.get_lock():
+            perVal.value += 1
+        random_deltas_r = normal(0, residualsStdDevR, len(Z_append)//2)
+        random_deltas_j = normal(0, residualsStdDevJ, len(Z_append)//2)
+        random_deltas = np.append(random_deltas_r, random_deltas_j)
+        yTrial = Z_append + random_deltas
+        minimized = lmfit.minimize(diffComplex, parameters, args=(yTrial,))
+        if (minimized.success):
+            
+            fitted = minimized.params.valuesdict()
+            toAppendResults = []
+            for j in range(numParams):
+                toAppendResults.append(fitted[paramNames[j]])
+            sharedList.append(toAppendResults)
+
+def mp_imag(sharedList, numBootstrap, perVal, numParams, paramNames, r_in, Z_append, paramGuesses, paramBounds, w, weight, assumedNoise, ZrIn, ZjIn, fitType, formula, errorParams):
+    parameters = lmfit.Parameters()
+    for i in range(numParams):
+        parameters.add(paramNames[i], value=paramGuesses[i])
+        if (paramBounds[i] == "-"):
+            parameters[paramNames[i]].max = 0
+        elif (paramBounds[i] == "+"):
+            parameters[paramNames[i]].min = 0
+        elif (paramBounds[i] == "f"):
+            parameters[paramNames[i]].vary = False    
+    parametersRes = lmfit.Parameters()
+    for i in range(numParams):
+        parametersRes.add(paramNames[i], value=r_in[i])
+    #---Used to calculate weights---
+    def weightCodeHalf(p):
+        V = np.ones(len(w)) #Default (weight == 0) is no weighting (weights are 1)
+        if (weight == 1):   #Modulus weighting
+            for i in range(len(V)):
+                V[i] = assumedNoise*np.sqrt(ZrIn[i]**2 + ZjIn[i]**2)
+        elif (weight == 2): #Proportional weighting
+            for i in range(len(V)):
+                V[i] = assumedNoise*ZrIn[i]
+        elif (weight == 3): #Error structure weighting
+            pass
+        elif (weight == 4): #Custom weighting
+            p.valuesdict()
+            Zr = ZrIn.copy()
+            Zj = ZjIn.copy()
+            Zreal = []
+            Zimag = []
+            weighting = []
+            freq = w.copy()
+            for i in range(numParams):
+                exec(paramNames[i] + " = " + str(float(p[paramNames[i]])))
+            ldict = locals()
+            exec(formula, globals(), ldict)
+            V = ldict['weighting']
+        return V
+    def modelImag(p):
+        p.valuesdict()
+        Zr = ZrIn.copy()
+        Zj = ZjIn.copy()
+        Zreal = [] #np.zeros(len(w))
+        Zimag = [] #np.zeros(len(w))
+        freq = w.copy()
+        for i in range(numParams):
+            #print(paramNames[i] + " = " + str(float(p[paramNames[i]])))
+            exec(paramNames[i] + " = " + str(float(p[paramNames[i]])))
+        ldict = locals()
+        exec(formula, globals(), ldict)
+        Zreal = ldict['Zreal']
+        Zimag = ldict['Zimag']
+        #print(Zreal)
+        return Zimag
+    def diffImag(params, yVals):
+        return (yVals - modelImag(params))/weightCodeHalf(params)
+    residuals = diffImag(parametersRes, ZjIn)
+    residualsStdDev = np.std(residuals)
+    for i in range(numBootstrap):
+        with perVal.get_lock():
+            perVal.value += 1
+        random_deltas = normal(0, residualsStdDev, len(ZjIn))
+        yTrial = ZjIn + random_deltas
+        minimized = lmfit.minimize(diffImag, parameters, args=(yTrial,))
+        if (minimized.success):
+            fitted = minimized.params.valuesdict()
+            toAppendResults = []
+            for j in range(numParams):
+                toAppendResults.append(fitted[paramNames[j]])
+            sharedList.append(toAppendResults)
+
+def mp_real(sharedList, numBootstrap, perVal, numParams, paramNames, r_in, Z_append, paramGuesses, paramBounds, w, weight, assumedNoise, ZrIn, ZjIn, fitType, formula, errorParams):
+    parameters = lmfit.Parameters()
+    for i in range(numParams):
+        parameters.add(paramNames[i], value=paramGuesses[i])
+        if (paramBounds[i] == "-"):
+            parameters[paramNames[i]].max = 0
+        elif (paramBounds[i] == "+"):
+            parameters[paramNames[i]].min = 0
+        elif (paramBounds[i] == "f"):
+            parameters[paramNames[i]].vary = False    
+    parametersRes = lmfit.Parameters()
+    for i in range(numParams):
+        parametersRes.add(paramNames[i], value=r_in[i])
+    #---Used to calculate weights---
     def weightCodeHalf(p):
         V = np.ones(len(w)) #Default (weight == 0) is no weighting (weights are 1)
         if (weight == 1):   #Modulus weighting
@@ -122,108 +223,52 @@ def mp_real(guesses, sharedList, index, parameters, numParams, weight, assumedNo
         Zimag = ldict['Zimag']
         #print(Zreal)
         return Zreal
-    current_best_val = 1E308
-    current_best_params = guesses[0]
-    current_best_result = 0
-    for i in range(len(guesses)):
-        with percentVal.get_lock():
-            percentVal.value += 1
-        for j in range(numParams):
-            parameters.get(paramNames[j]).set(value=guesses[i][j])
-        minimized = lmfit.minimize(diffReal, parameters)
-        if (minimized.chisqr < current_best_val):
-            current_best_val = minimized.chisqr
-            current_best_params = guesses
-            current_best_result = minimized
-    sharedList[index] = [current_best_val, current_best_result, current_best_params]
+    def diffReal(params, yVals):
+        return (yVals - modelReal(params))/weightCodeHalf(params)
+    residuals = diffReal(parametersRes, ZrIn)
+    residualsStdDev = np.std(residuals)
+    for i in range(numBootstrap):
+        with perVal.get_lock():
+            perVal.value += 1
+        random_deltas = normal(0, residualsStdDev, len(ZrIn))
+        yTrial = ZrIn + random_deltas
+        minimized = lmfit.minimize(diffReal, parameters, args=(yTrial,))
+        if (minimized.success):
+            fitted = minimized.params.valuesdict()
+            toAppendResults = []
+            for j in range(numParams):
+                toAppendResults.append(fitted[paramNames[j]])
+            sharedList.append(toAppendResults)
 
-def mp_imag(guesses, sharedList, index, parameters, numParams, weight, assumedNoise, formula, w, ZrIn, ZjIn, Z_append, percentVal, paramNames, fitType, errorParams):
-    def diffImag(params):
-        return (ZjIn - modelImag(params))/weightCodeHalf(params)
-    def weightCodeHalf(p):
-        V = np.ones(len(w)) #Default (weight == 0) is no weighting (weights are 1)
-        if (weight == 1):   #Modulus weighting
-            for i in range(len(V)):
-                V[i] = assumedNoise*np.sqrt(ZrIn[i]**2 + ZjIn[i]**2)
-        elif (weight == 2): #Proportional weighting
-            for i in range(len(V)):
-                V[i] = assumedNoise*ZjIn[i]
-        elif (weight == 3): #Error structure weighting
-            pass
-        elif (weight == 4): #Custom weighting
-            p.valuesdict()
-            Zr = ZrIn.copy()
-            Zj = ZjIn.copy()
-            Zreal = []
-            Zimag = []
-            weighting = []
-            freq = w.copy()
-            for i in range(numParams):
-                exec(paramNames[i] + " = " + str(float(p[paramNames[i]])))
-            ldict = locals()
-            exec(formula, globals(), ldict)
-            V = ldict['weighting']
-        return V
-    def modelImag(p):
-        p.valuesdict()
-        Zr = ZrIn.copy()
-        Zj = ZjIn.copy()
-        Zreal = [] #np.zeros(len(w))
-        Zimag = [] #np.zeros(len(w))
-        freq = w.copy()
-        for i in range(numParams):
-            #print(paramNames[i] + " = " + str(float(p[paramNames[i]])))
-            exec(paramNames[i] + " = " + str(float(p[paramNames[i]])))
-        ldict = locals()
-        exec(formula, globals(), ldict)
-        Zreal = ldict['Zreal']
-        Zimag = ldict['Zimag']
-        #print(Zreal)
-        return Zimag
-    current_best_val = 1E308
-    current_best_params = guesses[0]
-    current_best_result = 0
-    for i in range(len(guesses)):
-        with percentVal.get_lock():
-            percentVal.value += 1
-        for j in range(numParams):
-            parameters.get(paramNames[j]).set(value=guesses[i][j])
-        minimized = lmfit.minimize(diffImag, parameters)
-        if (minimized.chisqr < current_best_val):
-            current_best_val = minimized.chisqr
-            current_best_params = guesses
-            current_best_result = minimized
-    sharedList[index] = [current_best_val, current_best_result, current_best_params]
-    
-class customFitter:
+class bootstrapFitter:
     def __init__(self):
-        self.keepGoing = True
         self.processes = []
-        
+        self.keepGoing = True
+    
     def terminateProcesses(self):
         self.keepGoing = False
         for process in self.processes:
             process.terminate()
     
-    def findFit(self, listPercent, fitType, numMonteCarlo, weight, assumedNoise, formula, w, ZrIn, ZjIn, paramNames, paramGuesses, paramBounds, errorParams):
+    def findFit(self, listPercent, numBootstrap, r_in, s_in, sdR_in, sdI_in, chi_in, aic_in, realF_in, imagF_in, fitType, numMonteCarlo, weight, assumedNoise, formula, w, ZrIn, ZjIn, paramNames, paramGuesses, paramBounds, errorParams):
         np.random.seed(1234)        #Use constant seed to ensure reproducibility of Monte Carlo simulations
         Z_append = np.append(ZrIn, ZjIn)
         numParams = len(paramNames)
         
-        def diffComplex(params):
+        def diffComplex(params, yVals):
             if (not self.keepGoing):
                 return
-            return (Z_append - model(params))/weightCode(params)
+            return (yVals - model(params))/weightCode(params)
         
-        def diffImag(params):
+        def diffImag(params, yVals):
             if (not self.keepGoing):
                 return
-            return (ZjIn - modelImag(params))/weightCodeHalf(params)
+            return (yVals - modelImag(params))/weightCodeHalf(params)
         
-        def diffReal(params):
+        def diffReal(params, yVals):
             if (not self.keepGoing):
                 return
-            return (ZrIn - modelReal(params))/weightCodeHalf(params)
+            return (yVals - modelReal(params))/weightCodeHalf(params)
         
         #---Used to calculate weights---
         def weightCode(p):
@@ -267,10 +312,7 @@ class customFitter:
                     V[i] = assumedNoise*np.sqrt(ZrIn[i]**2 + ZjIn[i]**2)
             elif (weight == 2): #Proportional weighting
                 for i in range(len(V)):
-                    if (fitType != 1):
-                        V[i] = assumedNoise*ZrIn[i]
-                    else:
-                        V[i] = assumedNoise*ZjIn[i]
+                    V[i] = assumedNoise*ZrIn[i]
             elif (weight == 3): #Error structure weighting
                 pass
             elif (weight == 4): #Custom weighting
@@ -347,7 +389,7 @@ class customFitter:
         parameters = lmfit.Parameters()
         parameterCorrector = 0
         for i in range(numParams):
-            parameters.add(paramNames[i], value=paramGuesses[i][0])
+            parameters.add(paramNames[i], value=paramGuesses[i])
             if (paramBounds[i] == "-"):
                 parameters[paramNames[i]].max = 0
             elif (paramBounds[i] == "+"):
@@ -359,38 +401,87 @@ class customFitter:
             return
 
         try:
-            guesses = list(itertools.product(*paramGuesses))
-            current_best_val = 1E308
-            current_best_params = guesses[0]
-            current_best_result = 0
-            if (numParams * len(guesses) < 1000):
-                for i in range(len(guesses)):
-                    for j in range(numParams):
-                        parameters.get(paramNames[j]).set(value=guesses[i][j])
-                    if (fitType == 3):      #Complex fitting
-                        minimized = lmfit.minimize(diffComplex, parameters)
-                    elif (fitType == 2):    #Imaginary fitting
-                        minimized = lmfit.minimize(diffImag, parameters)
-                    elif (fitType == 1):    #Real fitting
-                        minimized = lmfit.minimize(diffReal, parameters)
-                    if (minimized.chisqr < current_best_val):
-                        current_best_val = minimized.chisqr
-                        current_best_params = guesses
-                        current_best_result = minimized
-                    listPercent.append(1)
-            else:
+            if (numBootstrap <= 1000):
+                #---Calculate residuals---
+                if (fitType == 3):
+                    parametersRes = lmfit.Parameters()
+                    for i in range(numParams):
+                        parametersRes.add(paramNames[i], value=r_in[i])
+                    residuals = diffComplex(parametersRes, Z_append)
+                    residualsStdDevR = np.std(residuals[:len(residuals)//2])
+                    residualsStdDevJ = np.std(residuals[len(residuals)//2:])
+                    paramResultArray = []
+                    for i in range(numBootstrap):
+                        listPercent.append(1)
+                        #print(len(listPercent))
+                        random_deltas_r = normal(0, residualsStdDevR, len(Z_append)//2)
+                        random_deltas_j = normal(0, residualsStdDevJ, len(Z_append)//2)
+                        random_deltas = np.append(random_deltas_r, random_deltas_j)
+                        yTrial = Z_append + random_deltas
+                        minimized = lmfit.minimize(diffComplex, parameters, args=(yTrial,))
+                        if (minimized.success):
+                            #print(minimized.params)
+                            fitted = minimized.params.valuesdict()
+                            toAppendResults = []
+                            for j in range(numParams):
+                                toAppendResults.append(fitted[paramNames[j]])
+                            paramResultArray.append(toAppendResults)
+                    sigma = np.std(paramResultArray, axis=0)
+                elif (fitType == 2):
+                    parametersRes = lmfit.Parameters()
+                    for i in range(numParams):
+                        parametersRes.add(paramNames[i], value=r_in[i])
+                    residuals = diffImag(parametersRes, ZjIn)
+                    residualsStdDev = np.std(residuals)
+                    paramResultArray = []
+                    for i in range(numBootstrap):
+                        listPercent.append(1)
+                        #print(len(listPercent))
+                        random_deltas = normal(0, residualsStdDev, len(ZjIn))
+                        yTrial = ZjIn + random_deltas
+                        minimized = lmfit.minimize(diffImag, parameters, args=(yTrial,))
+                        if (minimized.success):
+                            #print(minimized.params)
+                            fitted = minimized.params.valuesdict()
+                            toAppendResults = []
+                            for j in range(numParams):
+                                toAppendResults.append(fitted[paramNames[j]])
+                            paramResultArray.append(toAppendResults)
+                    sigma = np.std(paramResultArray, axis=0)
+                elif (fitType == 1):
+                    parametersRes = lmfit.Parameters()
+                    for i in range(numParams):
+                        parametersRes.add(paramNames[i], value=r_in[i])
+                    residuals = diffReal(parametersRes, ZrIn)
+                    residualsStdDev = np.std(residuals)
+                    paramResultArray = []
+                    for i in range(numBootstrap):
+                        listPercent.append(1)
+                        #print(len(listPercent))
+                        random_deltas = normal(0, residualsStdDev, len(ZrIn))
+                        yTrial = ZrIn + random_deltas
+                        minimized = lmfit.minimize(diffReal, parameters, args=(yTrial,))
+                        if (minimized.success):
+                            #print(minimized.params)
+                            fitted = minimized.params.valuesdict()
+                            toAppendResults = []
+                            for j in range(numParams):
+                                toAppendResults.append(fitted[paramNames[j]])
+                            paramResultArray.append(toAppendResults)
+                    sigma = np.std(paramResultArray, axis=0)
+            else:   #Use multiprocessing if more than a certain number of trials requested
                 numCores = mp.cpu_count()
-                splitArray = np.array_split(guesses, numCores)
                 manager = mp.Manager()
                 vals = manager.list()
                 percentVal = mp.Value("i", 0)
-                for i in range(numCores):
-                    vals.append([])
+                numRunsPer = int(np.ceil(numBootstrap/numCores))
+                #for i in range(numCores):
+                #    vals.append([])
                 if (fitType == 3):
                     for i in range(numCores):
                         if (not self.keepGoing):
                             return
-                        self.processes.append(mp.Process(target=mp_complex, args=(splitArray[i], vals, i, parameters, numParams, weight, assumedNoise, formula, w, ZrIn, ZjIn, Z_append, percentVal, paramNames, fitType, errorParams)))
+                        self.processes.append(mp.Process(target=mp_complex, args=(vals, numRunsPer, percentVal, numParams, paramNames, r_in, Z_append, paramGuesses, paramBounds, w, weight, assumedNoise, ZrIn, ZjIn, fitType, formula, errorParams)))
                         listPercent.append(2)
                     for p in self.processes:
                         if (not self.keepGoing):
@@ -406,11 +497,12 @@ class customFitter:
                     checkVal()
                     for p in self.processes:
                         p.join()
+                    sigma = np.std(vals, axis=0)
                 elif (fitType == 2):
                     for i in range(numCores):
                         if (not self.keepGoing):
                             return
-                        self.processes.append(mp.Process(target=mp_imag, args=(splitArray[i], vals, i, parameters, numParams, weight, assumedNoise, formula, w, ZrIn, ZjIn, Z_append, percentVal, paramNames, fitType, errorParams)))
+                        self.processes.append(mp.Process(target=mp_imag, args=(vals, numRunsPer, percentVal, numParams, paramNames, r_in, Z_append, paramGuesses, paramBounds, w, weight, assumedNoise, ZrIn, ZjIn, fitType, formula, errorParams)))
                         listPercent.append(2)
                     for p in self.processes:
                         if (not self.keepGoing):
@@ -426,11 +518,12 @@ class customFitter:
                     checkVal()
                     for p in self.processes:
                         p.join()
+                    sigma = np.std(vals, axis=0)
                 elif (fitType == 1):
                     for i in range(numCores):
                         if (not self.keepGoing):
                             return
-                        self.processes.append(mp.Process(target=mp_real, args=(splitArray[i], vals, i, parameters, numParams, weight, assumedNoise, formula, w, ZrIn, ZjIn, Z_append, percentVal, paramNames, fitType, errorParams)))
+                        self.processes.append(mp.Process(target=mp_real, args=(vals, numRunsPer, percentVal, numParams, paramNames, r_in, Z_append, paramGuesses, paramBounds, w, weight, assumedNoise, ZrIn, ZjIn, fitType, formula, errorParams)))
                         listPercent.append(2)
                     for p in self.processes:
                         if (not self.keepGoing):
@@ -446,23 +539,66 @@ class customFitter:
                     checkVal()
                     for p in self.processes:
                         p.join()
-                lowest = 1E9
-                lowestIndex = -1
-                for i in range(len(vals)):
-                    if (vals[i][0] < lowest):
-                        lowest = vals[i][0]
-                        lowestIndex = i
-                current_best_params = vals[lowestIndex][2]
-                current_best_result = vals[lowestIndex][1]
-                current_best_val = vals[lowestIndex][0]
+                    sigma = np.std(vals, axis=0)
         except SystemExit:
-            return "@", "@", "@", "@", "@", "@", "@", "@", "@"
+            return "@", "@", "@", "@", "@", "@", "@", "@"
         except Exception as inst:
-            print(inst)
-            return "b", "b", "b", "b", "b", "b", "b", "b", "b"
-
-        if (current_best_result != 0):
-            minimized = current_best_result
+            #print(inst)
+            return "b", "b", "b", "b", "b", "b", "b", "b"
+        
+         #---Calculate newly fitted values---
+        ToReturnReal = []
+        ToReturnImag = []
+        Zr = ZrIn.copy()
+        Zj = ZjIn.copy()
+        Zreal = []
+        Zimag = []
+        freq = w.copy()
+        for i in range(numParams):
+            exec(paramNames[i] + " = " + str(float(r_in[i])))
+        ldict = locals()
+        exec(formula, globals(), ldict)
+        Zreal = ldict['Zreal']
+        Zimag = ldict['Zimag']
+        ToReturnReal = Zreal
+        ToReturnImag = Zimag
+        
+        #---Calculate numMonteCarlo number of parameters, using a Gaussian distribution---
+        randomParams = np.zeros((numParams, numMonteCarlo))
+        randomlyCalculatedReal = np.zeros((len(w), numMonteCarlo))
+        randomlyCalculatedImag = np.zeros((len(w), numMonteCarlo))
+        
+        for i in range(numParams):
+            randomParams[i] = normal(r_in[i], abs(sigma[i]), numMonteCarlo)
+        
+        if (not self.keepGoing):
+            return
+        
+        #---Calculate impedance values based on the random paramaters---
+        for i in range(numMonteCarlo):
+            Zr = ZrIn.copy()
+            Zj = ZjIn.copy()
+            Zreal = [] #np.zeros(len(w))
+            Zimag = [] #np.zeros(len(w))
+            freq = w.copy()
+            for k in range(numParams):
+                exec(paramNames[k] + " = " + str(float(randomParams[k][i])))
+            ldict = locals()
+            exec(formula, globals(), ldict)
+            Zreal = ldict['Zreal']
+            Zimag = ldict['Zimag']
+            for j in range(len(w)):
+                randomlyCalculatedReal[j][i] = Zreal[j]
+                randomlyCalculatedImag[j][i] = Zimag[j]
+    
+        standardDevsReal = np.zeros(len(w))
+        standardDevsImag = np.zeros(len(w))
+        for i in range(len(w)):
+            standardDevsReal[i] = np.std(randomlyCalculatedReal[i])
+            standardDevsImag[i] = np.std(randomlyCalculatedImag[i])
+        
+        return r_in, sigma, standardDevsReal, standardDevsImag, chi_in, aic_in, ToReturnReal, ToReturnImag
+        """
         if (not minimized.success):     #If the fitting fails
             return "^", "^", "^", "^", "^", "^", "^", "^"
     
@@ -472,7 +608,7 @@ class customFitter:
         for i in range(numParams):
             result.append(fitted[paramNames[i]])
             sigma.append(minimized.params[paramNames[i]].stderr)
-
+        
         #print(result)
         #---Calculate newly fitted values---
         ToReturnReal = []
@@ -490,17 +626,11 @@ class customFitter:
         Zimag = ldict['Zimag']
         ToReturnReal = Zreal
         ToReturnImag = Zimag
-
+        
         if None in sigma:
             if (ToReturnReal[0] == 1E300):
-                return "b", "b", "b", "b", "b", "b", "b", "b", "b"
-            return result, "-", "-", "-", minimized.chisqr, minimized.aic, ToReturnReal, ToReturnImag, current_best_params
-        
-        for s in sigma:
-            if (np.isnan(s)):
-                if (ToReturnReal[0] == 1E300):
-                    return "b", "b", "b", "b", "b", "b", "b", "b", "b"
-                return result, "-", "-", "-", minimized.chisqr, minimized.aic, ToReturnReal, ToReturnImag, current_best_params
+                return "b", "b", "b", "b", "b", "b", "b", "b"
+            return result, "-", "-", "-", minimized.chisqr, minimized.aic, ToReturnReal, ToReturnImag
         
         if (not self.keepGoing):
             return
@@ -539,83 +669,5 @@ class customFitter:
             standardDevsReal[i] = np.std(randomlyCalculatedReal[i])
             standardDevsImag[i] = np.std(randomlyCalculatedImag[i])
         
-        return result, sigma, standardDevsReal, standardDevsImag, minimized.chisqr, minimized.aic, ToReturnReal, ToReturnImag, current_best_params
-        """    
-        cor = np.zeros((numParams, numParams))
-        if (minimized.params['Re'].correl == None):
-            cor[:,0] = 0
-            cor[0,:] = 0
-            cor[0][0] = 1
-        else:
-            cor[0][0] = 1
-            parameterCorrector = 0
-            for i in range(1, numVoigtElements+1):
-                try:
-                    cor[0][i+parameterCorrector] = minimized.params['Re'].correl['R'+str(i)]
-                except KeyError:
-                    cor[0][i+parameterCorrector] = 0
-                try:
-                    cor[0][i+1+parameterCorrector] = minimized.params['Re'].correl['T'+str(i)]
-                except KeyError:
-                    cor[0][i+1+parameterCorrector] = 0
-                parameterCorrector += 1
-        parameterCorrectorA = 0
-        for i in range(1, numVoigtElements+1):
-            #---R---
-            if (minimized.params['R'+str(i)].correl == None):
-                cor[i+parameterCorrectorA,:] = 0
-                cor[i+parameterCorrectorA][i+parameterCorrectorA] = 1
-            else:
-                try:
-                    cor[i+parameterCorrectorA][0] = minimized.params['R'+str(i)].correl['Re']
-                except KeyError:
-                    cor[i+parameterCorrectorA][0] = 0
-                cor[i+parameterCorrectorA][i+parameterCorrectorA] = 1
-                parameterCorrectorB = 0
-                for j in range(1, numVoigtElements+1):
-                    
-                    if (i != j):
-                        try:
-                            cor[i+parameterCorrectorA][j+parameterCorrectorB] = minimized.params['R'+str(i)].correl['R'+str(j)]
-                        except KeyError:
-                            cor[i+parameterCorrectorA][j+parameterCorrectorB] = 0
-                    try:
-                        cor[i+parameterCorrectorA][j+1+parameterCorrectorB] = minimized.params['R'+str(i)].correl['T'+str(j)]
-                    except KeyError:
-                        cor[i+parameterCorrectorA][j+1+parameterCorrectorB] = 0
-                    parameterCorrectorB += 1
-                    
-            #---Tau---
-            if (minimized.params['T'+str(i)].correl == None):
-                cor[i+1+parameterCorrectorA,:] = 0
-                cor[i+1+parameterCorrectorA][i+1+parameterCorrectorA] = 1
-            else:
-                try:
-                    cor[i+1+parameterCorrectorA][0] = minimized.params['T'+str(i)].correl['Re']
-                except KeyError:
-                    cor[i+1+parameterCorrectorA][0] = 0
-                cor[i+1+parameterCorrectorA][i+1+parameterCorrectorA] = 1
-                
-                parameterCorrectorB = 0
-                for j in range(1, numVoigtElements+1):         
-                    try:
-                        cor[i+1+parameterCorrectorA][j+parameterCorrectorB] = minimized.params['T'+str(i)].correl['R'+str(j)]
-                    except KeyError:
-                        cor[i+1+parameterCorrectorA][j+parameterCorrectorB] = 0
-                    if (i != j):
-                        try:
-                            cor[i+1+parameterCorrectorA][j+1+parameterCorrectorB] = minimized.params['T'+str(i)].correl['T'+str(j)]
-                        except KeyError:
-                            cor[i+1+parameterCorrectorA][j+1+parameterCorrectorB] = 0
-                    parameterCorrectorB += 1    
-                
-            parameterCorrectorA += 1
-        
-    #    #---Replace "fitted" values for fixed parameters with their initial guesses---
-    #    if (constants[0] != -1):
-    #        for constant in constants:
-    #            result[constant] = initialGuesses[constant]
-                
-        #---Return everything---
-        return result, sigma, standardDevsReal, standardDevsImag, minimized.chisqr, cor, minimized.aic
-        """
+        return result, sigma, standardDevsReal, standardDevsImag, minimized.chisqr, minimized.aic, ToReturnReal, ToReturnImag
+    """

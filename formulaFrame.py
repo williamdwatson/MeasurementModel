@@ -9,15 +9,17 @@ import tkinter as tk
 import tkinter.font as tkfont
 from tkinter import messagebox
 import tkinter.ttk as ttk
-from tkinter.filedialog import askopenfilename, asksaveasfile
+from tkinter.filedialog import askopenfilename, asksaveasfile, askdirectory
 import os
 import sys
 import ctypes
 import numpy as np
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 import customFitting
+import bootstrapFitting
 import threading
 import queue
 from rangeSlider import RangeSlider
@@ -53,9 +55,10 @@ class FrequencyMismatchError(Exception):
     pass
 
 class ThreadedTaskCustom(threading.Thread):
-    def __init__(self, queue, fitType, numMonte, weight, noise, customFormula, w, r, j, paramNames, paramGuesses, paramLimits, errorParams):
+    def __init__(self, queue, lp, fitType, numMonte, weight, noise, customFormula, w, r, j, paramNames, paramGuesses, paramLimits, errorParams):
         threading.Thread.__init__(self)
         self.queue = queue
+        self.listPer = lp
         self.fT = fitType
         self.nM = numMonte
         self.wght = weight
@@ -71,9 +74,60 @@ class ThreadedTaskCustom(threading.Thread):
         self.fittingObject = customFitting.customFitter()
     def run(self):
         try:
-            r, s, sdr, sdi, chi, aic, rF, iF = self.fittingObject.findFit(self.fT, self.nM, self.wght, self.aN, self.formula, self.wdat, self.rdat, self.jdat, self.pN, self.pG, self.pL, self.eP)
-            self.queue.put((r, s, sdr, sdi, chi, aic, rF, iF))
+            r, s, sdr, sdi, chi, aic, rF, iF, bP = self.fittingObject.findFit(self.listPer, self.fT, self.nM, self.wght, self.aN, self.formula, self.wdat, self.rdat, self.jdat, self.pN, self.pG, self.pL, self.eP)
+            self.queue.put((r, s, sdr, sdi, chi, aic, rF, iF, bP))
         except:
+            self.queue.put(("@", "@", "@", "@", "@", "@", "@", "@", "@"))
+    def get_id(self):
+        # From https://www.geeksforgeeks.org/python-different-ways-to-kill-a-thread/
+        # returns id of the respective thread 
+        if hasattr(self, '_thread_id'): 
+            return self._thread_id 
+        for id, thread in threading._active.items(): 
+            if thread is self: 
+                return id  
+    def terminate(self):
+        self.fittingObject.terminateProcesses()
+        # From https://www.geeksforgeeks.org/python-different-ways-to-kill-a-thread/
+        thread_id = self.get_id() 
+        res = ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, ctypes.py_object(SystemExit))
+        if res > 1: 
+            ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, 0) 
+            #print('Exception raise failure')
+
+class ThreadedTaskBootstrap(threading.Thread):
+    def __init__(self, queue, lp, nBS, r_in, s_in, sdR_in, sdI_in, chi_in, aic_in, realF_in, imagF_in, fitType, numMonte, weight, noise, customFormula, w, r, j, paramNames, paramGuesses, paramLimits, errorParams):
+        threading.Thread.__init__(self)
+        self.queue = queue
+        self.percent_list = lp
+        self.nBootStrap = nBS
+        self.in_r = r_in
+        self.in_s = s_in
+        self.in_sdR = sdR_in
+        self.in_sdI = sdI_in
+        self.in_chi = chi_in
+        self.in_aic = aic_in
+        self.in_realF = realF_in
+        self.in_imagF = imagF_in
+        self.fT = fitType
+        self.nM = numMonte
+        self.wght = weight
+        self.aN = noise
+        self.formula = customFormula
+        self.wdat = w
+        self.rdat = r
+        self.jdat = j
+        self.pN = paramNames
+        self.pG = paramGuesses
+        self.pL = paramLimits
+        self.eP = errorParams
+        self.fittingObject = bootstrapFitting.bootstrapFitter()
+    def run(self):
+        try:
+            r, s, sdr, sdi, chi, aic, rF, iF = self.fittingObject.findFit(self.percent_list, self.nBootStrap, self.in_r, self.in_s, self.in_sdR, self.in_sdI, self.in_chi, self.in_aic, self.in_realF, self.in_imagF, self.fT, self.nM, self.wght, self.aN, self.formula, self.wdat, self.rdat, self.jdat, self.pN, self.pG, self.pL, self.eP)
+            self.queue.put((r, s, sdr, sdi, chi, aic, rF, iF))
+        except Exception as inst:
+            #print(inst)
             self.queue.put(("@", "@", "@", "@", "@", "@", "@", "@"))
     def get_id(self):
         # From https://www.geeksforgeeks.org/python-different-ways-to-kill-a-thread/
@@ -197,16 +251,67 @@ class fF(tk.Frame):
         addButton_ttp = CreateToolTip(self.addButton, "Add a parameter")
         removeButton_ttp = CreateToolTip(self.removeButton, "Remove last parameter")
         self.howMany = tk.Label(self.paramPopup, text="Number of parameters: 0", bg=self.backgroundColor, fg=self.foregroundColor)
+        self.advancedOptionsButton = ttk.Button(self.paramPopup, text="Advanced options")
+        advancedOptions_ttp = CreateToolTip(self.advancedOptionsButton, 'Opens a popup containing advanced parameter settings')
         self.addButton.pack(side=tk.LEFT, fill=tk.X, expand=True)
         self.removeButton.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        self.advancedOptionsButton.pack(side=tk.BOTTOM, fill=tk.X, expand=False)
         self.howMany.pack(side=tk.BOTTOM, fill=tk.X, expand=False)
         self.buttonFrame.pack(side=tk.BOTTOM, fill=tk.X, expand=False, pady=1)
         self.vsb.pack(side=tk.RIGHT, fill=tk.Y)
         self.pcanvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.pcanvas.create_window((4,4), window=self.pframe, anchor="nw")
+        self.advancedOptionsWindow = tk.Toplevel(bg=self.backgroundColor)
+        self.advancedOptionsWindow.withdraw()
+        self.paramListbox = tk.Listbox(self.advancedOptionsWindow, selectmode=tk.BROWSE, activestyle='none', background=self.backgroundColor, foreground=self.foregroundColor, exportselection=False)
+        self.paramListboxScrollbar = ttk.Scrollbar(self.advancedOptionsWindow, orient=tk.VERTICAL)
+        self.paramListboxScrollbar['command'] = self.paramListbox.yview
+        self.paramListbox.configure(yscrollcommand=self.paramListboxScrollbar.set)
+        self.advancedOptionsLabel = tk.Label(self.advancedOptionsWindow, text="", bg=self.backgroundColor, fg=self.foregroundColor, font=('Helvetica', 10, 'bold'))
+        self.multistartCheckbox = ttk.Checkbutton(self.advancedOptionsWindow, text="Enable multistart")
+        self.multistartSpacingFrame = tk.Frame(self.advancedOptionsWindow, bg=self.backgroundColor)
+        self.multistartSpacing = ttk.Combobox(self.multistartSpacingFrame, values=("Logarithmic", "Linear", "Random", "Custom"), state="disabled", exportselection=False)
+        self.multistartSpacingLabel = tk.Label(self.multistartSpacingFrame, text="Point spacing: ", bg=self.backgroundColor, fg=self.foregroundColor)
+        self.multistartSpacingLabel.pack(side=tk.LEFT)
+        self.multistartSpacing.pack(side=tk.RIGHT, fill=tk.X, expand=True)
+        self.multistartLowerFrame = tk.Frame(self.advancedOptionsWindow, bg=self.backgroundColor)
+        self.multistartLowerLabel = tk.Label(self.multistartLowerFrame, text="Lower bound: ", bg=self.backgroundColor, fg=self.foregroundColor)
+        self.multistartLowerEntry = ttk.Entry(self.multistartLowerFrame, state="disabled")
+        self.multistartLowerLabel.pack(side=tk.LEFT)
+        self.multistartLowerEntry.pack(side=tk.RIGHT, fill=tk.X, expand=True)
+        self.multistartUpperFrame = tk.Frame(self.advancedOptionsWindow, bg=self.backgroundColor)
+        self.multistartUpperLabel = tk.Label(self.multistartUpperFrame, text="Upper bound: ", bg=self.backgroundColor, fg=self.foregroundColor)
+        self.multistartUpperEntry = ttk.Entry(self.multistartUpperFrame, state="disabled")
+        self.multistartUpperLabel.pack(side=tk.LEFT)
+        self.multistartUpperEntry.pack(side=tk.RIGHT, fill=tk.X, expand=True)
+        self.multistartNumberFrame = tk.Frame(self.advancedOptionsWindow, bg=self.backgroundColor)
+        self.multistartNumberLabel = tk.Label(self.multistartNumberFrame, text="Number of points: ", bg=self.backgroundColor, fg=self.foregroundColor)
+        self.multistartNumberEntry = ttk.Entry(self.multistartNumberFrame, state="disabled")
+        self.multistartNumberLabel.pack(side=tk.LEFT)
+        self.multistartNumberEntry.pack(side=tk.RIGHT, fill=tk.X, expand=True)
+        self.multistartCustomFrame = tk.Frame(self.advancedOptionsWindow, bg=self.backgroundColor)
+        self.multistartCustomLabel = tk.Label(self.multistartCustomFrame, text="Enter values separated by commas:", bg=self.backgroundColor, fg=self.foregroundColor)
+        self.multistartCustomEntry = ttk.Entry(self.multistartCustomFrame)
+        self.multistartCustomLabel.pack(side=tk.TOP, fill=tk.X, expand=False)
+        self.multistartCustomEntry.pack(side=tk.TOP, fill=tk.X, expand=True)
+        self.paramListbox.pack(side=tk.LEFT, fill=tk.Y, expand=False)
+        self.paramListboxScrollbar.pack(side=tk.LEFT, fill=tk.Y, expand=False)
+        self.advancedOptionsLabel.pack(side=tk.TOP, fill=tk.X, expand=False)
+        self.multistartCheckboxVariables = []
+        self.multistartSpacingVariables = []
+        self.multistartLowerVariables = []
+        self.multistartUpperVariables = []
+        self.multistartNumberVariables = []
+        self.multistartCustomVariables = []
+        self.paramListboxSelection = 0
         self.varNum = 0
+        self.whatFit = "C"
         self.aR = ""
+        self.bootstrapEntryVariable = tk.StringVar(self, "500")
+        self.bootstrapRunning = False
         self.currentThreads = []
+        self.listPercent = []
+        self.bestParams = []
         
         def _on_mousewheel_help(event):
             xpos, ypos = self.vsbh.get()
@@ -246,6 +351,13 @@ class fF(tk.Frame):
         self.paramValueValues = []
         self.paramValueLabels = []
         self.paramDeleteButtons = []
+        
+        def validateIt(P):
+            if P == "":
+                return True
+            else:
+                return P.isalnum()
+        valcom = (self.register(validateIt), '%P')
         
         def OpenFile():
             name = askopenfilename(initialdir=self.topGUI.getCurrentDirectory(), filetypes = [("Measurement model file", "*.mmfile *.mmcustom"), ("Measurement model data (*.mmfile)", "*.mmfile"), ("Measurement model custom fitting (*.mmcustom)", "*.mmcustom")], title = "Choose a file")
@@ -425,6 +537,7 @@ class fF(tk.Frame):
                         self.paramValueValues.clear()
                         self.paramValueEntries.clear()
                         self.paramDeleteButtons.clear()
+                        self.paramListbox.delete(0, tk.END)
                         while True:
                             p = toLoad.readline()
                             if not p:
@@ -434,7 +547,7 @@ class fF(tk.Frame):
                                 pname, pval, pcombo = p.split("~=~")
                                 self.numParams += 1
                                 self.paramNameValues.append(tk.StringVar(self, pname))
-                                self.paramNameEntries.append(ttk.Entry(self.pframe, textvariable=self.paramNameValues[self.numParams-1], width=10))
+                                self.paramNameEntries.append(ttk.Entry(self.pframe, textvariable=self.paramNameValues[self.numParams-1], width=10, validate="all", validatecommand=valcom))
                                 self.paramNameLabels.append(tk.Label(self.pframe, text="Name: ", background=self.backgroundColor, foreground=self.foregroundColor))
                                 self.paramValueLabels.append(tk.Label(self.pframe, text="Value: ", background=self.backgroundColor, foreground=self.foregroundColor))
                                 self.paramComboboxValues.append(tk.StringVar(self, pcombo))
@@ -455,7 +568,12 @@ class fF(tk.Frame):
                                 self.paramValueEntries[len(self.paramValueEntries)-1].bind("<MouseWheel>", _on_mousewheel)
                                 self.paramDeleteButtons[len(self.paramDeleteButtons)-1].bind("<MouseWheel>", _on_mousewheel)
                                 self.paramNameEntries[len(self.paramNameEntries)-1].bind("<KeyRelease>", keyup)
+                                self.paramListbox.insert(tk.END, pname)
                         toLoad.close()
+                        self.paramListbox.selection_clear(0, tk.END)
+                        self.paramListbox.select_set(0)
+                        self.paramListboxSelection = 0
+                        self.paramListbox.event_generate("<<ListboxSelect>>")
                         try:
                             data = np.loadtxt(fileToLoad)
                             w_in = data[:,0]
@@ -734,6 +852,13 @@ class fF(tk.Frame):
                     self.customFormula.insert(tk.INSERT, "\t")
         """
         def keyup(event):
+            self.paramListbox.delete(0, tk.END)
+            for n in self.paramNameValues:
+                self.paramListbox.insert(tk.END, n.get())
+            try:
+                self.advancedOptionsLabel.configure(text=self.paramNameValues[self.paramListboxSelection].get())
+            except:
+                pass
             self.customFormula.tag_remove("tagZreal", "1.0", tk.END)
             self.customFormula.tag_remove("tagReservedWords2", "1.0", tk.END)
             self.customFormula.tag_remove("tagReservedWords3", "1.0", tk.END)
@@ -938,13 +1063,25 @@ class fF(tk.Frame):
                     self.paramNameValues[i].set(self.paramNameValues[i+1].get())
                     self.paramComboboxValues[i].set(self.paramComboboxValues[i+1].get())
                     self.paramValueValues[i].set(self.paramValueValues[i+1].get())
+                    self.multistartCheckboxVariables[i].set(self.multistartCheckboxVariables[i+1].get())
+                    self.multistartLowerVariables[i].set(self.multistartLowerVariables[i+1].get())
+                    self.multistartUpperVariables[i].set(self.multistartUpperVariables[i+1].get())
+                    self.multistartSpacingVariables[i].set(self.multistartSpacingVariables[i+1].get())
+                    self.multistartCustomVariables[i].set(self.multistartCustomVariables[i+1].get())
+                    self.multistartNumberVariables[i].set(self.multistartNumberVariables[i+1].get())
                 removeParam()
         
         def addParam():
             self.numParams += 1
             self.paramNameValues.append(tk.StringVar(self, "var" + str(self.varNum)))
             self.varNum += 1
-            self.paramNameEntries.append(ttk.Entry(self.pframe, textvariable=self.paramNameValues[self.numParams-1], width=10))
+            self.multistartCheckboxVariables.append(tk.IntVar(self, 0))
+            self.multistartLowerVariables.append(tk.StringVar(self, "1E-5"))
+            self.multistartUpperVariables.append(tk.StringVar(self, "1E5"))
+            self.multistartSpacingVariables.append(tk.StringVar(self, "Logarithmic"))
+            self.multistartCustomVariables.append(tk.StringVar(self, "0.1,1,10,100,1000"))
+            self.multistartNumberVariables.append(tk.StringVar(self, "10"))
+            self.paramNameEntries.append(ttk.Entry(self.pframe, textvariable=self.paramNameValues[self.numParams-1], width=10, validate="all", validatecommand=valcom))
             self.paramNameLabels.append(tk.Label(self.pframe, text="Name: ", background=self.backgroundColor, foreground=self.foregroundColor))
             self.paramValueLabels.append(tk.Label(self.pframe, text="Value: ", background=self.backgroundColor, foreground=self.foregroundColor))
             self.paramComboboxValues.append(tk.StringVar(self, "+ or -"))
@@ -965,6 +1102,24 @@ class fF(tk.Frame):
             self.paramValueEntries[len(self.paramValueEntries)-1].bind("<MouseWheel>", _on_mousewheel)
             self.paramDeleteButtons[len(self.paramDeleteButtons)-1].bind("<MouseWheel>", _on_mousewheel)
             self.paramNameEntries[len(self.paramNameEntries)-1].bind("<KeyRelease>", keyup)
+            self.paramListbox.insert(tk.END, self.paramNameValues[-1].get())
+            if (self.numParams == 1):
+                self.multistartCheckbox.configure(variable=self.multistartCheckboxVariables[0])
+                self.multistartLowerEntry.configure(textvariable=self.multistartLowerVariables[0])
+                self.multistartUpperEntry.configure(textvariable=self.multistartUpperVariables[0])
+                self.multistartSpacing.configure(textvariable=self.multistartSpacingVariables[0])
+                self.multistartNumberEntry.configure(textvariable=self.multistartNumberVariables[0])
+                self.multistartCustomEntry.configure(textvariable=self.multistartCustomVariables[0])
+                self.multistartCheckbox.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5)
+                self.multistartSpacingFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5)
+                self.multistartLowerFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5, pady=5)
+                self.multistartUpperFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5)
+                self.multistartNumberFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5, pady=5)
+                self.multistartSpacing.configure(state="disabled")
+                self.multistartUpperEntry.configure(state="disabled")
+                self.multistartLowerEntry.configure(state="disabled")
+                self.multistartNumberEntry.configure(state="disabled")
+                self.multistartCustomEntry.configure(state="disabled")
             keyup("")
         
         def removeParam():
@@ -980,8 +1135,103 @@ class fF(tk.Frame):
                 self.paramDeleteButtons.pop().grid_remove()
                 self.numParams -= 1
                 self.howMany.configure(text="Number of parameters: " + str(self.numParams))
+                self.paramListbox.delete(tk.END)
+                self.paramListbox.select_set(0)
+                self.paramListboxSelection = 0
+                self.paramListbox.event_generate("<<ListboxSelect>>")
+                self.multistartCheckboxVariables.pop()
+                self.multistartLowerVariables.pop()
+                self.multistartUpperVariables.pop()
+                self.multistartSpacingVariables.pop()
+                self.multistartCustomVariables.pop()
+                self.multistartNumberVariables.pop()
                 keyup("")
-
+        
+        def advCheck():
+            #num_selected = self.paramListbox.curselection()[0]
+            if (self.multistartCheckboxVariables[self.paramListboxSelection].get()):
+                self.multistartSpacing.configure(state="readonly")
+                self.multistartUpperEntry.configure(state="normal")
+                self.multistartLowerEntry.configure(state="normal")
+                self.multistartNumberEntry.configure(state="normal")
+                self.multistartCustomEntry.configure(state="normal")
+            else:
+                self.multistartSpacing.configure(state="disabled")
+                self.multistartUpperEntry.configure(state="disabled")
+                self.multistartLowerEntry.configure(state="disabled")
+                self.multistartNumberEntry.configure(state="disabled")
+                self.multistartCustomEntry.configure(state="disabled")
+        
+        def advSelectionChange(e):
+            if (self.multistartSpacingVariables[self.paramListboxSelection].get() == "Custom"):
+                self.multistartLowerFrame.pack_forget()
+                self.multistartUpperFrame.pack_forget()
+                self.multistartNumberFrame.pack_forget()
+                self.multistartCustomFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5, pady=5)
+            else:
+                self.multistartCustomFrame.pack_forget()
+                self.multistartLowerFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5, pady=5)
+                self.multistartUpperFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5)
+                self.multistartNumberFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5, pady=5)
+        
+        def advancedOptionsPopup():
+            self.advancedOptionsWindow.deiconify()
+            self.advancedOptionsWindow.lift()
+            self.advancedOptionsWindow.title("Advanced parameter options")
+            self.advancedOptionsWindow.iconbitmap(resource_path("img/elephant3.ico"))
+            self.advancedOptionsWindow.geometry("500x400")
+            self.multistartCheckbox.configure(command=advCheck)
+            self.multistartSpacing.bind("<<ComboboxSelected>>", advSelectionChange)
+            #print(self.multistartSpacing)
+            def onClose():
+                self.advancedOptionsWindow.withdraw()
+            def onSelect(e):
+                try:
+                    num_selected = self.paramListbox.curselection()[0]
+                    self.paramListboxSelection = num_selected
+                    self.advancedOptionsLabel.configure(text=self.paramNameValues[num_selected].get())
+                    self.multistartCheckbox.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5)
+                    self.multistartSpacingFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5)
+                    if (self.multistartSpacingVariables[num_selected].get() == "Custom"):
+                        self.multistartLowerFrame.pack_forget()
+                        self.multistartUpperFrame.pack_forget()
+                        self.multistartNumberFrame.pack_forget()
+                        self.multistartCustomFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5, pady=5)
+                    else:
+                        self.multistartCustomFrame.pack_forget()
+                        self.multistartLowerFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5, pady=5)
+                        self.multistartUpperFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5)
+                        self.multistartNumberFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5, pady=5)
+                    if (self.multistartCheckboxVariables[num_selected].get()):
+                        self.multistartSpacing.configure(state="readonly")
+                        self.multistartUpperEntry.configure(state="normal")
+                        self.multistartLowerEntry.configure(state="normal")
+                        self.multistartNumberEntry.configure(state="normal")
+                        self.multistartCustomEntry.configure(state="normal")
+                    else:
+                        self.multistartSpacing.configure(state="disabled")
+                        self.multistartUpperEntry.configure(state="disabled")
+                        self.multistartLowerEntry.configure(state="disabled")
+                        self.multistartNumberEntry.configure(state="disabled")
+                        self.multistartCustomEntry.configure(state="disabled")
+                    self.multistartCheckbox.configure(variable=self.multistartCheckboxVariables[num_selected])
+                    self.multistartLowerEntry.configure(textvariable=self.multistartLowerVariables[num_selected])
+                    self.multistartUpperEntry.configure(textvariable=self.multistartUpperVariables[num_selected])
+                    self.multistartSpacing.configure(textvariable=self.multistartSpacingVariables[num_selected])
+                    self.multistartNumberEntry.configure(textvariable=self.multistartNumberVariables[num_selected])
+                    self.multistartCustomEntry.configure(textvariable=self.multistartCustomVariables[num_selected])
+                except:     #No parameters left
+                    self.paramListboxSelection = 0
+                    self.advancedOptionsLabel.configure(text="")
+                    self.multistartCheckbox.pack_forget()
+                    self.multistartSpacingFrame.pack_forget()
+                    self.multistartLowerFrame.pack_forget()
+                    self.multistartUpperFrame.pack_forget()
+                    self.multistartNumberFrame.pack_forget()
+                    self.multistartCustomFrame.pack_forget()
+            self.advancedOptionsWindow.protocol("WM_DELETE_WINDOW", onClose)
+            self.paramListbox.bind("<<ListboxSelect>>", onSelect)
+        
         def _on_mousewheel(event):
             xpos, ypos = self.vsb.get()
             xpos_round = round(xpos, 2)     #Avoid floating point errors
@@ -999,13 +1249,10 @@ class fF(tk.Frame):
             
             def onClose():
                 self.paramPopup.withdraw()
-                #addButton.destroy()
-                #removeButton.destroy()
-                #buttonFrame.destroy()
-                #self.howMany.destroy()
             
             self.addButton.configure(command=addParam)
             self.removeButton.configure(command=removeParam)
+            self.advancedOptionsButton.configure(command=advancedOptionsPopup)
             self.paramPopup.title("Custom fitting parameters")
             self.paramPopup.iconbitmap(resource_path("img/elephant3.ico"))
             self.paramPopup.geometry("500x400")
@@ -1016,7 +1263,6 @@ class fF(tk.Frame):
         
         def helpPopup(event):
             webbrowser.open_new(r'file://' + os.path.dirname(os.path.realpath(__file__)) + '\Formula_guide.pdf')
-            #webbrowser.open_new(r'file://C:\Users\willd\Documents\Research\Python\32820\Formula_guide.pdf')
             """
             self.hcanvas.configure(yscrollcommand=self.vsbh.set)
             self.hcanvas.bind("<MouseWheel>", _on_mousewheel)
@@ -1038,9 +1284,11 @@ class fF(tk.Frame):
             self.helpPopup.bind("<Configure>", helpConfigure)
             """
         
-        def process_queue_custom():
+        def process_queue_bootstrap():
             try:
-                r,s,sdR,sdI,chi,aic,realF,imagF = self.queue.get(0)
+                r,s,sdR,sdI,chi,aic,realF,imagF = self.queueBootstrap.get(0)
+                self.progStatus.grid_remove()
+                self.progStatus.destroy()
                 self.runButton.configure(state="normal")
                 self.browseButton.configure(state="normal")
                 self.customFormula.configure(state="normal")
@@ -1054,6 +1302,271 @@ class fF(tk.Frame):
                 self.cancelButton.grid_remove()
                 self.prog_bar.stop()
                 self.prog_bar.destroy()
+                
+                if (len(r) == 1):
+                    if (r == "b"):
+                        messagebox.showerror("Fitting error", "There was an error in the simulations.")
+                    elif (r == "^"):
+                        messagebox.showerror("Fitting error", "The simulations failed.")
+                    elif (r == "@"):
+                        return    #The fitting was cancelled
+                for i in range(len(r)):
+                    self.paramValueValues[i].set("%.5g"%r[i])
+                self.aR = ""
+                self.aR += "File name: " + self.browseEntry.get() + "\n"
+                self.aR += "Number of data: " + str(self.lengthOfData) + "\n"
+                self.aR += "Number of parameters: " + str(len(r)) + "\n\n"
+                for i in range(len(r)):
+                    self.aR += self.paramNameValues[i].get() + " = " + str(float(r[i]))
+                    if (len(s) == 1):
+                        self.aR += "\n"
+                    else:
+                        self.aR += " ± " + str(float(s[i])) + "\n"
+                self.aR += "\nChi-squared statistic = %.4g"%chi + "\n"
+                self.aR += "Chi-squared/Degrees of freedom = %.4g"%(chi/(self.lengthOfData*2-len(r))) + "\n"
+                try:
+                    self.aR += "Akaike Information Criterion = %.4g"%aic
+                except:
+                    self.aR += "Akaike Information Criterion could not be calculated"
+                self.resultsView.delete(*self.resultsView.get_children())
+                self.resultAlert.grid_remove()
+                if (len(s) > 1):
+                    for i in range(len(r)):
+                        if (r[i] == 0):
+                            self.resultsView.insert("", tk.END, text="", values=(self.paramNameValues[i].get(), "%.5g"%r[i], "%.3g"%s[i], "0%"))
+                        else:
+                            if (abs(s[i]*2*100/r[i]) > 100 or np.isnan(s[i])):
+                                self.resultsView.insert("", tk.END, text="", values=(self.paramNameValues[i].get(), "%.5g"%r[i], "%.3g"%s[i], "%.3g"%(s[i]*2*100/r[i])+"%"), tags=("bad",))
+                                self.resultAlert.grid(column=0, row=2, sticky="E")
+                            else:
+                                self.resultsView.insert("", tk.END, text="", values=(self.paramNameValues[i].get(), "%.5g"%r[i], "%.3g"%s[i], "%.3g"%(s[i]*2*100/r[i])+"%"))
+                else:
+                    for i in range(len(r)):
+                        self.resultsView.insert("", tk.END, text="", values=(self.paramNameValues[i].get(), "%.5g"%r[i], "nan", "nan"))
+                        self.resultAlert.grid(column=0, row=2, sticky="E")
+                self.resultsView.tag_configure("bad", background="yellow")
+                self.resultsFrame.grid(column=0, row=5, sticky="W", pady=5)
+                self.graphFrame.grid(column=0, row=6, sticky="W", pady=5)
+                self.saveFrame.grid(column=0, row=7, sticky="W", pady=5)
+                self.realFit = realF
+                self.imagFit = imagF
+                self.sdrReal = sdR
+                self.sdrImag = sdI
+                if (len(sdR) == 1):
+                    if (sdR == "-"):
+                        self.sdrReal = np.zeros(len(self.wdata))
+                        self.sdrImag = np.zeros(len(self.wdata))
+                self.fits = r
+                self.sigmas = s
+                self.chiSquared = chi
+            except:
+                percent_to_step = (len(self.listPercent) - 1)/self.listPercent[0]
+                #print(percent_to_step*100)
+                self.prog_bar.config(value=percent_to_step*100)
+                try:
+                    self.taskbar.SetProgressValue(self.masterWindowId, (len(self.listPercent) - 1), self.listPercent[0])
+                    self.taskbar.SetProgressState(self.masterWindowId, 0x2)
+                except:
+                    pass
+                if (self.listPercent[len(self.listPercent)-1] == 2):
+                    self.progStatus.configure(text="Starting processes...")
+                elif (percent_to_step >= 1):
+                    self.progStatus.configure(text="Calculating CIs...")
+                elif (percent_to_step > 0.001):
+                    self.progStatus.configure(text="{:.1%}".format(percent_to_step))
+                self.after(100, process_queue_bootstrap)
+        
+        def bootstrapStdDevs(r,s,sdR,sdI,chi,aic,realF,imagF):
+            self.bootstrapLabel.destroy()
+            self.bootstrapEntry.destroy()
+            self.bootstrapButton.destroy()
+            self.bootstrapCancel.destroy()
+            self.bootstrapPopup.destroy()
+            try:
+                bootstrapNum = int(self.bootstrapEntryVariable.get())
+                if (bootstrapNum <= 0):
+                    raise Exception
+            except:
+                messagebox.showwarning("Invalid value", "Error 53: \nThe number of simulations must be a positive integer")
+                return
+            self.queueBootstrap = queue.Queue()
+            #---Check if a formula has been entered----
+            formula = self.customFormula.get("1.0", tk.END)
+            if ("".join(formula.split()) == ""):
+                messagebox.showwarning("Error", "Error 44: \nFormula is empty")
+                return
+            
+            #---Check that none of the variable names are repeated, and that none are Python reserved words or variables used in this code
+            for i in range(len(self.paramNameValues)):
+                name = self.paramNameValues[i].get()
+                if (name == "False" or name == "None" or name == "True" or name == "and" or name == "as" or name == "assert" or name == "break" or name == "class" or name == "continue" or name == "def" or name == "del" or name == "elif" or name == "else" or name == "except"\
+                     or name == "finally" or name == "for" or name == "from" or name == "global" or name == "if" or name == "import" or name == "in" or name == "is" or name == "lambda" or name == "nonlocal" or name == "not" or name == "or" or name == "pass" or name == "raise"\
+                      or name == "return" or name == "try" or name == "while" or name == "with" or name == "yield"):
+                    messagebox.showwarning("Error", "Error 45: \nThe variable name \"" + name + "\" is a Python reserved word. Change the variable name.")
+                    return
+                #elif ("self." in name):
+                #    messagebox.showwarning("Error", "Error 46: \nThe variable name \"" + name + "\" contains \"self.\"; change the variable name.")
+                #    return
+                elif (name == "freq" or name == "Zr" or name == "Zj" or name == "Zreal" or name == "Zimag" or name == "weighting"):
+                    messagebox.showwarning("Error", "Error 47: \nThe variable name \"" + name + "\" is used by the fitting program; change the variable name.")
+                    return
+                for j in range(i+1, len(self.paramNameValues)):
+                    if (name == self.paramNameValues[j].get()):
+                        messagebox.showwarning("Error", "Error 48: \nTwo or more variables have the same name.")
+                        return
+            
+            #---Replace the functions with np.<function>, and then attempt to compile the code to look for syntax errors---        
+            try:
+                prebuiltFormulas = ['PI', 'ARCSINH', 'ARCCOSH', 'ARCTANH', 'ARCSIN', 'ARCCOS', 'ARCTAN', 'COSH', 'SINH', 'TANH', 'SIN', 'COS', 'TAN', 'SQRT', 'EXP', 'ABS', 'DEG2RAD', 'RAD2DEG']
+                formula = formula.replace("^", "**")    #Replace ^ with ** for exponentiation (this could prevent some features like regex from being used effectively)
+                formula = formula.replace("LN", "np.emath.log")#, "cmath.log")
+                formula = formula.replace("LOG", "np.emath.log10")
+                for pf in prebuiltFormulas:
+                    toReplace = "np." + pf.lower()
+                    formula = formula.replace(pf, toReplace)
+                formula = formula.replace("\n", "\n\t")
+                formula = "try:\n\t" + formula
+                formula = formula.rstrip()
+                formula += "\n\tif any(np.isnan(Zreal)) or any(np.isnan(Zimag)):\n\t\traise Exception\nexcept:\n\tZreal = np.full(len(freq), 1E300)\n\tZimag = np.full(len(freq), 1E300)"
+                #print(formula)
+                compile(formula, 'user_generated_formula', 'exec')
+            except:
+                messagebox.showwarning("Compile error", "There was an issue compiling the code")
+                return
+            
+            #---Check if the variable "freq" appears in the code, as it's likely a mistake if it doesn't---
+            textToSearch = self.customFormula.get("1.0", tk.END)
+            whereFreq = [m.start() for m in re.finditer(r'\bfreq\b', textToSearch)]
+            if (len(whereFreq) == 0):
+                messagebox.showwarning("No \"freq\"", "The variable \"freq\" does not appear in the code. This may cause an error.")
+            elif (len(whereFreq) == 1 and whereFreq[0] == 5):
+                messagebox.showwarning("No \"freq\"", "The variable \"freq\" does not seem to be in the code. This may cause an error.")
+            
+            self.queue = queue.Queue()
+            fit_type = 3
+            if (self.fittingTypeComboboxValue.get() == "Real"):
+                fit_type = 1
+            elif (self.fittingTypeCombobox.get() == "Imaginary"):
+                fit_type = 2
+            num_monte = 1000
+            try:
+                num_monte = int(self.monteCarloValue.get())
+            except:
+                messagebox.showwarning("Bad number of simulations", "The number of simulations must be an integer")
+                return
+            param_names = []
+            for pNV in self.paramNameValues:
+                param_names.append(pNV.get())
+            """
+            param_guesses = []
+            for pNG in self.paramValueValues:
+                try:
+                    param_guesses.append(float(pNG.get()))
+                except:
+                    messagebox.showwarning("Bad parameter value", "The parameter values must be real numbes")
+                    return
+            """
+            param_limits = []
+            for pL in self.paramComboboxValues:
+                if (pL.get() == "+"):
+                    param_limits.append("+")
+                elif (pL.get() == "-"):
+                    param_limits.append("-")
+                elif (pL.get() == "fixed"):
+                    param_limits.append("f")
+                else:
+                    param_limits.append("n")
+            weight = 0
+            errorModelParams = np.zeros(5)
+            if (self.weightingComboboxValue.get() == "Modulus"):
+                weight = 1
+            elif (self.weightingComboboxValue.get() == "Proportional"):
+                weight = 2
+            elif (self.weightingComboboxValue.get() == "Error model"):
+                if (self.errorAlphaCheckboxVariable.get() != 1 and self.errorBetaCheckboxVariable.get() != 1 and self.errorGammaCheckboxVariable.get() != 1 and self.errorDeltaCheckboxVariable.get() != 1):
+                    messagebox.showwarning("Bad error structure", "At least one error structure value must be checkd")
+                    return
+                try:
+                    if (self.errorAlphaCheckboxVariable.get() == 1):
+                        if (self.errorAlphaVariable.get() == "" or self.errorAlphaVariable.get() == " " or self.errorAlphaVariable.get() == "."):
+                            errorModelParams[0] = 0
+                        else:
+                            errorModelParams[0] = float(self.errorAlphaVariable.get())
+                    if (self.errorBetaCheckboxVariable.get() == 1):
+                        if (self.errorBetaVariable.get() == "" or self.errorBetaVariable.get() == " " or self.errorBetaVariable.get() == "."):
+                            errorModelParams[1] = 0
+                        else:
+                            errorModelParams[1] = float(self.errorBetaVariable.get())
+                    if (self.errorBetaReCheckboxVariable.get() == 1):
+                        if (self.errorBetaReVariable.get() == "" or self.errorBetaReVariable.get() == " " or self.errorBetaReVariable.get() == "."):
+                            errorModelParams[2] = 0
+                        else:
+                            errorModelParams[2] = float(self.errorBetaReVariable.get())
+                    if (self.errorGammaCheckboxVariable.get() == 1):
+                        if (self.errorGammaVariable.get() == "" or self.errorGammaVariable.get() == " " or self.errorGammaVariable.get() == "."):
+                            errorModelParams[3] = 0
+                        else:
+                            errorModelParams[3] = float(self.errorGammaVariable.get())
+                    if (self.errorDeltaCheckboxVariable.get() == 1):
+                        if (self.errorDeltaVariable.get() == "" or self.errorDeltaVariable.get() == " " or self.errorDeltaVariable.get() == "."):
+                            errorModelParams[4] = 0
+                        else:
+                            errorModelParams[4] = float(self.errorDeltaVariable.get())
+                except:
+                    messagebox.showerror("Value error", "One of the error structure parameters has an invalid value")
+                    return
+                if (errorModelParams[0] == 0 and errorModelParams[1] == 0 and errorModelParams[3] == 0 and errorModelParams[4] == 0):
+                    messagebox.showerror("Value error", "At least one of the error structure parameters must be nonzero")
+                    return
+                weight = 3
+            elif (self.weightingComboboxValue.get() == "Custom"):
+                weight = 4
+            assumed_noise = float(self.noiseEntryValue.get())
+            self.runButton.configure(state="disabled")
+            self.browseButton.configure(state="disabled")
+            self.customFormula.configure(state="disabled")
+            self.freqRangeButton.configure(state="disabled")
+            self.parametersButton.configure(state="disabled")
+            self.fittingTypeCombobox.configure(state="disabled")
+            self.monteCarloEntry.configure(state="disabled")
+            self.saveFormulaButton.configure(state="disabled")
+            self.weightingCombobox.configure(state="disabled")
+            self.noiseEntry.configure(state="disabled")
+            self.prog_bar = ttk.Progressbar(self.runFrame, orient="horizontal", length=150, mode="determinate")
+            self.prog_bar.grid(column=3, row=0, padx=5)
+            self.progStatus = tk.Label(self.runFrame, text="Initializing...", bg=self.backgroundColor, fg=self.foregroundColor)
+            self.progStatus.grid(column=4, row=0)
+            #self.prog_bar.start(40)
+            self.listPercent = [bootstrapNum]
+            self.currentThreads.append(ThreadedTaskBootstrap(self.queueBootstrap, self.listPercent, bootstrapNum, r,s,sdR,sdI,chi,aic,realF,imagF,fit_type, num_monte, weight, assumed_noise, formula, self.wdata, self.jdata, self.rdata, param_names, self.bestParams, param_limits, errorModelParams))
+            self.currentThreads[len(self.currentThreads) - 1].start()
+            self.bootstrapRunning = True
+            #self.bootstrapThreadIndex = len(self.currentThreads)-1
+            self.cancelButton.configure(command=lambda: self.currentThreads[len(self.currentThreads)-1].terminate())
+            self.cancelButton.grid(column=2, row=0, sticky="W", padx=15)
+            self.after(100, process_queue_bootstrap)
+        
+        def process_queue_custom():
+            try:
+                r,s,sdR,sdI,chi,aic,realF,imagF, bestP = self.queue.get(0)
+                self.runButton.configure(state="normal")
+                self.browseButton.configure(state="normal")
+                self.customFormula.configure(state="normal")
+                self.freqRangeButton.configure(state="normal")
+                self.parametersButton.configure(state="normal")
+                self.fittingTypeCombobox.configure(state="readonly")
+                self.monteCarloEntry.configure(state="normal")
+                self.saveFormulaButton.configure(state="normal")
+                self.weightingCombobox.configure(state="readonly")
+                self.noiseEntry.configure(state="normal")
+                self.cancelButton.grid_remove()
+                self.prog_bar.stop()
+                self.prog_bar.destroy()
+                try:
+                    self.progStatus.grid_remove()
+                    self.progStatus.destroy()
+                except:
+                    pass
                 if (len(r) == 1):
                     if (r == "b"):
                         messagebox.showerror("Fitting error", "There was an error in the fitting.")
@@ -1062,9 +1575,38 @@ class fF(tk.Frame):
                     elif (r == "@"):
                         pass    #The fitting was cancelled
                 else:
+                    self.bestParams = list(bestP[0])
+                    doBootstrap = False
                     if len(s) == 1:
                         if (s == "-"):
-                            messagebox.showwarning("Variance error", "A minimization was found, but the standard deviations and confidence intervals could not be calculated.")
+                            doBootstrap = messagebox.askyesno("Variance error", "A minimization was found, but the standard deviations and confidence intervals could not be calculated. Would you like to calculate these with a Monte Carlo simulation?")
+                    if (doBootstrap):
+                        self.bootstrapPopup = tk.Toplevel(bg=self.backgroundColor)
+                        self.bootstrapPopup.geometry("400x100")
+                        self.bootstrapLabel = tk.Label(self.bootstrapPopup, text="Number of simulations: ", fg=self.foregroundColor, bg=self.backgroundColor)
+                        self.bootstrapEntry = ttk.Entry(self.bootstrapPopup, textvariable=self.bootstrapEntryVariable)
+                        self.bootstrapButton = ttk.Button(self.bootstrapPopup, text="Run", command=lambda: bootstrapStdDevs(r,s,sdR,sdI,chi,aic,realF,imagF))
+                        self.bootstrapCancel = ttk.Button(self.bootstrapPopup, text="Cancel")
+                        self.bootstrapLabel.pack(side=tk.TOP, fill=tk.X)
+                        self.bootstrapEntry.pack(side=tk.TOP, fill=tk.X)
+                        self.bootstrapButton.pack(side=tk.LEFT, expand=True, fill=tk.X)
+                        self.bootstrapCancel.pack(side=tk.RIGHT, expand=True, fill=tk.X)
+                        self.bootstrapPopup.title("Monte Carlo standard deviations")
+                        self.bootstrapPopup.iconbitmap(resource_path("img/elephant3.ico"))
+                        self.bootstrapPopup.lift()
+                        self.bootstrapPopup.grab_set()
+                        self.bootstrapPopup.bind("<Return>", lambda e: bootstrapStdDevs(r,s,sdR,sdI,chi,aic,realF,imagF))
+                        def bootstrap_closing():
+                            self.bootstrapLabel.destroy()
+                            self.bootstrapEntry.destroy()
+                            self.bootstrapButton.destroy()
+                            self.bootstrapCancel.destroy()
+                            self.bootstrapPopup.destroy()
+                            #if (self.bootstrapRunning):
+                            #    self.currentThreads[self.bootstrapThreadIndex].terminate()
+                        self.bootstrapCancel['command'] = bootstrap_closing
+                        self.bootstrapPopup.protocol("WM_DELETE_WINDOW", bootstrap_closing)
+                        
                     for i in range(len(r)):
                         self.paramValueValues[i].set("%.5g"%r[i])
                     self.aR = ""
@@ -1087,6 +1629,8 @@ class fF(tk.Frame):
                     self.resultAlert.grid_remove()
                     if (len(s) > 1):
                         for i in range(len(r)):
+                            if (r[i] == 0):
+                                self.resultsView.insert("", tk.END, text="", values=(self.paramNameValues[i].get(), "%.5g"%r[i], "%.3g"%s[i], "0%"))
                             if (abs(s[i]*2*100/r[i]) > 100 or np.isnan(s[i])):
                                 self.resultsView.insert("", tk.END, text="", values=(self.paramNameValues[i].get(), "%.5g"%r[i], "%.3g"%s[i], "%.3g"%(s[i]*2*100/r[i])+"%"), tags=("bad",))
                                 self.resultAlert.grid(column=0, row=2, sticky="E")
@@ -1097,6 +1641,12 @@ class fF(tk.Frame):
                             self.resultsView.insert("", tk.END, text="", values=(self.paramNameValues[i].get(), "%.5g"%r[i], "nan", "nan"))
                             self.resultAlert.grid(column=0, row=2, sticky="E")
                     self.resultsView.tag_configure("bad", background="yellow")
+                    if (self.fittingTypeComboboxValue.get() == "Complex"):
+                        self.whatFit = "C"
+                    elif (self.fittingTypeComboboxValue.get() == "Imaginary"):
+                        self.whatFit = "J"
+                    elif (self.fittingTypeComboboxValue.get() == "Real"):
+                        self.whatFit = "R"
                     self.resultsFrame.grid(column=0, row=5, sticky="W", pady=5)
                     self.graphFrame.grid(column=0, row=6, sticky="W", pady=5)
                     self.saveFrame.grid(column=0, row=7, sticky="W", pady=5)
@@ -1112,6 +1662,21 @@ class fF(tk.Frame):
                     self.sigmas = s
                     self.chiSquared = chi
             except:
+                if (self.listPercent[0] > 1):
+                    percent_to_step = (len(self.listPercent) - 1)/self.listPercent[0]
+                    #print(percent_to_step*100)
+                    self.prog_bar.config(value=percent_to_step*100)
+                    try:
+                        self.taskbar.SetProgressValue(self.masterWindowId, (len(self.listPercent) - 1), self.listPercent[0])
+                        self.taskbar.SetProgressState(self.masterWindowId, 0x2)
+                    except:
+                        pass
+                    if (self.listPercent[len(self.listPercent)-1] == 2):
+                        self.progStatus.configure(text="Starting processes...")
+                    elif (percent_to_step >= 1):
+                        self.progStatus.configure(text="Calculating CIs...")
+                    elif (percent_to_step > 0.001):
+                        self.progStatus.configure(text="{:.1%}".format(percent_to_step))
                 self.after(100, process_queue_custom)
         
         def checkFitting():
@@ -1184,12 +1749,80 @@ class fF(tk.Frame):
             for pNV in self.paramNameValues:
                 param_names.append(pNV.get())
             param_guesses = []
-            for pNG in self.paramValueValues:
+            for i in range(len(self.paramValueValues)):
+                param_guesses.append([])
+            for i in range(len(self.paramValueValues)):
                 try:
-                    param_guesses.append(float(pNG.get()))
+                    param_guesses[i].append(float(self.paramValueValues[i].get()))
                 except:
-                    messagebox.showwarning("Bad parameter value", "The parameter values must be real numbes")
+                    messagebox.showwarning("Bad parameter value", "Error 54: \nThe parameter values must be real numbers")
                     return
+                if (self.multistartCheckboxVariables[i].get()):
+                        if (self.multistartSpacingVariables[i].get() == "Linear"):
+                            try:
+                                float(self.multistartLowerVariables[i].get())
+                            except:
+                                messagebox.showwarning("Bad lower bound", "Error 55: \nThe lower bound on a multistart must be a real number")
+                                return
+                            try:
+                                float(self.multistartUpperVariables[i].get())
+                            except:
+                                messagebox.showwarning("Bad upper bound", "Error 56: \nThe upper bound on a multistart must be a real number")
+                                return
+                            try:
+                                if (int(self.multistartNumberVariables[i].get()) <= 0):
+                                    raise Exception
+                            except:
+                                messagebox.showwarning("Bad number of multistarts", "Error 57: \nThe number of multistarts must be a positive integer")
+                                return
+                            param_guesses[i].extend(np.linspace(float(self.multistartLowerVariables[i].get()), float(self.multistartUpperVariables[i].get()), int(self.multistartNumberVariables[i].get())))
+                        elif (self.multistartSpacingVariables[i].get() == "Logarithmic"):
+                            try:
+                                float(self.multistartLowerVariables[i].get())
+                            except:
+                                messagebox.showwarning("Bad lower bound", "Error 55: \nThe lower bound on a multistart must be a real number")
+                                return
+                            try:
+                                float(self.multistartUpperVariables[i].get())
+                            except:
+                                messagebox.showwarning("Bad upper bound", "Error 56: \nThe upper bound on a multistart must be a real number")
+                                return
+                            try:
+                                if (int(self.multistartNumberVariables[i].get()) <= 0):
+                                    raise Exception
+                            except:
+                                messagebox.showwarning("Bad number of multistarts", "Error 57: \nThe number of multistarts must be a positive integer")
+                                return
+                            if (np.sign(float(self.multistartLowerVariables[i].get())) != np.sign(float(self.multistartUpperVariables[i].get()))):
+                                messagebox.showwarning("Value error", "Error 58: \nFor logarithmic spacing, the sign of the upper and lower bounds must be the same")
+                                return
+                            if (float(self.multistartLowerVariables[i].get()) == 0 or float(self.multistartUpperVariables[i].get()) == 0):
+                                messagebox.showwarning("Value error", "Error 59: \nFor logarithmic spacing, neither the upper nor lower bound can be 0")
+                                return
+                            param_guesses[i].extend(np.geomspace(float(self.multistartLowerVariables[i].get()), float(self.multistartUpperVariables[i].get()), int(self.multistartNumberVariables[i].get())))
+                        elif (self.multistartSpacingVariables[i].get() == "Random"):
+                            try:
+                                float(self.multistartLowerVariables[i].get())
+                            except:
+                                messagebox.showwarning("Bad lower bound", "Error 55: \nThe lower bound on a multistart must be a real number")
+                                return
+                            try:
+                                float(self.multistartUpperVariables[i].get())
+                            except:
+                                messagebox.showwarning("Bad upper bound", "Error 56: \nThe upper bound on a multistart must be a real number")
+                                return
+                            try:
+                                if (int(self.multistartNumberVariables[i].get()) <= 0):
+                                    raise Exception
+                            except:
+                                messagebox.showwarning("Bad number of multistarts", "Error 57: \nThe number of multistarts must be a positive integer")
+                                return
+                            param_guesses[i].extend((float(self.multistartUpperVariables[i].get())-float(self.multistartLowerVariables[i].get()))*np.random.rand(int(self.multistartNumberVariables[i].get()))+float(self.multistartLowerVariables[i].get()))
+                        elif (self.multistartSpacingVariables[i].get() == "Custom"):
+                            try:
+                                param_guesses[i].extend(float(val) for val in [x.strip() for x in self.multistartCustomVariables[i].get().split(',')])
+                            except:
+                                messagebox.showwarning("Value error", "Error 60: \nThere was a problem with the custom multistart choices")
             param_limits = []
             for pL in self.paramComboboxValues:
                 if (pL.get() == "+"):
@@ -1256,11 +1889,21 @@ class fF(tk.Frame):
             self.saveFormulaButton.configure(state="disabled")
             self.weightingCombobox.configure(state="disabled")
             self.noiseEntry.configure(state="disabled")
-            self.prog_bar = ttk.Progressbar(self.runFrame, orient="horizontal", length=150, mode="indeterminate")
-            self.prog_bar.grid(column=3, row=0, padx=5)
-            self.prog_bar.start(40)
+            num_guesses = 1
+            for a in param_guesses:
+                num_guesses *= len(a)
+            self.listPercent = [num_guesses]
+            if (num_guesses > 1):
+                self.prog_bar = ttk.Progressbar(self.runFrame, orient="horizontal", length=150, mode="determinate")
+                self.prog_bar.grid(column=3, row=0, padx=5)
+                self.progStatus = tk.Label(self.runFrame, text="Initializing...", bg=self.backgroundColor, fg=self.foregroundColor)
+                self.progStatus.grid(column=4, row=0)
+            else:
+                self.prog_bar = ttk.Progressbar(self.runFrame, orient="horizontal", length=150, mode="indeterminate")
+                self.prog_bar.grid(column=3, row=0, padx=5)
+                self.prog_bar.start(40)
             
-            self.currentThreads.append(ThreadedTaskCustom(self.queue, fit_type, num_monte, weight, assumed_noise, formula, self.wdata, self.jdata, self.rdata, param_names, param_guesses, param_limits, errorModelParams))
+            self.currentThreads.append(ThreadedTaskCustom(self.queue, self.listPercent, fit_type, num_monte, weight, assumed_noise, formula, self.wdata, self.rdata, self.jdata, param_names, param_guesses, param_limits, errorModelParams))
             self.currentThreads[len(self.currentThreads) - 1].start()
             self.cancelButton.configure(command=lambda: self.currentThreads[len(self.currentThreads) - 1].terminate())
             self.cancelButton.grid(column=2, row=0, sticky="W", padx=15)
@@ -1363,10 +2006,10 @@ class fF(tk.Frame):
                     else:
                         dataColor = "tab:blue"
                         fitColor = "orange"
-
+                    whichPlot = "a"
                     if (event.inaxes == self.aplot):
                         resultPlotBig.title("Nyquist Plot")
-                        larger.plot(self.rdata, -1*self.jdata, "o", color=dataColor)
+                        pointsPlot, = larger.plot(self.rdata, -1*self.jdata, "o", color=dataColor)
                         larger.plot(RealFit, -1*ImagFit, color=fitColor, marker="x", markeredgecolor="black")
                         if (self.confInt):
                             for i in range(len(self.wdata)):
@@ -1378,9 +2021,12 @@ class fF(tk.Frame):
                         larger.set_title("Nyquist Plot", color=self.foregroundColor)
                         larger.set_xlabel("Zr / Ω", color=self.foregroundColor)
                         larger.set_ylabel("-Zj / Ω", color=self.foregroundColor)
+                        whichPlot = "a"
+                        rightPoint = max(self.rdata)
+                        topPoint = max(-1*self.jdata)
                     elif (event.inaxes == self.bplot):
                         resultPlotBig.title("Real Impedance Plot")
-                        larger.plot(self.wdata, self.rdata, "o", color=dataColor)
+                        pointsPlot, = larger.plot(self.wdata, self.rdata, "o", color=dataColor)
                         larger.plot(self.wdata, RealFit, color=fitColor)
                         if (self.confInt):
                             error_above = np.zeros(len(self.wdata))
@@ -1394,9 +2040,12 @@ class fF(tk.Frame):
                         larger.set_title("Real Impedance Plot", color=self.foregroundColor)
                         larger.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                         larger.set_ylabel("Zr / Ω", color=self.foregroundColor)
+                        whichPlot = "b"
+                        rightPoint = max(self.wdata)
+                        topPoint = max(self.rdata)
                     elif (event.inaxes == self.cplot):
                         resultPlotBig.title("Imaginary Impedance Plot")
-                        larger.plot(self.wdata, -1*self.jdata, "o", color=dataColor)
+                        pointsPlot, = larger.plot(self.wdata, -1*self.jdata, "o", color=dataColor)
                         larger.plot(self.wdata, -1*ImagFit, color=fitColor)
                         if (self.confInt):
                             error_above = np.zeros(len(self.wdata))
@@ -1410,9 +2059,12 @@ class fF(tk.Frame):
                         larger.set_title("Imaginary Impedance Plot", color=self.foregroundColor)
                         larger.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                         larger.set_ylabel("-Zj / Ω", color=self.foregroundColor)
+                        whichPlot = "c"
+                        rightPoint = max(self.wdata)
+                        topPoint = max(-1*self.jdata)
                     elif (event.inaxes == self.dplot):
                         resultPlotBig.title("|Z| Bode Plot")
-                        larger.plot(self.wdata, np.sqrt(self.jdata**2 + self.rdata**2), "o", color=dataColor)
+                        pointsPlot, = larger.plot(self.wdata, np.sqrt(self.jdata**2 + self.rdata**2), "o", color=dataColor)
                         larger.plot(self.wdata, np.sqrt(ImagFit**2 + RealFit**2), color=fitColor)
                         if (self.confInt):
                             error_above = np.zeros(len(self.wdata))
@@ -1427,26 +2079,32 @@ class fF(tk.Frame):
                         larger.set_title("|Z| Bode Plot", color=self.foregroundColor)
                         larger.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                         larger.set_ylabel("|Z| / Ω", color=self.foregroundColor)
+                        whichPlot = "d"
+                        rightPoint = max(self.wdata)
+                        topPoint = max(np.sqrt(self.jdata**2 + self.rdata**2))
                     elif (event.inaxes == self.eplot):
                         phase_fit = np.arctan2(ImagFit, RealFit) * (180/np.pi)
                         actual_phase = np.arctan2(self.jdata, self.rdata) * (180/np.pi)
                         resultPlotBig.title("Phase Angle Bode Plot")
-                        larger.plot(self.wdata, actual_phase, "o", color=dataColor)
+                        pointsPlot, = larger.plot(self.wdata, actual_phase, "o", color=dataColor)
                         larger.plot(self.wdata, phase_fit, color=fitColor)
                         if (self.confInt):
                             error_above = np.arctan2((ImagFit+2*self.sdrImag), (RealFit+2*self.sdrReal)) * (180/np.pi)
                             error_below = np.arctan2((ImagFit-2*self.sdrImag), (RealFit-2*self.sdrReal)) * (180/np.pi)
                             larger.plot(self.wdata, error_above, "--", color=self.ellipseColor)
                             larger.plot(self.wdata, error_below, "--", color=self.ellipseColor)
-    #                    larger.yaxis.set_ticks([-90, -75, -60, -45, -30, -15, 0])
-                        larger.set_ylim(bottom=-90, top=0)
+                        larger.yaxis.set_ticks([-90, -75, -60, -45, -30, -15, 0])
+                        larger.set_ylim(bottom=0, top=-90)
                         larger.set_xscale("log")
                         larger.set_title("Phase Angle Bode Plot", color=self.foregroundColor)
                         larger.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                         larger.set_ylabel("Phase Angle / Degrees", color=self.foregroundColor)
+                        whichPlot = "e"
+                        rightPoint = max(self.wdata)
+                        topPoint = -90
                     elif (event.inaxes == self.hplot):
-                        resultPlotBig.title("Log(Zr) vs Log|ω|")
-                        larger.plot(self.wdata, np.log10(abs(self.rdata)), "o", color=dataColor)
+                        resultPlotBig.title("Log(Zr) vs Log|f|")
+                        pointsPlot, = larger.plot(self.wdata, np.log10(abs(self.rdata)), "o", color=dataColor)
                         larger.plot(self.wdata, np.log10(abs(RealFit)), color=fitColor)
                         if (self.confInt):
                             error_above = np.zeros(len(self.wdata))
@@ -1462,9 +2120,12 @@ class fF(tk.Frame):
                         larger.set_title("Log|Zr|", color=self.foregroundColor)
                         larger.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                         larger.set_ylabel("Log|Zr|", color=self.foregroundColor)
+                        whichPlot = "h"
+                        rightPoint = max(self.wdata)
+                        topPoint = max(np.log10(abs(self.rdata)))
                     elif (event.inaxes == self.iplot):
-                         resultPlotBig.title("Log|Zj| vs Log|ω|")
-                         larger.plot(self.wdata, np.log10(abs(self.jdata)), "o", color=dataColor)
+                         resultPlotBig.title("Log|Zj| vs Log|f|")
+                         pointsPlot, = larger.plot(self.wdata, np.log10(abs(self.jdata)), "o", color=dataColor)
                          larger.plot(self.wdata, np.log10(abs(ImagFit)), color=fitColor)
                          if (self.confInt):
                             error_above = np.zeros(len(self.wdata))
@@ -1480,6 +2141,9 @@ class fF(tk.Frame):
                          larger.set_title("Log|Zj|", color=self.foregroundColor)
                          larger.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                          larger.set_ylabel("Log|Zj|", color=self.foregroundColor)
+                         whichPlot = "i"
+                         rightPoint = max(self.wdata)
+                         topPoint = max(np.log10(abs(self.jdata)))
                     elif (event.inaxes == self.kplot):
                         normalized_residuals_real = np.zeros(len(self.wdata))
                         normalized_error_real_below = np.zeros(len(self.wdata))
@@ -1489,7 +2153,7 @@ class fF(tk.Frame):
                             normalized_error_real_below[i] = 2*self.sdrReal[i]/RealFit[i]
                             normalized_error_real_above[i] = -2*self.sdrReal[i]/RealFit[i]
                         resultPlotBig.title("Real Normalized Residuals")
-                        larger.plot(self.wdata, normalized_residuals_real, "o", markerfacecolor="None", color=dataColor)
+                        pointsPlot, = larger.plot(self.wdata, normalized_residuals_real, "o", markerfacecolor="None", color=dataColor)
                         if (self.confInt):
                             larger.plot(self.wdata, normalized_error_real_above, "--", color=self.ellipseColor)
                             larger.plot(self.wdata, normalized_error_real_below, "--", color=self.ellipseColor)
@@ -1498,6 +2162,9 @@ class fF(tk.Frame):
                         larger.set_title("Real Normalized Residuals", color=self.foregroundColor)
                         larger.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                         larger.set_ylabel("(Zr-Z\u0302rmodel)/Zr", color=self.foregroundColor)
+                        whichPlot = "k"
+                        rightPoint = max(self.wdata)
+                        topPoint = max(normalized_residuals_real)
                     elif (event.inaxes == self.lplot):
                         normalized_residuals_imag = np.zeros(len(self.wdata))
                         normalized_error_imag_below = np.zeros(len(self.wdata))
@@ -1507,7 +2174,7 @@ class fF(tk.Frame):
                             normalized_error_imag_below[i] = 2*self.sdrImag[i]/ImagFit[i]
                             normalized_error_imag_above[i] = -2*self.sdrImag[i]/ImagFit[i]
                         resultPlotBig.title("Imaginary Normalized Residuals")
-                        larger.plot(self.wdata, normalized_residuals_imag, "o", markerfacecolor="None", color=dataColor)
+                        pointsPlot, = larger.plot(self.wdata, normalized_residuals_imag, "o", markerfacecolor="None", color=dataColor)
                         if (self.confInt):
                             larger.plot(self.wdata, normalized_error_imag_above, "--", color=self.ellipseColor)
                             larger.plot(self.wdata, normalized_error_imag_below, "--", color=self.ellipseColor)
@@ -1516,7 +2183,9 @@ class fF(tk.Frame):
                         larger.set_title("Imaginary Normalized Residuals", color=self.foregroundColor)
                         larger.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                         larger.set_ylabel("(Zj-Z\u0302jmodel)/Zj", color=self.foregroundColor)
-    
+                        whichPlot = "l"
+                        rightPoint = max(self.wdata)
+                        topPoint = max(normalized_residuals_imag)
                     larger.xaxis.label.set_fontsize(20)
                     larger.yaxis.label.set_fontsize(20)
                     larger.title.set_fontsize(30)    
@@ -1526,6 +2195,61 @@ class fF(tk.Frame):
                 toolbar = NavigationToolbar2Tk(largerCanvas, resultPlotBig)
                 toolbar.update()
                 largerCanvas._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+                if (self.mouseoverCheckboxVariable.get() == 1):
+                    annot = larger.annotate("", xy=(0,0), xytext=(10,10),textcoords="offset points", bbox=dict(boxstyle="round", fc="w", alpha=1), arrowprops=dict(arrowstyle="-"))
+                    annot.set_visible(False)
+                    def update_annot(ind):
+                        x,y = pointsPlot.get_data()
+                        xval = x[ind["ind"][0]]
+                        yval = y[ind["ind"][0]]
+                        annot.xy = (xval, yval)
+                        if (whichPlot == "a"):
+                            text = "Zr=%.5g"%xval + "\nZj=-%.5g"%yval + "\nf=%.5g"%self.wdata[np.where(self.rdata == xval)][0]
+                        elif (whichPlot == "b"):
+                            text = "Zr=%.5g"%yval + "\nZj=-%.5g"%self.jdata[np.where(self.rdata == yval)][0] + "\nf=%.5g"%xval
+                        elif (whichPlot == "c"):
+                            text = "Zr=%.5g"%self.rdata[np.where(-1*self.jdata == yval)][0] + "\nZj=-%.5g"%yval + "\nf=%.5g"%xval
+                        elif (whichPlot == "d"):
+                            text = "|Z|=%.5g"%yval + "\nf=%.5g"%xval
+                        elif (whichPlot == "e"):
+                            text = "\u03D5=%.5g\u00B0"%yval + "\nf=%.5g"%xval
+                        elif (whichPlot == "h"):
+                            text = "Zr=%.5g"%10**yval + "\nf=%.5g"%xval
+                        elif (whichPlot == "i"):
+                            text = "Zj=-%.5g"%10**yval + "\nf=%.5g"%xval
+                        elif (whichPlot == "k"):
+                            text = "Real res.=%.5g"%yval + "\nf=%.5g"%xval
+                        elif (whichPlot == "l"):
+                            text = "Imag. res.=%.5g"%yval + "\nf=%.5g"%xval  
+                        annot.set_text(text)
+                        #---Check if we're within 5% of the right or top edges, and adjust label positions accordingly
+                        if (rightPoint != 0):
+                            if (abs(xval - rightPoint)/rightPoint <= 0.05):
+                                annot.set_position((-10, -20))
+                        if (topPoint != 0):
+                            if (whichPlot != "e" and whichPlot != "g"):
+                                if (abs(yval - topPoint)/topPoint <= 0.05):
+                                    annot.set_position((10, -20))
+                            else:
+                                if (yval <= -85.5):
+                                    annot.set_position((10, -20))
+                        else:
+                            annot.set_position((10, -20))
+                    def hover(event):
+                        vis = annot.get_visible()
+                        if event.inaxes == larger:
+                            nonlocal pointsPlot
+                            cont, ind = pointsPlot.contains(event)
+                            if cont:
+                                update_annot(ind)
+                                annot.set_visible(True)
+                                fig.canvas.draw_idle()
+                            else:
+                                if vis:
+                                    annot.set_position((10,10))
+                                    annot.set_visible(False)
+                                    fig.canvas.draw_idle()
+                    fig.canvas.mpl_connect("motion_notify_event", hover)
                 def on_closing():   #Clear the figure before closing the popup
                     fig.clear()
                     resultPlotBig.destroy()
@@ -1584,12 +2308,12 @@ class fF(tk.Frame):
                         ellipse.set_alpha(0.1)
                         ellipse.set_facecolor(self.ellipseColor)
                 self.aplot.axis("equal")
-                #self.aplot.set_title("Nyquist")
-                extra = patches.Rectangle((0, 0), 1, 1, fc="w", fill=False, edgecolor='none', linewidth=0)
-                legA = self.aplot.legend([extra], ["Nyquist"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                for text in legA.get_texts():
-                    text.set_color(self.foregroundColor)
-                self.aplot.set_xlabel("Zr / Ω", color=self.foregroundColor)
+                self.aplot.set_title("Nyquist", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                #extra = patches.Rectangle((0, 0), 1, 1, fc="w", fill=False, edgecolor='none', linewidth=0)
+                #legA = self.aplot.legend([extra], ["Nyquist"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
+                #for text in legA.get_texts():
+                #    text.set_color(self.foregroundColor)
+                #self.aplot.set_xlabel("Zr / Ω", color=self.foregroundColor)
                 self.aplot.set_ylabel("-Zj / Ω", color=self.foregroundColor)
                 
                 self.bplot = self.f.add_subplot(332)
@@ -1609,11 +2333,11 @@ class fF(tk.Frame):
                     self.bplot.plot(self.wdata, error_above, "--", color=self.ellipseColor)
                     self.bplot.plot(self.wdata, error_below, "--", color=self.ellipseColor)
                 self.bplot.set_xscale('log')
-                #self.bplot.set_title("Real Impedance")
-                legB = self.bplot.legend([extra], ["Real Impedance"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                for text in legB.get_texts():
-                    text.set_color(self.foregroundColor)
-                self.bplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                self.bplot.set_title("Real Impedance", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                #legB = self.bplot.legend([extra], ["Real Impedance"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
+                #for text in legB.get_texts():
+                #   text.set_color(self.foregroundColor)
+                #self.bplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.bplot.set_ylabel("Zr / Ω", color=self.foregroundColor)
                 
                 self.cplot = self.f.add_subplot(333)
@@ -1633,11 +2357,11 @@ class fF(tk.Frame):
                     self.cplot.plot(self.wdata, -1*error_above, "--", color=self.ellipseColor)
                     self.cplot.plot(self.wdata, -1*error_below, "--", color=self.ellipseColor)
                 self.cplot.set_xscale('log')
-                #self.cplot.set_title("Imaginary Impedance")
-                legC = self.cplot.legend([extra], ["Imaginary Impedance"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                for text in legC.get_texts():
-                    text.set_color(self.foregroundColor)
-                self.cplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                self.cplot.set_title("Imaginary Impedance", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                #legC = self.cplot.legend([extra], ["Imaginary Impedance"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
+                #for text in legC.get_texts():
+                #    text.set_color(self.foregroundColor)
+                #self.cplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.cplot.set_ylabel("-Zj / Ω", color=self.foregroundColor)
                 
                 self.dplot = self.f.add_subplot(334)
@@ -1658,11 +2382,11 @@ class fF(tk.Frame):
                     self.dplot.plot(self.wdata, error_below, "--", color=self.ellipseColor)
                 self.dplot.set_xscale('log')
                 self.dplot.set_yscale('log')
-                #self.dplot.set_title("|Z| Bode")
-                legD = self.dplot.legend([extra], ["|Z| Bode"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                for text in legD.get_texts():
-                    text.set_color(self.foregroundColor)
-                self.dplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                self.dplot.set_title("|Z| Bode", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                #legD = self.dplot.legend([extra], ["|Z| Bode"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
+                #for text in legD.get_texts():
+                #    text.set_color(self.foregroundColor)
+                #self.dplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.dplot.set_ylabel("|Z| / Ω", color=self.foregroundColor)
                 
                 self.eplot = self.f.add_subplot(335)
@@ -1683,14 +2407,14 @@ class fF(tk.Frame):
                     error_below = np.arctan2((ImagFit-2*self.sdrImag) , (RealFit-2*self.sdrReal)) * (180/np.pi)
                     self.eplot.plot(self.wdata, error_above, "--", color=self.ellipseColor)
                     self.eplot.plot(self.wdata, error_below, "--", color=self.ellipseColor)
-    #            self.eplot.yaxis.set_ticks([-90, -75, -60, -45, -30, -15, 0])
-                self.eplot.set_ylim(bottom=-90, top=0)
+                self.eplot.yaxis.set_ticks([-90, -75, -60, -45, -30, -15, 0])
+                self.eplot.set_ylim(bottom=0, top=-90)
                 self.eplot.set_xscale('log')
-                #self.eplot.set_title("Phase Angle Bode")
-                legE = self.eplot.legend([extra], ["Phase Angle Bode"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                for text in legE.get_texts():
-                    text.set_color(self.foregroundColor)
-                self.eplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                self.eplot.set_title("Phase Angle Bode", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                #legE = self.eplot.legend([extra], ["Phase Angle Bode"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
+                #for text in legE.get_texts():
+                #    text.set_color(self.foregroundColor)
+                #self.eplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.eplot.set_ylabel("Phase angle / Deg.", color=self.foregroundColor)
                 
                 self.hplot = self.f.add_subplot(336)
@@ -1710,11 +2434,11 @@ class fF(tk.Frame):
                     self.hplot.plot(self.wdata, error_above, "--", color=self.ellipseColor)
                     self.hplot.plot(self.wdata, error_below, "--", color=self.ellipseColor)
                 self.hplot.set_xscale('log')
-                #self.hplot.set_title("Log|Zr|")
-                legH = self.hplot.legend([extra], ["Log|Zr|"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                for text in legH.get_texts():
-                    text.set_color(self.foregroundColor)
-                self.hplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                self.hplot.set_title("Log|Zr|", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                #legH = self.hplot.legend([extra], ["Log|Zr|"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
+                #for text in legH.get_texts():
+                #    text.set_color(self.foregroundColor)
+                #self.hplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.hplot.set_ylabel("Log|Zr|", color=self.foregroundColor)
                 
                 self.iplot = self.f.add_subplot(337)
@@ -1734,11 +2458,11 @@ class fF(tk.Frame):
                     self.iplot.plot(self.wdata, error_above, "--", color=self.ellipseColor)
                     self.iplot.plot(self.wdata, error_below, "--", color=self.ellipseColor)
                 self.iplot.set_xscale('log')
-                #self.iplot.set_title("Log|Zj|")
-                legI = self.iplot.legend([extra], ["Log|Zj|"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                for text in legI.get_texts():
-                    text.set_color(self.foregroundColor)
-                self.iplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                self.iplot.set_title("Log|Zj|", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                #legI = self.iplot.legend([extra], ["Log|Zj|"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
+                #for text in legI.get_texts():
+                #    text.set_color(self.foregroundColor)
+                #self.iplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.iplot.set_ylabel("Log|Zj|", color=self.foregroundColor)
                 
                 normalized_residuals_real = np.zeros(len(self.wdata))
@@ -1768,11 +2492,11 @@ class fF(tk.Frame):
                 #fplot.plot(self.wdata, phase_fit, color="orange")
                 self.kplot.axhline(0, color="black", linewidth=1.0)
                 self.kplot.set_xscale('log')
-                #self.kplot.set_title("Real Residuals")
-                legK = self.kplot.legend([extra], ["Real Residuals"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                for text in legK.get_texts():
-                    text.set_color(self.foregroundColor)
-                self.kplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                self.kplot.set_title("Real Residuals", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                #legK = self.kplot.legend([extra], ["Real Residuals"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
+                #for text in legK.get_texts():
+                #    text.set_color(self.foregroundColor)
+                #self.kplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.kplot.set_ylabel("(Zr-Zrmodel)/Zr", color=self.foregroundColor)
                 
                 self.lplot = self.f.add_subplot(339)
@@ -1788,23 +2512,219 @@ class fF(tk.Frame):
                 #fplot.plot(self.wdata, phase_fit, color="orange")
                 self.lplot.axhline(0, color="black", linewidth=1.0)
                 self.lplot.set_xscale('log')
-                #self.lplot.set_title("Imaginary Residuals")
-                legL = self.lplot.legend([extra], ["Imaginary Residuals"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                self.lplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                self.lplot.set_title("Imaginary Residuals", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                #legL = self.lplot.legend([extra], ["Imaginary Residuals"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
+                #self.lplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.lplot.set_ylabel("(Zj-Zjmodel)/Zj", color=self.foregroundColor)
-                for text in legL.get_texts():
-                    text.set_color(self.foregroundColor)
+                #for text in legL.get_texts():
+                #    text.set_color(self.foregroundColor)
                 self.nyCanvas = FigureCanvasTkAgg(self.f, self.resultPlot)
                 self.f.subplots_adjust(top=0.95, bottom=0.1, right=0.95, left=0.05)
             self.nyCanvas.draw()
             self.nyCanvas.get_tk_widget().pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
             self.nyCanvas.mpl_connect('button_press_event', onclick)
             self.nyCanvas._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+            def saveAllPlots():
+                folder = askdirectory(parent=self.resultPlot, initialdir=self.topGUI.getCurrentDirectory())
+                folder_str = str(folder)
+                if (len(folder_str) == 0):
+                    pass
+                else:
+                    self.saveNyCanvasButton.configure(text="Saving...")
+                    defaultSaveName, ext = os.path.splitext(os.path.basename(self.browseEntry.get()))
+                    defaultSaveName += "-" + self.whatFit + str((len(self.fits)-1)//2)
+                    pltSaveFig = plt.Figure()
+                    pltSaveFig.set_facecolor(self.backgroundColor)
+                    dataColor = "tab:blue"
+                    fitColor = "orange"
+                    if (self.topGUI.getTheme() == "dark"):
+                        dataColor = "cyan"
+                        fitColor = "gold"
+                    else:
+                        dataColor = "tab:blue"
+                        fitColor = "orange"
+    
+                    save_canvas = FigureCanvas(pltSaveFig)
+                    ax_save = pltSaveFig.add_subplot(111)
+                    ax_save.set_facecolor(self.backgroundColor)
+                    #---aplot---
+                    ax_save.yaxis.set_ticks_position("both")
+                    ax_save.yaxis.set_tick_params(color=self.foregroundColor, direction="in")
+                    ax_save.xaxis.set_ticks_position("both")
+                    ax_save.xaxis.set_tick_params(color=self.foregroundColor, direction="in")
+                    ax_save.plot(self.rdata, -1*self.jdata, "o",  color=dataColor)
+                    ax_save.plot(RealFit, -1*ImagFit, color=fitColor, marker="x", markeredgecolor="black")
+                    if (self.confInt):
+                        for i in range(len(self.wdata)):
+                            ellipse = patches.Ellipse(xy=(RealFit[i], ImagFit[i]), width=4*self.sdrReal[i], height=4*self.sdrImag[i])
+                            ax_save.add_artist(ellipse)
+                            ellipse.set_alpha(0.1)
+                            ellipse.set_facecolor(self.ellipseColor)
+                    ax_save.axis("equal")
+                    ax_save.set_title("Nyquist", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                    ax_save.set_xlabel("Zr / Ω", color=self.foregroundColor)
+                    ax_save.set_ylabel("-Zj / Ω", color=self.foregroundColor)
+                    pltSaveFig.savefig(str(os.path.join(folder, defaultSaveName)) + "_nyquist_custom.png", dpi=300)
+                    ax_save.clear()
+                    ax_save.axis("auto")
+                    #---bplot---
+                    ax_save.set_facecolor(self.backgroundColor)
+                    ax_save.yaxis.set_ticks_position("both")
+                    ax_save.yaxis.set_tick_params(color=self.foregroundColor, direction="in")
+                    ax_save.xaxis.set_ticks_position("both")
+                    ax_save.xaxis.set_tick_params(color=self.foregroundColor, direction="in", which="both")
+                    ax_save.plot(self.wdata, self.rdata, "o", color=dataColor)
+                    ax_save.plot(self.wdata, RealFit, color=fitColor)
+                    if (self.confInt):
+                        error_above = np.zeros(len(self.wdata))
+                        error_below = np.zeros(len(self.wdata))
+                        for i in range(len(self.wdata)):
+                            error_above[i] = max(RealFit[i] + 2*self.sdrReal[i], RealFit[i] - 2*self.sdrReal[i])
+                            error_below[i] = min(RealFit[i] + 2*self.sdrReal[i], RealFit[i] - 2*self.sdrReal[i])
+                        ax_save.plot(self.wdata, error_above, "--", color=self.ellipseColor)
+                        ax_save.plot(self.wdata, error_below, "--", color=self.ellipseColor)
+                    ax_save.set_xscale('log')
+                    ax_save.set_title("Real Impedance", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                    ax_save.set_ylabel("Zr / Ω", color=self.foregroundColor)
+                    ax_save.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                    pltSaveFig.savefig(str(os.path.join(folder, defaultSaveName)) + "_real_impedance_custom.png", dpi=300)
+                    ax_save.clear()
+                    #---cplot---
+                    ax_save.plot(self.wdata, -1*self.jdata, "o", color=dataColor)
+                    ax_save.plot(self.wdata, -1*ImagFit, color=fitColor)
+                    if (self.confInt):
+                        error_above = np.zeros(len(self.wdata))
+                        error_below = np.zeros(len(self.wdata))
+                        for i in range(len(self.wdata)):
+                            error_above[i] = max(ImagFit[i] + 2*self.sdrImag[i], ImagFit[i] - 2*self.sdrImag[i])
+                            error_below[i] = min(ImagFit[i] + 2*self.sdrImag[i], ImagFit[i] - 2*self.sdrImag[i])
+                        ax_save.plot(self.wdata, -1*error_above, "--", color=self.ellipseColor)
+                        ax_save.plot(self.wdata, -1*error_below, "--", color=self.ellipseColor)
+                    ax_save.set_xscale('log')
+                    ax_save.set_title("Imaginary Impedance", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                    ax_save.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                    ax_save.set_ylabel("-Zj / Ω", color=self.foregroundColor)
+                    pltSaveFig.savefig(str(os.path.join(folder, defaultSaveName)) + "_imag_impedance_custom.png", dpi=300)
+                    ax_save.clear()
+                    #---dplot---
+                    ax_save.yaxis.set_ticks_position("both")
+                    ax_save.yaxis.set_tick_params(color=self.foregroundColor, direction="in", which="both")
+                    ax_save.xaxis.set_ticks_position("both")
+                    ax_save.xaxis.set_tick_params(color=self.foregroundColor, direction="in", which="both")
+                    ax_save.plot(self.wdata, np.sqrt(self.rdata**2 + self.jdata**2), "o", color=dataColor)
+                    ax_save.plot(self.wdata, np.sqrt(RealFit**2 + ImagFit**2), color=fitColor)
+                    if (self.confInt):
+                        error_above = np.zeros(len(self.wdata))
+                        error_below = np.zeros(len(self.wdata))
+                        for i in range(len(self.wdata)):
+                            error_above[i] = np.sqrt(max((RealFit[i]+2*self.sdrReal[i])**2, (RealFit[i]-2*self.sdrReal[i])**2) + max((ImagFit[i]+2*self.sdrImag[i])**2, (ImagFit[i]-2*self.sdrImag[i])**2))
+                            error_below[i] = np.sqrt(min((RealFit[i]+2*self.sdrReal[i])**2, (RealFit[i]-2*self.sdrReal[i])**2) + min((ImagFit[i]+2*self.sdrImag[i])**2, (ImagFit[i]-2*self.sdrImag[i])**2))
+                        ax_save.plot(self.wdata, error_above, "--", color=self.ellipseColor)
+                        ax_save.plot(self.wdata, error_below, "--", color=self.ellipseColor)
+                    ax_save.set_xscale('log')
+                    ax_save.set_yscale('log')
+                    ax_save.set_title("|Z| Bode", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                    ax_save.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                    ax_save.set_ylabel("|Z| / Ω", color=self.foregroundColor)
+                    pltSaveFig.savefig(str(os.path.join(folder, defaultSaveName)) + "_Z_bode_custom.png", dpi=300)
+                    ax_save.clear()
+                    #---eplot---
+                    ax_save.yaxis.set_ticks_position("both")
+                    ax_save.yaxis.set_tick_params(color=self.foregroundColor, direction="in")
+                    ax_save.xaxis.set_ticks_position("both")
+                    ax_save.xaxis.set_tick_params(color=self.foregroundColor, direction="in", which="both")
+                    ax_save.plot(self.wdata, np.arctan2(self.jdata, self.rdata)*(180/np.pi), "o", color=dataColor)
+                    ax_save.plot(self.wdata, phase_fit, color=fitColor)
+                    if (self.confInt):
+        #                error_above = np.zeros(len(self.wdata))
+        #                error_below = np.zeros(len(self.wdata))
+        #                for i in range(len(self.wdata)):
+        #                    error_above[i] = np.arctan2(max((Zfit.imag[i]+2*self.sdrImag[i]), (Zfit.imag[i]-2*self.sdrImag[i])), min((Zfit.real[i]+2*self.sdrReal[i]), (Zfit.real[i]-2*self.sdrReal[i])))
+        #                    error_below[i] = np.arctan2(min((Zfit.imag[i]+2*self.sdrImag[i]), (Zfit.imag[i]-2*self.sdrImag[i])), max((Zfit.real[i]+2*self.sdrReal[i]), (Zfit.real[i]-2*self.sdrReal[i])))
+                        error_above = np.arctan2((ImagFit+2*self.sdrImag) , (RealFit+2*self.sdrReal)) * (180/np.pi)
+                        error_below = np.arctan2((ImagFit-2*self.sdrImag) , (RealFit-2*self.sdrReal)) * (180/np.pi)
+                        ax_save.plot(self.wdata, error_above, "--", color=self.ellipseColor)
+                        ax_save.plot(self.wdata, error_below, "--", color=self.ellipseColor)
+                    ax_save.yaxis.set_ticks([-90, -75, -60, -45, -30, -15, 0])
+                    ax_save.set_ylim(bottom=0, top=-90)
+                    ax_save.set_xscale('log')
+                    ax_save.set_title("Phase Angle Bode", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                    ax_save.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                    ax_save.set_ylabel("Phase angle / Deg.", color=self.foregroundColor)
+                    pltSaveFig.savefig(str(os.path.join(folder, defaultSaveName)) + "_phase_angle_bode_custom.png", dpi=300)
+                    ax_save.clear()
+                    #---hplot---
+                    ax_save.plot(self.wdata, np.log10(abs(self.rdata)), "o", color=dataColor)
+                    ax_save.plot(self.wdata, np.log10(abs(RealFit)), color=fitColor)
+                    if (self.confInt):
+                        error_above = np.zeros(len(self.wdata))
+                        error_below = np.zeros(len(self.wdata))
+                        for i in range(len(self.wdata)):
+                            error_above[i] = max(np.log10(abs(RealFit[i]+2*self.sdrReal[i])), np.log10(abs(RealFit[i]-2*self.sdrReal[i]))) #np.log10(max(abs(Zfit.real[i]+2*self.sdrReal[i]), abs(Zfit.real[i]-2*self.sdrReal[i])))
+                            error_below[i] = min(np.log10(abs(RealFit[i]+2*self.sdrReal[i])), np.log10(abs(RealFit[i]-2*self.sdrReal[i])))#np.log10(min(abs(Zfit.real[i]+2*self.sdrReal[i]), abs(Zfit.real[i]-2*self.sdrReal[i])))
+                        ax_save.plot(self.wdata, error_above, "--", color=self.ellipseColor)
+                        ax_save.plot(self.wdata, error_below, "--", color=self.ellipseColor)
+                    ax_save.set_xscale('log')
+                    ax_save.set_title("Log|Zr|", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                    ax_save.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                    ax_save.set_ylabel("Log|Zr|", color=self.foregroundColor)
+                    pltSaveFig.savefig(str(os.path.join(folder, defaultSaveName)) + "_log_zr_custom.png", dpi=300)
+                    ax_save.clear()
+                    #---iplot---
+                    ax_save.plot(self.wdata, np.log10(abs(self.jdata)), "o", color=dataColor)
+                    ax_save.plot(self.wdata, np.log10(abs(ImagFit)), color=fitColor)
+                    if (self.confInt):
+                        error_above = np.zeros(len(self.wdata))
+                        error_below = np.zeros(len(self.wdata))
+                        for i in range(len(self.wdata)):
+                            error_above[i] = max(np.log10(abs(ImagFit[i]+2*self.sdrImag[i])), np.log10(abs(ImagFit[i]-2*self.sdrImag[i])))#np.log10(max(abs(Zfit.imag[i]+2*self.sdrImag[i]), abs(Zfit.imag[i]-2*self.sdrImag[i])))
+                            error_below[i] = min(np.log10(abs(ImagFit[i]+2*self.sdrImag[i])), np.log10(abs(ImagFit[i]-2*self.sdrImag[i])))#np.log10(min(abs(Zfit.imag[i]+2*self.sdrImag[i]), abs(Zfit.imag[i]-2*self.sdrImag[i])))
+                        ax_save.plot(self.wdata, error_above, "--", color=self.ellipseColor)
+                        ax_save.plot(self.wdata, error_below, "--", color=self.ellipseColor)
+                    ax_save.set_xscale('log')
+                    ax_save.set_title("Log|Zj|", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                    ax_save.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                    ax_save.set_ylabel("Log|Zj|", color=self.foregroundColor)
+                    pltSaveFig.savefig(str(os.path.join(folder, defaultSaveName)) + "_log_zj_custom.png", dpi=300)
+                    ax_save.clear()
+                    #---kplot---
+                    ax_save.plot(self.wdata, normalized_residuals_real, "o", markerfacecolor="None", color=dataColor)
+                    if (self.confInt):
+                        ax_save.plot(self.wdata, normalized_error_real_above, "--", color=self.ellipseColor)
+                        ax_save.plot(self.wdata, normalized_error_real_below, "--", color=self.ellipseColor)
+                    #fplot.plot(self.wdata, phase_fit, color="orange")
+                    ax_save.axhline(0, color="black", linewidth=1.0)
+                    ax_save.set_xscale('log')
+                    ax_save.set_title("Real Residuals", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                    ax_save.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                    ax_save.set_ylabel("(Zr-Zrmodel)/Zr", color=self.foregroundColor)
+                    pltSaveFig.savefig(str(os.path.join(folder, defaultSaveName)) + "_real_residuals_custom.png", dpi=300)
+                    ax_save.clear()
+                    #---lplot---
+                    ax_save.plot(self.wdata, normalized_residuals_imag, "o", markerfacecolor="None", color=dataColor)
+                    if (self.confInt):
+                        ax_save.plot(self.wdata, normalized_error_imag_above, "--", color=self.ellipseColor)
+                        ax_save.plot(self.wdata, normalized_error_imag_below, "--", color=self.ellipseColor)
+                    ax_save.axhline(0, color="black", linewidth=1.0)
+                    ax_save.set_xscale('log')
+                    ax_save.set_title("Imaginary Residuals", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
+                    ax_save.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                    ax_save.set_ylabel("(Zj-Zjmodel)/Zj", color=self.foregroundColor)
+                    pltSaveFig.savefig(str(os.path.join(folder, defaultSaveName)) + "_imag_residuals_custom.png", dpi=300)
+                    ax_save.clear()
+                    self.saveNyCanvasButton.configure(text="Saved")
+                    self.after(500, lambda: self.saveNyCanvasButton.configure(text="Save All"))
+            self.saveNyCanvasButton = ttk.Button(self.resultPlot, text="Save All", command=saveAllPlots)
+            saveNyCanvasButton_ttp = CreateToolTip(self.saveNyCanvasButton, "Save all plots")
+            self.saveNyCanvasButton.pack(side=tk.BOTTOM, pady=5, expand=False)
             enterAxes = self.f.canvas.mpl_connect('axes_enter_event', graphOver)
             leaveAxes = self.f.canvas.mpl_connect('axes_leave_event', graphOut)
             def on_closing():   #Clear the figure before closing the popup
                 self.f.clear()
                 self.resultPlot.destroy()
+                self.saveNyCanvasButton.destroy()
+                nonlocal saveNyCanvasButton_ttp
+                del saveNyCanvasButton_ttp
                 self.alreadyPlotted = False
             
             self.resultPlot.protocol("WM_DELETE_WINDOW", on_closing)
@@ -2245,13 +3165,17 @@ class fF(tk.Frame):
         self.graphFrame = tk.Frame(self, bg=self.backgroundColor)
         self.includeFrame = tk.Frame(self.graphFrame, bg=self.backgroundColor)
         self.confidenceIntervalCheckboxVariable = tk.IntVar(self, 0)
-        self.confidenceIntervalCheckbox = ttk.Checkbutton(self.includeFrame, text="Include Confidence Interval", variable=self.confidenceIntervalCheckboxVariable)
+        self.confidenceIntervalCheckbox = ttk.Checkbutton(self.includeFrame, text="Include CI", variable=self.confidenceIntervalCheckboxVariable)
+        self.mouseoverCheckboxVariable = tk.IntVar(self, 1)
+        self.mouseoverCheckbox = ttk.Checkbutton(self.includeFrame, text="Mouseover labels", variable=self.mouseoverCheckboxVariable)
         self.plotButton = ttk.Button(self.graphFrame, text="Plot", command=plotResults)
         self.plotButton.grid(column=0, row=0, sticky="W", pady=(8,5))
         self.confidenceIntervalCheckbox.grid(column=1, row=0, sticky="W", padx=5)
+        self.mouseoverCheckbox.grid(column=2, row=0, sticky="W")
         self.includeFrame.grid(column=1, row=0, sticky="W")
         plot_ttp = CreateToolTip(self.plotButton, 'Opens a window with plots using data and fitted parameters')
         include_ttp = CreateToolTip(self.confidenceIntervalCheckbox, 'Include confidence interval ellipses and bars when plotting')
+        mouseover_ttp = CreateToolTip(self.mouseoverCheckbox, 'Show data label on mouseover when viewing larger popup plots')
         
         #---The save and export buttons---
         self.saveFrame = tk.Frame(self, bg=self.backgroundColor)
@@ -2622,7 +3546,7 @@ class fF(tk.Frame):
                         pname, pval, pcombo = p.split("~=~")
                         self.numParams += 1
                         self.paramNameValues.append(tk.StringVar(self, pname))
-                        self.paramNameEntries.append(ttk.Entry(self.pframe, textvariable=self.paramNameValues[self.numParams-1], width=10))
+                        self.paramNameEntries.append(ttk.Entry(self.pframe, textvariable=self.paramNameValues[self.numParams-1], width=10, validate="all", validatecommand=valcom))
                         self.paramNameLabels.append(tk.Label(self.pframe, text="Name: ", background=self.backgroundColor, foreground=self.foregroundColor))
                         self.paramValueLabels.append(tk.Label(self.pframe, text="Value: ", background=self.backgroundColor, foreground=self.foregroundColor))
                         self.paramComboboxValues.append(tk.StringVar(self, pcombo))
@@ -2643,7 +3567,12 @@ class fF(tk.Frame):
                         self.paramValueEntries[len(self.paramValueEntries)-1].bind("<MouseWheel>", self._on_mousewheel)
                         self.paramDeleteButtons[len(self.paramDeleteButtons)-1].bind("<MouseWheel>", self._on_mousewheel)
                         self.paramNameEntries[len(self.paramNameEntries)-1].bind("<KeyRelease>", self.keyup)
+                        self.paramListbox.insert(tk.END, pname)
                 toLoad.close()
+                self.paramListbox.selection_clear(0, tk.END)
+                self.paramListbox.select_set(0)
+                self.paramListboxSelection = 0
+                self.paramListbox.event_generate("<<ListboxSelect>>")
                 try:
                     data = np.loadtxt(fileToLoad)
                     w_in = data[:,0]

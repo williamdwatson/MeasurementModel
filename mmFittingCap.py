@@ -312,7 +312,7 @@ class fitter:
         numCores = mp.cpu_count()
         for g in initialGuesses:
             numCombos *= len(g)
-        if ((numVoigtElements < 8 and numCombos > 200) or (numVoigtElements >= 8 and numCombos > 100)):
+        if (numVoigtElements * numCombos > 1000):   #(numVoigtElements < 8 and numCombos > 200) or (numVoigtElements >= 8 and numCombos > 100)):
             longestIndex = initialGuesses.index(max(initialGuesses, key=len))       #Find largest set of initial guesses
             splitArray = np.array_split(initialGuesses[longestIndex], numCores)     #Split the array at the index of the longest set of initial Guesses
             toRun = []                                                              #Initialize the array that will be used for multi-core processing

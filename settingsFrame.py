@@ -347,7 +347,7 @@ class sF(tk.Frame):
                 self.defaultReCheckboxVariable.set(0)
         
         def findNewDirectory():
-            folder = askdirectory(initialdir=self.topGUI.currentDirectory)
+            folder = askdirectory(initialdir=self.topGUI.getCurrentDirectory())
             folder_str = str(folder)
             if len(folder_str) == 0:
                 pass
