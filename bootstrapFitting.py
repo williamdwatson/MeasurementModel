@@ -2,7 +2,21 @@
 """
 Created on Tue Oct  8 16:19:24 2019
 
-@author: willdwat
+©Copyright 2020 University of Florida Research Foundation, Inc. All Rights Reserved.
+    William Watson and Mark Orazem
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 import numpy as np
@@ -396,6 +410,12 @@ class bootstrapFitter:
                 parameters[paramNames[i]].min = 0
             elif (paramBounds[i] == "f"):
                 parameters[paramNames[i]].vary = False
+            elif (len(paramBounds[i]) > 1):
+                upper, lower = paramBounds[i].split(";")
+                if (upper != "inf"):
+                    parameters[paramNames[i]].max = float(upper)
+                if (lower != "-inf"):
+                    parameters[paramNames[i]].min = float(lower)
         
         if (not self.keepGoing):
             return

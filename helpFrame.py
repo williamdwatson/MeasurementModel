@@ -2,7 +2,21 @@
 """
 Created on Wed Jun 20 15:07:52 2018
 
-@author: willdwat
+©Copyright 2020 University of Florida Research Foundation, Inc. All Rights Reserved.
+    William Watson and Mark Orazem
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 import tkinter as tk
 import webbrowser
@@ -180,6 +194,17 @@ class hF(tk.Frame):
         self.roundiconsLink.grid(column=0, row=7, sticky="W")
         self.becrisLink.grid(column=0, row=8, sticky="W")
         """
+        
+        self.copyrightLabel = tk.Label(self, text="©Copyright 2020 University of Florida Research Foundation, Inc. All Rights Reserved.\n\nThis program is free software: you can redistribute it and/or modify \
+it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.\n\n\
+\
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the \
+GNU General Public License for more details.\n\n\
+You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.", justify=tk.LEFT, wraplength=600, bg=self.backgroundColor, fg=self.foregroundColor)
+        
+        self.gnuLicenseLink = tk.Label(self, text="GNU General Public License", cursor="hand2", bg=self.backgroundColor, fg=self.linkColor)
+        self.gnuLicenseLink.bind('<Button-1>', lambda e: webbrowser.open_new("gpl-3.0-standalone.html"))
+        gnuLicense_ttp = CreateToolTip(self.gnuLicenseLink, 'GNU General Public License')
         self.aboutCodeFrame.grid(column=0, row=1, columnspan=3, sticky="W")
         self.aboutCode.grid(column=0, row=0, sticky="W")
         self.aboutCodeLink.grid(column=1, row=0, sticky="W")
@@ -194,6 +219,8 @@ class hF(tk.Frame):
         self.pltLink.grid(column=0, row=10, sticky="W")
         self.helpLink.grid(column=0, row=0, sticky="W", pady=7)
         self.aboutUsFrame.grid(column=0, row=13, sticky="W", pady=7)
+        self.copyrightLabel.grid(column=0, row=14, sticky="W")
+        self.gnuLicenseLink.grid(column=0, row=15, sticky="W", pady=7)
 #        self.bugLink.grid(column=0, row=6, sticky="W", pady=7)
     
     def setThemeLight(self):
@@ -217,6 +244,7 @@ class hF(tk.Frame):
         self.helpLink.configure(background="#FFFFFF", foreground="blue")
         #self.phatplusLink.configure(background="#FFFFFF", foreground="blue")
         self.aboutCode.configure(background="#FFFFFF", foreground="#000000")
+        self.copyrightLabel.configure(background="#FFFFFF", foreground="#000000")
         self.aboutCodeFrame.configure(background="#FFFFFF")
         self.aboutCodeLink.configure(background="#FFFFFF", foreground="blue")
         self.detectLink.configure(background="#FFFFFF", foreground="blue")
@@ -228,6 +256,7 @@ class hF(tk.Frame):
         self.comLink.configure(background="#FFFFFF", foreground="blue")
         self.sciLink.configure(background="#FFFFFF", foreground="blue")
         self.pltLink.configure(background="#FFFFFF", foreground="blue")
+        self.gnuLicenseLink.configure(background="#FFFFFF", foreground="blue")
 #        self.bugLink.configure(background="#FFFFFF", foreground="blue")
                                   
     def setThemeDark(self):
@@ -251,6 +280,7 @@ class hF(tk.Frame):
         self.helpLink.configure(background="#424242", foreground="skyblue")
         #self.phatplusLink.configure(background="#424242", foreground="skyblue")
         self.aboutCode.configure(background="#424242", foreground="#FFFFFF")
+        self.copyrightLabel.configure(background="#424242", foreground="#FFFFFF")
         self.aboutCodeFrame.configure(background="#424242")
         self.aboutCodeLink.configure(background="#424242", foreground="skyblue")
         self.detectLink.configure(background="#424242", foreground="skyblue")
@@ -262,4 +292,5 @@ class hF(tk.Frame):
         self.comLink.configure(background="#424242", foreground="skyblue")
         self.sciLink.configure(background="#424242", foreground="skyblue")
         self.pltLink.configure(background="#424242", foreground="skyblue")
+        self.gnuLicenseLink.configure(background="#424242", foreground="skyblue")
 #        self.bugLink.configure(background="#424242", foreground="skyblue")

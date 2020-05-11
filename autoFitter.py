@@ -2,7 +2,21 @@
 """
 Created on Sun Mar 22 21:54:03 2020
 
-@author: William
+©Copyright 2020 University of Florida Research Foundation, Inc. All Rights Reserved.
+    William Watson and Mark Orazem
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 import numpy as np
@@ -137,7 +151,7 @@ class autoFitter:
         for process in self.processes:
             process.terminate()
     
-    def autoFit(self, maxNVE, numMonteCarlo, w, Zr, Zj, listPercent, choice, autoType, *error_params):
+    def autoFit(self, maxNVE, fixRe, fixReVal, numMonteCarlo, w, Zr, Zj, listPercent, choice, autoType, *error_params):
         bestResults = []
         bestResultValues = []
         bestNVE = 1
@@ -179,12 +193,12 @@ class autoFitter:
             ig.append([rGuess])
             ig.append([tauGuess])
             #---Try default (complex fit, modulus weighting)---
-            r = self.findFit(w, Zr, Zj, nve, choice, 1, 1, autoType, listPercent, bL, ig, [-1], bU, error_params[0], error_params[1], error_params[2], error_params[3], error_params[4])
+            r = self.findFit(fixRe, fixReVal, w, Zr, Zj, nve, choice, 1, 1, autoType, listPercent, bL, ig, [-1], bU, error_params[0], error_params[1], error_params[2], error_params[3], error_params[4])
             if (r == "^" or r == "-" or r == "$"):
                 #---Try multistart (complex fit, modulus weighting)---
                 listPercent.append("b" + str(nve))
                 ig[len(ig)-1] = np.logspace(-5, 5, 10)
-                r2 = self.findFit(w, Zr, Zj, nve, choice, 1, 1, autoType, listPercent, bL, ig, [-1], bU, error_params[0], error_params[1], error_params[2], error_params[3], error_params[4])
+                r2 = self.findFit(fixRe, fixReVal, w, Zr, Zj, nve, choice, 1, 1, autoType, listPercent, bL, ig, [-1], bU, error_params[0], error_params[1], error_params[2], error_params[3], error_params[4])
                 if (r2 == "^" or r2 == "-" or r2 == "$"):
                     if didntWork:
                         return "^", "^", "^", "^", "^", "^", "^", "^", "^", "^", "^", "^", "^" 
@@ -347,7 +361,7 @@ class autoFitter:
         #---Return everything---
         return result, sigma, standardDevsReal, standardDevsImag, Zzero, ZzeroSigma, Zpolar, ZpolarSigma, bestResults.chisqr, cor, bestResults.aic, currentFitType, currentFitWeighting
             
-    def findFit(self, w, Zr, Zj, numVoigtElements, choice, assumed_noise, Rm, fitType, listPercent, lowerBounds, initialGuesses, constants, upperBounds, *error_params):
+    def findFit(self, fixed, fixedVal, w, Zr, Zj, numVoigtElements, choice, assumed_noise, Rm, fitType, listPercent, lowerBounds, initialGuesses, constants, upperBounds, *error_params):
         np.random.seed(1234)        #Use constant seed to ensure reproducibility of Monte Carlo simulations
         constants = np.sort(constants)
         Z_append = np.append(Zr, Zj)
@@ -423,6 +437,9 @@ class autoFitter:
         parameters = lmfit.Parameters()
         parameterCorrector = 0
         parameters.add("Re", value=initialGuesses[0][0], min=lowerBounds[0])
+        if (fixed):
+            parameters["Re"].value = fixedVal
+            parameters["Re"].vary = False
         for i in range(1, numVoigtElements+1):
             if (lowerBounds[i+parameterCorrector] == np.NINF):
                 parameters.add("R"+str(i), value=initialGuesses[i+parameterCorrector][0])
@@ -432,14 +449,14 @@ class autoFitter:
                 parameters['R'+str(i)].max = 0
             parameters.add("T"+str(i), value=initialGuesses[i+1+parameterCorrector][0], min=0.0)
             parameterCorrector += 1
-        if (constants[0] != -1):
-            for constant in constants:
-                if (constant == 0):
-                    parameters['Re'].vary = False
-                elif (constant%2 == 0):
-                    parameters['T'+str(int(constant/2))].vary = False
-                else:
-                    parameters['R'+str(int(np.ceil(constant/2)))].vary = False
+        #if (constants[0] != -1):
+        #    for constant in constants:
+        #        if (constant == 0):
+        #            parameters['Re'].vary = False
+        #        elif (constant%2 == 0):
+        #            parameters['T'+str(int(constant/2))].vary = False
+        #        else:
+        #            parameters['R'+str(int(np.ceil(constant/2)))].vary = False
         
         current_min = 1E9
         current_best = 0
@@ -450,7 +467,8 @@ class autoFitter:
                 for i in range(len(recursiveGuesses[0])):
                     for j in range(len(recursiveGuesses[1])):
                         for k in range(len(recursiveGuesses[2])):
-                            parameters.get("Re").set(value=recursiveGuesses[0][i])
+                            if (not fixed):
+                                parameters.get("Re").set(value=recursiveGuesses[0][i])
                             parameters.get("R1").set(value=recursiveGuesses[1][j])
                             parameters.get("T1").set(value=recursiveGuesses[2][k])
                             fittedMin = lmfit.minimize(diffComplex, parameters)
@@ -473,7 +491,8 @@ class autoFitter:
                 for i in range(len(recursiveGuesses[0])):
                     for j in range(len(recursiveGuesses[1])):
                         for k in range(len(recursiveGuesses[2])):
-                            parameters.get("Re").set(value=recursiveGuesses[0][i])
+                            if (not fixed):
+                                parameters.get("Re").set(value=recursiveGuesses[0][i])
                             parameters.get("R1").set(value=recursiveGuesses[1][j])
                             parameters.get("T1").set(value=recursiveGuesses[2][k])
                             fittedMin = lmfit.minimize(diffImag, parameters)
@@ -496,7 +515,8 @@ class autoFitter:
                 for i in range(len(recursiveGuesses[0])):
                     for j in range(len(recursiveGuesses[1])):
                         for k in range(len(recursiveGuesses[2])):
-                            parameters.get("Re").set(value=recursiveGuesses[0][i])
+                            if (not fixed):
+                                parameters.get("Re").set(value=recursiveGuesses[0][i])
                             parameters.get("R1").set(value=recursiveGuesses[1][j])
                             parameters.get("T1").set(value=recursiveGuesses[2][k])
                             fittedMin = lmfit.minimize(diffReal, parameters)
@@ -597,12 +617,12 @@ class autoFitter:
             result.append(fitted['T'+str(i)])
             sigma.append(minimized.params['R'+str(i)].stderr)
             sigma.append(minimized.params['T'+str(i)].stderr)
+        
         if None in sigma:
             return "-"
         for i in range(len(result)):
             if (result[i] != 0):
                 if (abs(2*sigma[i]/result[i]) >= 1.0 or np.isnan(sigma[i])):
-                    return "$"
-                
+                    return "$"       
         #---Return everything---
         return minimized

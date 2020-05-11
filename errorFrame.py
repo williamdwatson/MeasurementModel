@@ -2,7 +2,21 @@
 """
 Created on Mon Aug  6 15:03:45 2018
 
-@author: willdwat
+©Copyright 2020 University of Florida Research Foundation, Inc. All Rights Reserved.
+    William Watson and Mark Orazem
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 import tkinter as tk
@@ -128,6 +142,7 @@ class eF(tk.Frame):
         tk.Frame.__init__(self, parent, background=self.backgroundColor)
         
         self.noneLoaded = True
+        self.resPlots = []
         self.wdata = []
         self.avgRe = []
         self.rres = []
@@ -466,6 +481,7 @@ class eF(tk.Frame):
         def plotResiduals():
             for i in range(self.numFiles):
                 resPlot = tk.Toplevel()
+                self.resPlots.append(resPlot)
                 resPlot.title("Standard Deviations Plot: " + self.fileNames[i])
                 resPlot.iconbitmap(resource_path("img/elephant3.ico"))
                 
@@ -926,7 +942,12 @@ class eF(tk.Frame):
         
         self.plotButton = ttk.Button(self, text="Plot", width=20, command=plotResiduals)
         plot_ttp = CreateToolTip(self.plotButton, 'Plot the data and the fitted error structure')
-    
+        
+         #---Close all popups---
+        self.closeAllPopupsButton = ttk.Button(self, text="Close all popups", command=self.topGUI.closeAllPopups)
+        self.closeAllPopupsButton.grid(column=0, row=7, sticky="W", pady=10)
+        closeAllPopups_ttp = CreateToolTip(self.closeAllPopupsButton, 'Close all open popup windows')
+        
     def setThemeLight(self):
         self.foregroundColor = "#000000"
         self.backgroundColor = "#FFFFFF"
@@ -968,6 +989,13 @@ class eF(tk.Frame):
         self.resultsFrame.configure(background="#424242")
         self.resultsChi.configure(background="#424242", foreground="#FFFFFF")
         self.detrendLabel.configure(background="#424242", foreground="#FFFFFF")
+    
+    def closeWindows(self):
+        for resPlot in self.resPlots:
+            try:
+                resPlot.destroy()
+            except:
+                pass
     
     def errorEnter(self, n):
         try:

@@ -2,7 +2,21 @@
 """
 Created on Fri Sep 27 10:29:23 2019
 
-@author: willdwat
+©Copyright 2020 University of Florida Research Foundation, Inc. All Rights Reserved.
+    William Watson and Mark Orazem
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 import tkinter as tk
@@ -13,6 +27,7 @@ from tkinter.filedialog import askopenfilename, asksaveasfile, askdirectory
 import os
 import sys
 import ctypes
+import comtypes.client as cc
 import numpy as np
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
@@ -20,6 +35,7 @@ from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 import customFitting
 import bootstrapFitting
+import simplexFitting
 import threading
 import queue
 from rangeSlider import RangeSlider
@@ -233,12 +249,187 @@ class fF(tk.Frame):
         self.freqWindow.iconbitmap(resource_path('img/elephant3.ico'))
         self.lowestUndeleted = tk.Label(self.freqWindow, text="Lowest Remaining Frequency: 0", background=self.backgroundColor, foreground=self.foregroundColor)
         self.highestUndeleted = tk.Label(self.freqWindow, text="Highest Remaining Frequency: 0", background=self.backgroundColor, foreground=self.foregroundColor)
-        self.rs = RangeSlider(self.freqWindow, lowerBound=-4, upperBound=7, background=self.backgroundColor, tickColor=self.foregroundColor)
-        self.rs.grid(column=1, row=1)
+        #self.rs = RangeSlider(self.freqWindow, lowerBound=-4, upperBound=7, background=self.backgroundColor, tickColor=self.foregroundColor)
+        #self.rs.grid(column=1, row=1)
         self.lowerSpinboxVariable = tk.StringVar(self, "0")
         self.upperSpinboxVariable = tk.StringVar(self, "0")
         self.upDelete = 0
         self.lowDelete = 0
+        
+        def popup_formula_description(event):
+            try:
+                self.popup_menu_description.tk_popup(event.x_root, event.y_root, 0)
+            finally:
+                self.popup_menu_description.grab_release()
+        
+        def copyFormula_description():
+            try:
+                pyperclip.copy(self.formulaDescriptionEntry.get(tk.SEL_FIRST, tk.SEL_LAST))
+            except:
+                pass
+        
+        def cutFormula_description():
+            try:
+                pyperclip.copy(self.formulaDescriptionEntry.get(tk.SEL_FIRST, tk.SEL_LAST))
+                self.formulaDescriptionEntry.delete(tk.SEL_FIRST, tk.SEL_LAST)
+            except:
+                pass
+        
+        def pasteFormula_description():
+            try:
+                toPaste = pyperclip.paste()
+                self.formulaDescriptionEntry.insert(tk.INSERT, toPaste)
+                keyup(None)
+            except:
+                pass
+            
+        def undoFormula_description():
+            try:
+                self.formulaDescriptionEntry.edit_undo()
+            except:
+                pass
+            
+        def redoFormula_description():
+            try:
+                self.formulaDescriptionEntry.edit_redo()
+            except:
+                pass
+        
+        self.formulaDescriptionWindow = tk.Toplevel(bg=self.backgroundColor)
+        self.formulaDescriptionWindow.withdraw()
+        self.formulaDescriptionWindow.resizable(False, False)
+        self.formulaDescriptionWindow.title("Custom formula description")
+        self.formulaDescriptionWindow.iconbitmap(resource_path('img/elephant3.ico'))
+        #self.formulaDescriptionVariable = tk.StringVar(self, "")
+        self.formulaDescriptionLatexVariable = tk.StringVar(self, "")
+        self.formulaDescriptionLabel = tk.Label(self.formulaDescriptionWindow, text="Description: ", bg=self.backgroundColor, fg=self.foregroundColor)
+        self.formulaDescriptionFrame = tk.Frame(self.formulaDescriptionWindow, bg=self.backgroundColor)
+        self.formulaDescriptionContainer = tk.Frame(self.formulaDescriptionFrame, borderwidth=1, relief="sunken")
+        self.formulaDescriptionEntry = tk.Text(self.formulaDescriptionContainer, width=60, height=10, wrap="none", borderwidth=0, undo=True, fg=self.foregroundColor)
+        if (self.topGUI.getTheme() == "dark"):
+            self.formulaDescriptionEntry.configure(background="#6B6B6B")
+        else:
+            self.formulaDescriptionEntry.configure(background="#FFFFFF")
+        self.formulaDescriptionVertical = tk.Scrollbar(self.formulaDescriptionContainer, orient="vertical", command=self.formulaDescriptionEntry.yview)
+        self.formulaDescriptionHorizontal = tk.Scrollbar(self.formulaDescriptionContainer, orient="horizontal", command=self.formulaDescriptionEntry.xview)
+        self.formulaDescriptionEntry.configure(yscrollcommand=self.formulaDescriptionVertical.set, xscrollcommand=self.formulaDescriptionHorizontal.set)
+        self.formulaLatexFrame = tk.Frame(self.formulaDescriptionWindow, bg=self.backgroundColor)
+        self.formulaDescriptionLatexLabel = tk.Label(self.formulaLatexFrame, text="Equation (Latex math): ", bg=self.backgroundColor, fg=self.foregroundColor)
+        self.formulaDescriptionLatexEntry = ttk.Entry(self.formulaLatexFrame, textvariable=self.formulaDescriptionLatexVariable)
+        self.formulaDescriptionVertical.pack(side=tk.RIGHT, fill=tk.Y, expand=False)
+        self.formulaDescriptionHorizontal.pack(side=tk.BOTTOM, fill=tk.X, expand=False)
+        self.formulaDescriptionEntry.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.formulaDescriptionLabel.pack(side=tk.TOP, anchor=tk.W)
+        self.formulaDescriptionContainer.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        self.formulaDescriptionFrame.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=5)
+        self.formulaDescriptionLatexLabel.pack(side=tk.LEFT)
+        self.formulaDescriptionLatexEntry.pack(side=tk.RIGHT, fill=tk.X, expand=True)
+        self.latexFig = Figure(figsize=(6, 2), dpi=100)
+        self.latexFig.set_facecolor(self.backgroundColor)
+        self.latexAx = self.latexFig.add_subplot(111)
+        self.latexCanvas = FigureCanvasTkAgg(self.latexFig, master=self.formulaDescriptionWindow)
+        self.latexCanvas.get_tk_widget().pack(side=tk.BOTTOM, fill=tk.X, expand=True)
+        self.latexCanvas._tkcanvas.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
+        self.latexAx.get_xaxis().set_visible(False)
+        self.latexAx.get_yaxis().set_visible(False)
+        self.latexFig.tight_layout()
+        #self.latexFig.patch.set_visible(False)
+        self.latexAx.axis("off")
+        self.formulaLatexFrame.pack(side=tk.BOTTOM, fill=tk.X, expand=True, pady=5, padx=5)
+        self.popup_menu_description = tk.Menu(self.formulaDescriptionEntry, tearoff=0)
+        self.popup_menu_description.add_command(label="Copy", command=copyFormula_description)
+        self.popup_menu_description.add_command(label="Cut", command=cutFormula_description)
+        self.popup_menu_description.add_command(label="Paste", command=pasteFormula_description)
+        self.popup_menu_description.add_separator()
+        self.popup_menu_description.add_command(label="Undo", command=undoFormula_description)
+        self.popup_menu_description.add_command(label="Redo", command=redoFormula_description)
+        self.formulaDescriptionEntry.bind("<Button-3>", popup_formula_description)
+        
+        self.loadFormulaWindow = tk.Toplevel(bg=self.backgroundColor)
+        self.loadFormulaWindow.withdraw()
+        self.loadFormulaWindow.title("Load formula")
+        self.loadFormulaWindow.iconbitmap(resource_path('img/elephant3.ico'))
+        self.loadFormulaFrame = tk.Frame(self.loadFormulaWindow, bg=self.backgroundColor)
+        self.loadFormulaDirectoryFrame = tk.Frame(self.loadFormulaFrame, bg=self.backgroundColor)
+        self.loadFormulaDirectoryEntry = ttk.Entry(self.loadFormulaDirectoryFrame, width=40, state="normal")
+        self.loadFormulaDirectoryEntry.insert(0, self.topGUI.getDefaultFormulaDirectory())
+        self.loadFormulaDirectoryEntry.configure(state="readonly")
+        self.loadFormulaDirectoryLabel = tk.Label(self.loadFormulaDirectoryFrame, text="Directory: ", bg=self.backgroundColor, fg=self.foregroundColor)
+        self.loadFormulaDirectoryButton = ttk.Button(self.loadFormulaDirectoryFrame, text="Browse..")
+        self.loadFormulaDirectoryLabel.pack(side=tk.LEFT, expand=False)
+        self.loadFormulaDirectoryEntry.pack(side=tk.LEFT, fill=tk.X, padx=3, expand=True)
+        self.loadFormulaDirectoryButton.pack(side=tk.RIGHT, expand=False)
+        self.loadFormulaNodes = dict()
+        self.loadFormulaFrameTwo = tk.Frame(self.loadFormulaFrame)
+        self.loadFormulaTree = ttk.Treeview(self.loadFormulaFrameTwo, selectmode="browse")
+        self.loadFormulaYSB = ttk.Scrollbar(self.loadFormulaFrameTwo, orient='vertical', command=self.loadFormulaTree.yview)
+        self.loadFormulaXSB = ttk.Scrollbar(self.loadFormulaFrameTwo, orient='horizontal', command=self.loadFormulaTree.xview)
+        self.loadFormulaTree.configure(yscroll=self.loadFormulaYSB.set, xscroll=self.loadFormulaXSB.set)
+        #self.loadFormulaTree.heading('#0', text=self.topGUI.getDefaultFormulaDirectory(), anchor='w')
+        self.loadFormulaXSB.pack(side=tk.BOTTOM, fill=tk.X, expand=False)
+        self.loadFormulaTree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.loadFormulaYSB.pack(side=tk.RIGHT, fill=tk.Y, expand=False)
+        self.loadFormulaDirectoryFrame.pack(side=tk.TOP, fill=tk.X, pady=(0, 5), expand=False)
+        self.loadFormulaFrameTwo.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
+        abspath = os.path.abspath(self.topGUI.getDefaultFormulaDirectory())
+        self.insert_node('', abspath, abspath)
+        self.loadFormulaTree.bind('<<TreeviewOpen>>', self.open_node)
+        self.loadFormulaDescriptionFrame = tk.Frame(self.loadFormulaWindow, bg=self.backgroundColor)
+        self.loadFormulaDescriptionLabel = tk.Label(self.loadFormulaDescriptionFrame, text="Description: ", bg=self.backgroundColor, fg=self.foregroundColor)
+        self.loadFormulaDescription = scrolledtext.ScrolledText(self.loadFormulaDescriptionFrame, height=5, fg=self.foregroundColor, state="disabled")
+        if (self.topGUI.getTheme() == "dark"):
+            self.loadFormulaDescription.configure(background="#6B6B6B")
+        else:
+            self.loadFormulaDescription.configure(background="#FFFFFF")
+        self.loadFormulaCodeLabel = tk.Label(self.loadFormulaDescriptionFrame, text="Code: ", bg=self.backgroundColor, fg=self.foregroundColor)
+        self.loadFormulaCode = scrolledtext.ScrolledText(self.loadFormulaDescriptionFrame, height=15, fg=self.foregroundColor, state="disabled")
+        if (self.topGUI.getTheme() == "dark"):
+            self.loadFormulaCode.configure(background="#6B6B6B")
+        else:
+            self.loadFormulaCode.configure(background="#FFFFFF")
+        self.loadFormulaEquationLabel = tk.Label(self.loadFormulaDescriptionFrame, text="Equation: ", bg=self.backgroundColor, fg=self.foregroundColor)
+        self.load_latexFig = Figure(figsize=(6, 2), dpi=100)
+        self.load_latexFig.set_facecolor(self.backgroundColor)
+        self.load_latexAx = self.load_latexFig.add_subplot(111)
+        self.load_latexCanvas = FigureCanvasTkAgg(self.load_latexFig, master=self.loadFormulaDescriptionFrame)
+        self.load_latexCanvas.get_tk_widget().pack(side=tk.BOTTOM, fill=tk.X, expand=True)
+        self.load_latexCanvas._tkcanvas.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
+        self.loadFormulaDescriptionLabel.pack(side=tk.TOP, expand=False, anchor=tk.W)
+        self.loadFormulaDescription.pack(side=tk.TOP, fill=tk.X, expand=True)
+        self.loadFormulaCodeLabel.pack(side=tk.TOP, expand=False, anchor=tk.W)
+        self.loadFormulaCode.pack(side=tk.TOP, fill=tk.Y, expand=True)
+        self.loadFormulaEquationLabel.pack(side=tk.TOP, expand=False, anchor=tk.W)
+        self.load_latexAx.get_xaxis().set_visible(False)
+        self.load_latexAx.get_yaxis().set_visible(False)
+        self.load_latexFig.tight_layout()
+        self.load_latexAx.axis("off")
+        self.loadFormulaButtonFrame = tk.Frame(self.loadFormulaWindow, bg=self.backgroundColor)
+        self.loadFormula = ttk.Button(self.loadFormulaButtonFrame, width=20, text="Load Formula", state="disabled", command=self.loadFormulaCommand)
+        self.loadFormulaIncludeLabel = tk.Label(self.loadFormulaButtonFrame, text="Include: ", bg=self.backgroundColor, fg=self.foregroundColor)
+        self.loadFormulaParamsVariable = tk.IntVar(self, 1)
+        self.loadFormulaParams = ttk.Checkbutton(self.loadFormulaButtonFrame, variable=self.loadFormulaParamsVariable, text="Parameters")
+        #self.loadFormulaParamAdvancedVariable = tk.IntVar(self, 1)
+        #self.loadFormulaParamAdvanced = ttk.Checkbutton(self.loadFormulaButtonFrame, variable=self.loadFormulaParamAdvancedVariable, text="Other parameter options")
+        self.loadFormulaCodeVariable = tk.IntVar(self, 1)
+        self.loadFormulaCodeCheck = ttk.Checkbutton(self.loadFormulaButtonFrame, variable=self.loadFormulaCodeVariable, text="Code")
+        self.loadFormulaOtherVariable = tk.IntVar(self, 0)
+        self.loadFormulaOther = ttk.Checkbutton(self.loadFormulaButtonFrame, variable=self.loadFormulaOtherVariable, text="Other fitting settings")
+        self.loadFormulaOther.grid(column=5, row=0)
+        self.loadFormulaCodeCheck.grid(column=4, row=0)
+        #self.loadFormulaParamAdvanced.grid(column=3, row=0)
+        self.loadFormulaParams.grid(column=2, row=0)
+        self.loadFormulaIncludeLabel.grid(column=1, row=0, padx=5)
+        self.loadFormula.grid(column=0, row=0)
+        self.loadFormulaButtonFrame.pack(side=tk.BOTTOM, anchor=tk.CENTER, fill=tk.NONE, pady=5, expand=False)
+        self.loadFormulaFrame.pack(side=tk.LEFT, fill=tk.BOTH, pady=5, padx=(0,5), expand=True)
+        self.loadFormulaDescriptionFrame.pack(side=tk.RIGHT, fill=tk.BOTH, pady=5, expand=True)
+        self.loadFormulaTree.bind("<ButtonRelease-1>", self.clickFormula)
+        loadFormulaDirectoryButton_ttp = CreateToolTip(self.loadFormulaDirectoryButton, 'Look for directory containing .mmformula files')
+        loadFormula_ttp = CreateToolTip(self.loadFormula, 'Load formula to main window')
+        loadFormulaParams_ttp = CreateToolTip(self.loadFormulaParams, 'Include parameters (names and values)')
+        #loadFormulaParamsAdvanced_ttp = CreateToolTip(self.loadFormulaParamAdvanced, 'Include advanced parameter options (multistart and limits)')
+        loadFormulaCode_ttp = CreateToolTip(self.loadFormulaCodeCheck, 'Include formula')
+        loadFormulaOther_ttp = CreateToolTip(self.loadFormulaOther, 'Include other fitting settings (number of simulations, fit type, and weighting)')
         
         self.paramPopup = tk.Toplevel(bg=self.backgroundColor)
         self.paramPopup.withdraw()
@@ -251,11 +442,19 @@ class fF(tk.Frame):
         addButton_ttp = CreateToolTip(self.addButton, "Add a parameter")
         removeButton_ttp = CreateToolTip(self.removeButton, "Remove last parameter")
         self.howMany = tk.Label(self.paramPopup, text="Number of parameters: 0", bg=self.backgroundColor, fg=self.foregroundColor)
-        self.advancedOptionsButton = ttk.Button(self.paramPopup, text="Advanced options")
+        self.bottomButtonsFrame = tk.Frame(self.paramPopup, bg=self.backgroundColor)
+        self.advancedOptionsButton = ttk.Button(self.bottomButtonsFrame, text="Advanced options")
         advancedOptions_ttp = CreateToolTip(self.advancedOptionsButton, 'Opens a popup containing advanced parameter settings')
+        #self.loadParamsButton = ttk.Button(self.bottomButtonsFrame, text="Load parameters")
+        #loadParams_ttp = CreateToolTip(self.loadParamsButton, 'Load parameters from a .mmcustom file (this will overwrite existing parameters)')
+        self.simplexButton = ttk.Button(self.bottomButtonsFrame, text="Step-by-step simplex", state="disabled")
+        simplexButton_ttp = CreateToolTip(self.simplexButton, 'Perform one interation of a simplex algorithm (will replace current parameter values)')
         self.addButton.pack(side=tk.LEFT, fill=tk.X, expand=True)
         self.removeButton.pack(side=tk.LEFT, fill=tk.X, expand=True)
-        self.advancedOptionsButton.pack(side=tk.BOTTOM, fill=tk.X, expand=False)
+        self.advancedOptionsButton.pack(side=tk.RIGHT, fill=tk.X, expand=True)
+        self.simplexButton.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        #self.loadParamsButton.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        self.bottomButtonsFrame.pack(side=tk.BOTTOM, fill=tk.X, expand=False)
         self.howMany.pack(side=tk.BOTTOM, fill=tk.X, expand=False)
         self.buttonFrame.pack(side=tk.BOTTOM, fill=tk.X, expand=False, pady=1)
         self.vsb.pack(side=tk.RIGHT, fill=tk.Y)
@@ -268,6 +467,16 @@ class fF(tk.Frame):
         self.paramListboxScrollbar['command'] = self.paramListbox.yview
         self.paramListbox.configure(yscrollcommand=self.paramListboxScrollbar.set)
         self.advancedOptionsLabel = tk.Label(self.advancedOptionsWindow, text="", bg=self.backgroundColor, fg=self.foregroundColor, font=('Helvetica', 10, 'bold'))
+        self.advancedUpperLimitFrame = tk.Frame(self.advancedOptionsWindow, bg=self.backgroundColor)
+        self.advancedUpperLimitLabel = tk.Label(self.advancedUpperLimitFrame, text="Upper limit: ", bg=self.backgroundColor, fg=self.foregroundColor)
+        self.advancedUpperLimitEntry = ttk.Entry(self.advancedUpperLimitFrame)
+        self.advancedUpperLimitLabel.pack(side=tk.LEFT)
+        self.advancedUpperLimitEntry.pack(side=tk.RIGHT, fill=tk.X, expand=True)
+        self.advancedLowerLimitFrame = tk.Frame(self.advancedOptionsWindow, bg=self.backgroundColor)
+        self.advancedLowerLimitLabel = tk.Label(self.advancedLowerLimitFrame, text="Lower limit: ", bg=self.backgroundColor, fg=self.foregroundColor)
+        self.advancedLowerLimitEntry = ttk.Entry(self.advancedLowerLimitFrame)
+        self.advancedLowerLimitLabel.pack(side=tk.LEFT)
+        self.advancedLowerLimitEntry.pack(side=tk.RIGHT, fill=tk.X, expand=True)
         self.multistartCheckbox = ttk.Checkbutton(self.advancedOptionsWindow, text="Enable multistart")
         self.multistartSpacingFrame = tk.Frame(self.advancedOptionsWindow, bg=self.backgroundColor)
         self.multistartSpacing = ttk.Combobox(self.multistartSpacingFrame, values=("Logarithmic", "Linear", "Random", "Custom"), state="disabled", exportselection=False)
@@ -297,6 +506,8 @@ class fF(tk.Frame):
         self.paramListbox.pack(side=tk.LEFT, fill=tk.Y, expand=False)
         self.paramListboxScrollbar.pack(side=tk.LEFT, fill=tk.Y, expand=False)
         self.advancedOptionsLabel.pack(side=tk.TOP, fill=tk.X, expand=False)
+        self.upperLimits = []
+        self.lowerLimits = []
         self.multistartCheckboxVariables = []
         self.multistartSpacingVariables = []
         self.multistartLowerVariables = []
@@ -312,6 +523,14 @@ class fF(tk.Frame):
         self.currentThreads = []
         self.listPercent = []
         self.bestParams = []
+        self.latexIn = ""
+        self.resultsWindows = []
+        self.resultPlotBigs = []
+        self.resultPlotBigFigs = []
+        self.resultPlots = []
+        self.resultPlotFigs = []
+        self.saveNyCanvasButtons = []
+        self.saveNyCanvasButton_ttps = []
         
         def _on_mousewheel_help(event):
             xpos, ypos = self.vsbh.get()
@@ -357,7 +576,35 @@ class fF(tk.Frame):
                 return True
             else:
                 return P.isalnum()
-        valcom = (self.register(validateIt), '%P')
+        self.valcom = (self.register(validateIt), '%P')
+        
+        def validateFreqHigh(P):
+            if (P == ""):
+                return True
+            try:
+                val = int(P)
+            except:
+                return False
+            if (val < 0):
+                return False
+            elif (val + self.lowDelete > len(self.wdataRaw)):
+                return False
+            return True
+        valfreqHigh = (self.register(validateFreqHigh), '%P')
+        
+        def validateFreqLow(P):
+            if (P == ""):
+                return True
+            try:
+                val = int(P)
+            except:
+                return False
+            if (val < 0):
+                return False
+            elif (val + self.upDelete > len(self.wdataRaw)):
+                return False
+            return True
+        valfreqLow = (self.register(validateFreqLow), '%P')
         
         def OpenFile():
             name = askopenfilename(initialdir=self.topGUI.getCurrentDirectory(), filetypes = [("Measurement model file", "*.mmfile *.mmcustom"), ("Measurement model data (*.mmfile)", "*.mmfile"), ("Measurement model custom fitting (*.mmcustom)", "*.mmcustom")], title = "Choose a file")
@@ -366,6 +613,34 @@ class fF(tk.Frame):
                     return name
             except:
                 return "+"
+        
+        def limitChanged(num, e):
+            if (self.paramComboboxValues[num].get() == "+"):
+                self.upperLimits[num].set("inf")
+                self.lowerLimits[num].set("0")
+                self.advancedLowerLimitEntry.configure(state="normal")
+                self.advancedUpperLimitEntry.configure(state="normal")
+            elif (self.paramComboboxValues[num].get() == "+ or -"):
+                self.upperLimits[num].set("inf")
+                self.lowerLimits[num].set("-inf")
+                self.advancedLowerLimitEntry.configure(state="normal")
+                self.advancedUpperLimitEntry.configure(state="normal")
+            elif (self.paramComboboxValues[num].get() == "-"):
+                self.upperLimits[num].set("0")
+                self.lowerLimits[num].set("-inf")
+                self.advancedLowerLimitEntry.configure(state="normal")
+                self.advancedUpperLimitEntry.configure(state="normal")
+            elif (self.paramComboboxValues[num].get() == "fixed" and self.paramListboxSelection == num):
+                self.advancedLowerLimitEntry.configure(state="disabled")
+                self.advancedUpperLimitEntry.configure(state="disabled")
+            elif (self.paramComboboxValues[num].get() == "custom"):
+                self.advancedLowerLimitEntry.configure(state="normal")
+                self.advancedUpperLimitEntry.configure(state="normal")
+                advancedOptionsPopup()
+                self.paramListbox.selection_clear(0, tk.END)
+                self.paramListbox.select_set(num)
+                self.paramListboxSelection = num
+                onSelect(None, n=num)
         
         def browse():
 #            if (self.browseEntry.get() == ""):
@@ -417,14 +692,16 @@ class fF(tk.Frame):
                                 self.wdata = self.wdataRaw.copy()
                                 self.rdata = self.rdataRaw.copy()
                                 self.jdata = self.jdataRaw.copy()
-                            self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
-                            self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
+                            #self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
+                            #self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
                             #self.rs.setMajorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
-                            self.rs.setNumberOfMajorTicks(10)
-                            self.rs.showMinorTicks(False)
+                            #self.rs.setNumberOfMajorTicks(10)
+                            #self.rs.showMinorTicks(False)
                             #self.rs.setMinorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
-                            self.rs.setLower(np.log10(min(self.wdata)))
-                            self.rs.setUpper(np.log10(max(self.wdata)))
+                            #self.rs.setLower(np.log10(min(self.wdata)))
+                            #self.rs.setUpper(np.log10(max(self.wdata)))
+                            #self.upperSpinboxVariable.set(str(self.upDelete))
+                            #self.lowerSpinboxVariable.set(str(self.lowDelete))
                             self.lowestUndeleted.configure(text="Lowest remaining frequency: {:.4e}".format(min(self.wdata)))
                             self.highestUndeleted.configure(text="Highest remaining frequency: {:.4e}".format(max(self.wdata)))
                             #self.wdata = self.wdataRaw.copy()
@@ -438,14 +715,45 @@ class fF(tk.Frame):
                             self.wdata = self.wdataRaw.copy()
                             self.rdata = self.rdataRaw.copy()
                             self.jdata = self.jdataRaw.copy()
-                            self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
-                            self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
-                            self.rs.setNumberOfMajorTicks(10)
-                            self.rs.showMinorTicks(False)
-                            self.rs.setLower(np.log10(min(self.wdata)))
-                            self.rs.setUpper(np.log10(max(self.wdata)))
+                            #self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
+                            #self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
+                            #self.rs.setNumberOfMajorTicks(10)
+                            #self.rs.showMinorTicks(False)
+                            #self.rs.setLower(np.log10(min(self.wdata)))
+                            #self.rs.setUpper(np.log10(max(self.wdata)))
                             self.lowestUndeleted.configure(text="Lowest remaining frequency: {:.4e}".format(min(self.wdata)))
                             self.highestUndeleted.configure(text="Highest remaining frequency: {:.4e}".format(max(self.wdata)))
+                        try:
+                            self.figFreq.clear()
+                            dataColor = "tab:blue"
+                            deletedColor = "#A9CCE3"
+                            if (self.topGUI.getTheme() == "dark"):
+                                dataColor = "cyan"
+                            else:
+                                dataColor = "tab:blue"
+                            with plt.rc_context({'axes.edgecolor':self.foregroundColor, 'xtick.color':self.foregroundColor, 'ytick.color':self.foregroundColor, 'figure.facecolor':self.backgroundColor}):
+                                self.figFreq = Figure(figsize=(5, 5), dpi=100)
+                                self.canvasFreq = FigureCanvasTkAgg(self.figFreq, master=self.freqWindow)
+                                self.canvasFreq.get_tk_widget().grid(row=1,column=1, rowspan=5)
+                                self.realFreq = self.figFreq.add_subplot(211)
+                                self.realFreq.set_facecolor(self.backgroundColor)
+                                self.realFreqDeletedLow, = self.realFreq.plot(self.wdataRaw[:self.lowDelete], self.rdataRaw[:self.lowDelete], "o", markerfacecolor="None", color=deletedColor)
+                                self.realFreqDeletedHigh, = self.realFreq.plot(self.wdataRaw[len(self.wdataRaw)-1-self.upDelete:], self.rdataRaw[len(self.wdataRaw)-1-self.upDelete:], "o", markerfacecolor="None", color=deletedColor)
+                                self.realFreqPlot, = self.realFreq.plot(self.wdata, self.rdata, "o", color=dataColor)
+                                self.realFreq.set_xscale("log")
+                                self.realFreq.get_xaxis().set_visible(False)
+                                self.realFreq.set_title("Real Impedance", color=self.foregroundColor)
+                                self.imagFreq = self.figFreq.add_subplot(212)
+                                self.imagFreq.set_facecolor(self.backgroundColor)
+                                self.imagFreqDeletedLow, = self.imagFreq.plot(self.wdataRaw[:self.lowDelete], -1*self.jdataRaw[:self.lowDelete], "o", markerfacecolor="None", color=deletedColor)
+                                self.imagFreqDeletedHigh, = self.imagFreq.plot(self.wdataRaw[len(self.wdataRaw)-1-self.upDelete:], -1*self.jdataRaw[len(self.wdataRaw)-1-self.upDelete:], "o", markerfacecolor="None", color=deletedColor)
+                                self.imagFreqPlot, = self.imagFreq.plot(self.wdata, -1*self.jdata, "o", color=dataColor)
+                                self.imagFreq.set_xscale("log")
+                                self.imagFreq.set_title("Imaginary Impedance", color=self.foregroundColor)
+                                self.imagFreq.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                                self.canvasFreq.draw()
+                        except:
+                            pass
                         self.lengthOfData = len(self.wdata)
                         self.freqRangeButton.configure(state="normal")
                         self.browseEntry.configure(state="normal")
@@ -453,12 +761,21 @@ class fF(tk.Frame):
                         self.browseEntry.insert(0, n)
                         self.browseEntry.configure(state="readonly")
                         self.runButton.configure(state="normal")
+                        self.simplexButton.configure(state="normal")
                     except:
                         messagebox.showerror("File error", "Error 42: \nThere was an error loading or reading the file")
                 elif (fext == ".mmcustom"):
                     try:
                         toLoad = open(n)
-                        fileToLoad = toLoad.readline().split("filename: ")[1][:-1]
+                        firstLine = toLoad.readline()
+                        fileVersion = 0
+                        if "version: 1.1" in firstLine:
+                            fileVersion = 1
+                        if (fileVersion == 0):
+                            fileToLoad = firstLine.split("filename: ")[1][:-1]
+                        else:
+                            fileToLoad = toLoad.readline().split("filename: ")[1][:-1]
+                        #fileToLoad = toLoad.readline().split("filename: ")[1][:-1]
                         numberOfSimulations = int(toLoad.readline().split("number_simulations: ")[1][:-1])
                         if (numberOfSimulations < 1):
                             raise ValueError
@@ -516,10 +833,16 @@ class fF(tk.Frame):
                         formulaIn = ""
                         while True:
                             nextLineIn = toLoad.readline()
-                            if "mmparams:" in nextLineIn:
-                                break
+                            if (fileVersion == 0):
+                                if "mmparams:" in nextLineIn:
+                                    break
+                                else:
+                                    formulaIn += nextLineIn
                             else:
-                                formulaIn += nextLineIn
+                                if "description:" in nextLineIn:
+                                    break
+                                else:
+                                    formulaIn += nextLineIn
                         for i in range(len(self.paramNameEntries)):
                             self.paramNameEntries[i].grid_remove()
                             self.paramNameLabels[i].grid_remove()
@@ -537,21 +860,115 @@ class fF(tk.Frame):
                         self.paramValueValues.clear()
                         self.paramValueEntries.clear()
                         self.paramDeleteButtons.clear()
+                        self.upperLimits.clear()
+                        self.lowerLimits.clear()
                         self.paramListbox.delete(0, tk.END)
+                        self.multistartCheckboxVariables.clear()
+                        self.multistartSpacingVariables.clear()
+                        self.multistartLowerVariables.clear()
+                        self.multistartUpperVariables.clear()
+                        self.multistartNumberVariables.clear()
+                        self.multistartCustomVariables.clear()
+                        self.advancedLowerLimitEntry.configure(state="normal")
+                        self.advancedUpperLimitEntry.configure(state="normal")
+                        if fileVersion != 0:
+                            self.formulaDescriptionEntry.delete("1.0", tk.END)
+                            descriptionIn = ""
+                            while True:
+                                nextLineIn = toLoad.readline()
+                                if "latex:" in nextLineIn:
+                                    break
+                                else:
+                                    descriptionIn += nextLineIn
+                            latexIn = toLoad.readline()
+                            self.formulaDescriptionEntry.insert("1.0", descriptionIn.rstrip())
+                            self.formulaDescriptionLatexVariable.set(latexIn.rstrip())
+                            self.graphLatex()
+                            toLoad.readline()
                         while True:
                             p = toLoad.readline()
                             if not p:
                                 break
                             else:
                                 p = p[:-1]
-                                pname, pval, pcombo = p.split("~=~")
+                                try:
+                                    pname, pval, pcombo, plimup, plimlow, pcheck, pspacing, pupper, plower, pnumber, pcustom = p.split("~=~")
+                                    self.multistartCheckboxVariables.append(tk.IntVar(self, int(pcheck)))
+                                    self.multistartLowerVariables.append(tk.StringVar(self, plower))
+                                    self.multistartUpperVariables.append(tk.StringVar(self, pupper))
+                                    self.multistartSpacingVariables.append(tk.StringVar(self, pspacing))
+                                    self.multistartCustomVariables.append(tk.StringVar(self, pcustom))
+                                    self.multistartNumberVariables.append(tk.StringVar(self, pnumber))
+                                    self.upperLimits.append(tk.StringVar(self, plimup))
+                                    self.lowerLimits.append(tk.StringVar(self, plimlow))
+                                except:
+                                    try:
+                                        pname, pval, pcombo, pcheck, pspacing, pupper, plower, pnumber, pcustom = p.split("~=~")
+                                        self.multistartCheckboxVariables.append(tk.IntVar(self, int(pcheck)))
+                                        self.multistartLowerVariables.append(tk.StringVar(self, plower))
+                                        self.multistartUpperVariables.append(tk.StringVar(self, pupper))
+                                        self.multistartSpacingVariables.append(tk.StringVar(self, pspacing))
+                                        self.multistartCustomVariables.append(tk.StringVar(self, pcustom))
+                                        self.multistartNumberVariables.append(tk.StringVar(self, pnumber))
+                                        self.upperLimits.append(tk.StringVar(self, "inf"))
+                                        self.lowerLimits.append(tk.StringVar(self, "-inf"))
+                                    except:
+                                        pname, pval, pcombo = p.split("~=~")
+                                        self.multistartCheckboxVariables.append(tk.IntVar(self, 0))
+                                        self.multistartLowerVariables.append(tk.StringVar(self, "1E-5"))
+                                        self.multistartUpperVariables.append(tk.StringVar(self, "1E5"))
+                                        self.multistartSpacingVariables.append(tk.StringVar(self, "Logarithmic"))
+                                        self.multistartCustomVariables.append(tk.StringVar(self, "0.1,1,10,100,1000"))
+                                        self.multistartNumberVariables.append(tk.StringVar(self, "10"))
+                                        self.upperLimits.append(tk.StringVar(self, "inf"))
+                                        self.lowerLimits.append(tk.StringVar(self, "-inf"))
                                 self.numParams += 1
+                                if (self.numParams == 1):
+                                    self.multistartCheckbox.configure(variable=self.multistartCheckboxVariables[0])
+                                    self.multistartLowerEntry.configure(textvariable=self.multistartLowerVariables[0])
+                                    self.multistartUpperEntry.configure(textvariable=self.multistartUpperVariables[0])
+                                    self.multistartSpacing.configure(textvariable=self.multistartSpacingVariables[0])
+                                    self.multistartNumberEntry.configure(textvariable=self.multistartNumberVariables[0])
+                                    self.multistartCustomEntry.configure(textvariable=self.multistartCustomVariables[0])
+                                    self.advancedLowerLimitFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5)
+                                    self.advancedUpperLimitFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5, pady=5)
+                                    self.advancedLowerLimitEntry.configure(textvariable=self.upperLimits[0])
+                                    self.advancedUpperLimitEntry.configure(textvariable=self.lowerLimits[0])
+                                    self.multistartCheckbox.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5)
+                                    self.multistartSpacingFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5)
+                                    self.multistartLowerFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5, pady=5)
+                                    self.multistartUpperFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5)
+                                    self.multistartNumberFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5, pady=5)
+                                    if (self.multistartCheckboxVariables[0].get() == 0):
+                                        self.multistartSpacing.configure(state="disabled")
+                                        self.multistartUpperEntry.configure(state="disabled")
+                                        self.multistartLowerEntry.configure(state="disabled")
+                                        self.multistartNumberEntry.configure(state="disabled")
+                                        self.multistartCustomEntry.configure(state="disabled")
+                                    else:
+                                        if (self.multistartSpacingVariables[0].get() == "Custom"):
+                                            self.multistartSpacing.configure(state="readonly")
+                                            self.multistartUpperEntry.configure(state="normal")
+                                            self.multistartLowerEntry.configure(state="normal")
+                                            self.multistartNumberEntry.configure(state="normal")
+                                            self.multistartCustomEntry.configure(state="normal")
+                                            self.multistartLowerFrame.pack_forget()
+                                            self.multistartUpperFrame.pack_forget()
+                                            self.multistartNumberFrame.pack_forget()
+                                            self.multistartCustomFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5, pady=5)
+                                        else:
+                                            self.multistartSpacing.configure(state="readonly")
+                                            self.multistartUpperEntry.configure(state="normal")
+                                            self.multistartLowerEntry.configure(state="normal")
+                                            self.multistartNumberEntry.configure(state="normal")
+                                            self.multistartCustomEntry.configure(state="normal")
                                 self.paramNameValues.append(tk.StringVar(self, pname))
-                                self.paramNameEntries.append(ttk.Entry(self.pframe, textvariable=self.paramNameValues[self.numParams-1], width=10, validate="all", validatecommand=valcom))
+                                self.paramNameEntries.append(ttk.Entry(self.pframe, textvariable=self.paramNameValues[self.numParams-1], width=10, validate="all", validatecommand=self.valcom))
                                 self.paramNameLabels.append(tk.Label(self.pframe, text="Name: ", background=self.backgroundColor, foreground=self.foregroundColor))
                                 self.paramValueLabels.append(tk.Label(self.pframe, text="Value: ", background=self.backgroundColor, foreground=self.foregroundColor))
                                 self.paramComboboxValues.append(tk.StringVar(self, pcombo))
-                                self.paramComboboxes.append(ttk.Combobox(self.pframe, textvariable=self.paramComboboxValues[self.numParams-1], value=("+", "+ or -", "-", "fixed"), justify=tk.CENTER, state="readonly", exportselection=0, width=6))
+                                self.paramComboboxes.append(ttk.Combobox(self.pframe, textvariable=self.paramComboboxValues[self.numParams-1], value=("+", "+ or -", "-", "fixed", "custom"), justify=tk.CENTER, state="readonly", exportselection=0, width=6))
+                                self.paramComboboxes[-1].bind("<<ComboboxSelected>>", partial(limitChanged, self.numParams-1))
                                 self.paramValueValues.append(tk.StringVar(self, pval))
                                 self.paramValueEntries.append(ttk.Entry(self.pframe, textvariable=self.paramValueValues[self.numParams-1], width=10))
                                 self.paramDeleteButtons.append(ttk.Button(self.pframe, text="Delete", command=partial(deleteParam, self.numParams-1)))
@@ -569,11 +986,15 @@ class fF(tk.Frame):
                                 self.paramDeleteButtons[len(self.paramDeleteButtons)-1].bind("<MouseWheel>", _on_mousewheel)
                                 self.paramNameEntries[len(self.paramNameEntries)-1].bind("<KeyRelease>", keyup)
                                 self.paramListbox.insert(tk.END, pname)
+                                if (self.paramComboboxValues[0].get() == "fixed"):
+                                    self.advancedLowerLimitEntry.configure(state="disabled")
+                                    self.advancedUpperLimitEntry.configure(state="disabled")
                         toLoad.close()
                         self.paramListbox.selection_clear(0, tk.END)
                         self.paramListbox.select_set(0)
                         self.paramListboxSelection = 0
-                        self.paramListbox.event_generate("<<ListboxSelect>>")
+                        onSelect(None, n=0)
+                        #self.paramListbox.event_generate("<<ListboxSelect>>")
                         try:
                             data = np.loadtxt(fileToLoad)
                             w_in = data[:,0]
@@ -607,17 +1028,49 @@ class fF(tk.Frame):
                                 self.wdata = self.wdataRaw.copy()[self.lowDelete:-1*self.upDelete]
                                 self.rdata = self.rdataRaw.copy()[self.lowDelete:-1*self.upDelete]
                                 self.jdata = self.jdataRaw.copy()[self.lowDelete:-1*self.upDelete]
-                            self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
-                            self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
+                            #self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
+                            #self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
                             #self.rs.setMajorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
-                            self.rs.setNumberOfMajorTicks(10)
-                            self.rs.showMinorTicks(False)
+                            #self.rs.setNumberOfMajorTicks(10)
+                            #self.rs.showMinorTicks(False)
                             #self.rs.setMinorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
-                            self.rs.setLower(np.log10(min(self.wdata)))
-                            self.rs.setUpper(np.log10(max(self.wdata)))
+                            #self.rs.setLower(np.log10(min(self.wdata)))
+                            #self.rs.setUpper(np.log10(max(self.wdata)))
+                            try:
+                                self.figFreq.clear()
+                                dataColor = "tab:blue"
+                                deletedColor = "#A9CCE3"
+                                if (self.topGUI.getTheme() == "dark"):
+                                    dataColor = "cyan"
+                                else:
+                                    dataColor = "tab:blue"
+                                with plt.rc_context({'axes.edgecolor':self.foregroundColor, 'xtick.color':self.foregroundColor, 'ytick.color':self.foregroundColor, 'figure.facecolor':self.backgroundColor}):
+                                    self.figFreq = Figure(figsize=(5, 5), dpi=100)
+                                    self.canvasFreq = FigureCanvasTkAgg(self.figFreq, master=self.freqWindow)
+                                    self.canvasFreq.get_tk_widget().grid(row=1,column=1, rowspan=5)
+                                    self.realFreq = self.figFreq.add_subplot(211)
+                                    self.realFreq.set_facecolor(self.backgroundColor)
+                                    self.realFreqDeletedLow, = self.realFreq.plot(self.wdataRaw[:self.lowDelete], self.rdataRaw[:self.lowDelete], "o", markerfacecolor="None", color=deletedColor)
+                                    self.realFreqDeletedHigh, = self.realFreq.plot(self.wdataRaw[len(self.wdataRaw)-1-self.upDelete:], self.rdataRaw[len(self.wdataRaw)-1-self.upDelete:], "o", markerfacecolor="None", color=deletedColor)
+                                    self.realFreqPlot, = self.realFreq.plot(self.wdata, self.rdata, "o", color=dataColor)
+                                    self.realFreq.set_xscale("log")
+                                    self.realFreq.get_xaxis().set_visible(False)
+                                    self.realFreq.set_title("Real Impedance", color=self.foregroundColor)
+                                    self.imagFreq = self.figFreq.add_subplot(212)
+                                    self.imagFreq.set_facecolor(self.backgroundColor)
+                                    self.imagFreqDeletedLow, = self.imagFreq.plot(self.wdataRaw[:self.lowDelete], -1*self.jdataRaw[:self.lowDelete], "o", markerfacecolor="None", color=deletedColor)
+                                    self.imagFreqDeletedHigh, = self.imagFreq.plot(self.wdataRaw[len(self.wdataRaw)-1-self.upDelete:], -1*self.jdataRaw[len(self.wdataRaw)-1-self.upDelete:], "o", markerfacecolor="None", color=deletedColor)
+                                    self.imagFreqPlot, = self.imagFreq.plot(self.wdata, -1*self.jdata, "o", color=dataColor)
+                                    self.imagFreq.set_xscale("log")
+                                    self.imagFreq.set_title("Imaginary Impedance", color=self.foregroundColor)
+                                    self.imagFreq.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                                    self.canvasFreq.draw()
+                            except:
+                                pass
                             self.lengthOfData = len(self.wdata)
                             self.freqRangeButton.configure(state="normal")
                             self.runButton.configure(state="normal")
+                            self.simplexButton.configure(state="normal")
                         except:
                             messagebox.showerror("File not found", "Error 53: \nThe linked .mmfile could not be found")
                             fileToLoad = ""
@@ -670,6 +1123,7 @@ class fF(tk.Frame):
                                 self.errorDeltaCheckboxVariable.set(1)
                                 self.errorDeltaEntry.configure(state="normal")
                                 self.errorDeltaVariable.set(errorDelta)
+                        self.noiseEntryValue.set(alphaVal)
                         if (self.weightingComboboxValue.get() == "None"):
                             self.noiseFrame.grid_remove()
                             self.errorStructureFrame.grid_remove()
@@ -687,7 +1141,7 @@ class fF(tk.Frame):
                         self.browseEntry.insert(0, fileToLoad)
                         self.browseEntry.configure(state="readonly")
                         self.customFormula.delete("1.0", tk.END)
-                        self.customFormula.insert("1.0", formulaIn)
+                        self.customFormula.insert("1.0", formulaIn.rstrip())
                         keyup("")
                     except:
                         messagebox.showerror("File error", "Error 42: \nThere was an error loading or reading the file")
@@ -699,6 +1153,33 @@ class fF(tk.Frame):
                 self.freqWindow.deiconify()
             else:
                 self.freqWindow.lift()
+            dataColor = "tab:blue"
+            deletedColor = "#A9CCE3"
+            if (self.topGUI.getTheme() == "dark"):
+                dataColor = "cyan"
+            else:
+                dataColor = "tab:blue"
+            with plt.rc_context({'axes.edgecolor':self.foregroundColor, 'xtick.color':self.foregroundColor, 'ytick.color':self.foregroundColor, 'figure.facecolor':self.backgroundColor}):
+                self.figFreq = Figure(figsize=(5, 5), dpi=100)
+                self.canvasFreq = FigureCanvasTkAgg(self.figFreq, master=self.freqWindow)
+                self.canvasFreq.get_tk_widget().grid(row=1,column=1, rowspan=5)
+                self.realFreq = self.figFreq.add_subplot(211)
+                self.realFreq.set_facecolor(self.backgroundColor)
+                self.realFreqDeletedLow, = self.realFreq.plot(self.wdataRaw[:self.lowDelete], self.rdataRaw[:self.lowDelete], "o", markerfacecolor="None", color=deletedColor)
+                self.realFreqDeletedHigh, = self.realFreq.plot(self.wdataRaw[len(self.wdataRaw)-1-self.upDelete:], self.rdataRaw[len(self.wdataRaw)-1-self.upDelete:], "o", markerfacecolor="None", color=deletedColor)
+                self.realFreqPlot, = self.realFreq.plot(self.wdata, self.rdata, "o", color=dataColor)
+                self.realFreq.set_xscale("log")
+                self.realFreq.get_xaxis().set_visible(False)
+                self.realFreq.set_title("Real Impedance", color=self.foregroundColor)
+                self.imagFreq = self.figFreq.add_subplot(212)
+                self.imagFreq.set_facecolor(self.backgroundColor)
+                self.imagFreqDeletedLow, = self.imagFreq.plot(self.wdataRaw[:self.lowDelete], -1*self.jdataRaw[:self.lowDelete], "o", markerfacecolor="None", color=deletedColor)
+                self.imagFreqDeletedHigh, = self.imagFreq.plot(self.wdataRaw[len(self.wdataRaw)-1-self.upDelete:], -1*self.jdataRaw[len(self.wdataRaw)-1-self.upDelete:], "o", markerfacecolor="None", color=deletedColor)
+                self.imagFreqPlot, = self.imagFreq.plot(self.wdata, -1*self.jdata, "o", color=dataColor)
+                self.imagFreq.set_xscale("log")
+                self.imagFreq.set_title("Imaginary Impedance", color=self.foregroundColor)
+                self.imagFreq.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                self.canvasFreq.draw()
             self.lowerSpinboxVariable.set(str(self.lowDelete))
             self.upperSpinboxVariable.set(str(self.upDelete))
             
@@ -729,16 +1210,29 @@ class fF(tk.Frame):
                     self.wdata = self.wdataRaw.copy()[self.lowDelete:-1*self.upDelete]
                     self.rdata = self.rdataRaw.copy()[self.lowDelete:-1*self.upDelete]
                     self.jdata = self.jdataRaw.copy()[self.lowDelete:-1*self.upDelete]
-                if (self.upperSpinboxVariable.get() == ""):
-                    self.upperSpinboxVariable.set("0")
-                if (self.lowerSpinboxVariable.get() == ""):
-                    self.lowerSpinboxVariable.set("0")
+                #if (self.upperSpinboxVariable.get() == ""):
+                #    self.upperSpinboxVariable.set("0")
+                #if (self.lowerSpinboxVariable.get() == ""):
+                #    self.lowerSpinboxVariable.set("0")
                 #self.rs.setLower(np.log10(min(self.wdata)))
                 #self.justUpdated = True
                 #self.rs.setUpper(np.log10(max(self.wdata)))
                 self.lengthOfData = len(self.wdata)
                 self.lowestUndeleted.configure(text="Lowest remaining frequency: {:.4e}".format(min(self.wdata)))
                 self.highestUndeleted.configure(text="Highest remaining frequency: {:.4e}".format(max(self.wdata)))
+                self.realFreqPlot.set_ydata(self.rdata)
+                self.realFreqPlot.set_xdata(self.wdata)
+                self.realFreqDeletedHigh.set_ydata(self.rdataRaw[len(self.wdataRaw)-1-self.upDelete:])
+                self.realFreqDeletedHigh.set_xdata(self.wdataRaw[len(self.wdataRaw)-1-self.upDelete:])
+                self.realFreqDeletedLow.set_ydata(self.rdataRaw[:self.lowDelete])
+                self.realFreqDeletedLow.set_xdata(self.wdataRaw[:self.lowDelete])
+                self.imagFreqDeletedHigh.set_ydata(-1*self.jdataRaw[len(self.wdataRaw)-1-self.upDelete:])
+                self.imagFreqDeletedHigh.set_xdata(self.wdataRaw[len(self.wdataRaw)-1-self.upDelete:])
+                self.imagFreqDeletedLow.set_ydata(-1*self.jdataRaw[:self.lowDelete])
+                self.imagFreqDeletedLow.set_xdata(self.wdataRaw[:self.lowDelete])
+                self.imagFreqPlot.set_ydata(-1*self.jdata)
+                self.imagFreqPlot.set_xdata(self.wdata)
+                self.canvasFreq.draw()
                 #self.updateFreqButton.configure(text="Updated")
                 #self.after(500, lambda : self.updateFreqButton.configure(text="Update Frequencies"))
             def changeFreqSpinboxLower(e = None):
@@ -748,14 +1242,14 @@ class fF(tk.Frame):
                     #print(len(self.wdataRaw)-1-higherDelete-lowerDelete)
                     #self.lowerSpinbox.configure(to=len(self.wdataRaw)-1-higherDelete-lowerDelete)
                     self.upperSpinbox.configure(to=len(self.wdataRaw)-1-lowerDelete)
-                    if (higherDelete == 0 and lowerDelete == 0):
-                        self.rs.setLower(np.log10(min(self.wdataRaw.copy())))
-                    elif (higherDelete == 0):
-                        self.rs.setLower(np.log10(min(self.wdataRaw.copy()[lowerDelete:])))
-                    elif (lowerDelete == 0):
-                        self.rs.setLower(np.log10(min(self.wdataRaw.copy()[:-1*higherDelete])))
-                    else:
-                        self.rs.setLower(np.log10(min(self.wdataRaw.copy()[lowerDelete:-1*higherDelete])))
+                    #if (higherDelete == 0 and lowerDelete == 0):
+                    #    self.rs.setLower(np.log10(min(self.wdataRaw.copy())))
+                    #elif (higherDelete == 0):
+                    #    self.rs.setLower(np.log10(min(self.wdataRaw.copy()[lowerDelete:])))
+                    #elif (lowerDelete == 0):
+                    #    self.rs.setLower(np.log10(min(self.wdataRaw.copy()[:-1*higherDelete])))
+                    #else:
+                    #    self.rs.setLower(np.log10(min(self.wdataRaw.copy()[lowerDelete:-1*higherDelete])))
                     updateFreqs()
                 except:
                     pass
@@ -766,39 +1260,41 @@ class fF(tk.Frame):
                     lowerDelete = 0 if self.lowerSpinboxVariable.get() == "" else int(self.lowerSpinboxVariable.get())
                     self.lowerSpinbox.configure(to=len(self.wdataRaw)-1-higherDelete)
                     #self.upperSpinbox.configure(to=len(self.wdataRaw)-1-higherDelete-lowerDelete)
-                    if (higherDelete == 0 and lowerDelete == 0):
-                        self.rs.setUpper(np.log10(max(self.wdataRaw.copy())))
-                    elif (higherDelete == 0):
-                        self.rs.setUpper(np.log10(max(self.wdataRaw.copy()[lowerDelete:])))
-                    elif (lowerDelete == 0):
-                        self.rs.setUpper(np.log10(max(self.wdataRaw.copy()[:-1*higherDelete])))
-                    else:
-                        self.rs.setUpper(np.log10(max(self.wdataRaw.copy()[lowerDelete:-1*higherDelete])))
+                    #if (higherDelete == 0 and lowerDelete == 0):
+                    #    self.rs.setUpper(np.log10(max(self.wdataRaw.copy())))
+                    #elif (higherDelete == 0):
+                    #    self.rs.setUpper(np.log10(max(self.wdataRaw.copy()[lowerDelete:])))
+                    #elif (lowerDelete == 0):
+                    #    self.rs.setUpper(np.log10(max(self.wdataRaw.copy()[:-1*higherDelete])))
+                    #else:
+                    #    self.rs.setUpper(np.log10(max(self.wdataRaw.copy()[lowerDelete:-1*higherDelete])))
                     updateFreqs()
                 except:
                     pass
             
-            self.rs.setPaintTicks(True)
-            self.rs.setSnapToTicks(False) 
-            self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
-            self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
+            #self.rs.setPaintTicks(True)
+            #self.rs.setSnapToTicks(False) 
+            #self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
+            #self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
 #            self.rs.setMajorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
-            self.rs.setNumberOfMajorTicks(10)
-            self.rs.showMinorTicks(False)
+            #self.rs.setNumberOfMajorTicks(10)
+            #self.rs.showMinorTicks(False)
 #            self.rs.setMinorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
-            self.rs.setLower(np.log10(min(self.wdata)))
-            self.rs.setUpper(np.log10(max(self.wdata)))
+            #self.rs.setLower(np.log10(min(self.wdata)))
+            #self.rs.setUpper(np.log10(max(self.wdata)))
             #self.rs.setFocus()
             self.lowerLabel = tk.Label(self.freqWindow, text="Number of low frequencies\n to delete", bg=self.backgroundColor, fg=self.foregroundColor)
             self.rangeLabel = tk.Label(self.freqWindow, text="Log of Frequency", bg=self.backgroundColor, fg=self.foregroundColor)
             self.upperLabel = tk.Label(self.freqWindow, text="Number of high frequencies\n to delete", bg=self.backgroundColor, fg=self.foregroundColor)
-            self.lowerLabel.grid(column=0, row=1, pady=80, padx=3, sticky="N")
-            self.rangeLabel.grid(column=1, row=1, pady=85, sticky="N")
-            self.upperLabel.grid(column=2, row=1, pady=80, padx=3, sticky="N")
-            self.lowerSpinbox = tk.Spinbox(self.freqWindow, from_=0, to=(len(self.wdataRaw)-1), textvariable=self.lowerSpinboxVariable, state="readonly", width=3, command=changeFreqSpinboxLower)
-            self.lowerSpinbox.grid(column=0, row=1, padx=(3,0))
-            self.upperSpinbox = tk.Spinbox(self.freqWindow, from_=0, to=(len(self.wdataRaw)-1), textvariable=self.upperSpinboxVariable, state="readonly", width=3, command=changeFreqSpinboxUpper)
-            self.upperSpinbox.grid(column=2, row=1, padx=(0,3))
+            self.lowerLabel.grid(column=0, row=1, pady=(80, 0), padx=3)
+            #self.rangeLabel.grid(column=1, row=1, pady=85, sticky="N")
+            self.upperLabel.grid(column=2, row=1, pady=(80, 0), padx=3)
+            self.lowerSpinbox = tk.Spinbox(self.freqWindow, from_=0, to=(len(self.wdataRaw)-1), textvariable=self.lowerSpinboxVariable, state="normal", width=6, validate="all", validatecommand=valfreqLow, command=changeFreqSpinboxLower)
+            self.lowerSpinbox.grid(column=0, row=2, padx=(3,0))
+            self.upperSpinbox = tk.Spinbox(self.freqWindow, from_=0, to=(len(self.wdataRaw)-1), textvariable=self.upperSpinboxVariable, state="normal", width=6, validate="all", validatecommand=valfreqHigh, command=changeFreqSpinboxUpper)
+            self.lowerSpinbox.bind("<KeyRelease>", changeFreqSpinboxLower)
+            self.upperSpinbox.bind("<KeyRelease>", changeFreqSpinboxUpper)
+            self.upperSpinbox.grid(column=2, row=2, padx=(0,3))
             self.lowestUndeleted.configure(text="Lowest remaining frequency: {:.4e}".format(min(self.wdata))) #%f" % round_to_n(min(self.wdata), 6)).strip("0"))
             self.highestUndeleted.configure(text="Highest remaining frequency: {:.4e}".format(max(self.wdata))) #%f" % round_to_n(max(self.wdata), 6)).strip("0"))
             self.lowestUndeleted.grid(column=0, row=3, sticky="N")
@@ -1069,6 +1565,8 @@ class fF(tk.Frame):
                     self.multistartSpacingVariables[i].set(self.multistartSpacingVariables[i+1].get())
                     self.multistartCustomVariables[i].set(self.multistartCustomVariables[i+1].get())
                     self.multistartNumberVariables[i].set(self.multistartNumberVariables[i+1].get())
+                    self.upperLimits[i].set(self.upperLimits[i+1].get())
+                    self.lowerLimits[i].set(self.lowerLimits[i+1].get())
                 removeParam()
         
         def addParam():
@@ -1081,11 +1579,14 @@ class fF(tk.Frame):
             self.multistartSpacingVariables.append(tk.StringVar(self, "Logarithmic"))
             self.multistartCustomVariables.append(tk.StringVar(self, "0.1,1,10,100,1000"))
             self.multistartNumberVariables.append(tk.StringVar(self, "10"))
-            self.paramNameEntries.append(ttk.Entry(self.pframe, textvariable=self.paramNameValues[self.numParams-1], width=10, validate="all", validatecommand=valcom))
+            self.upperLimits.append(tk.StringVar(self, "inf"))
+            self.lowerLimits.append(tk.StringVar(self, "-inf"))
+            self.paramNameEntries.append(ttk.Entry(self.pframe, textvariable=self.paramNameValues[self.numParams-1], width=10, validate="all", validatecommand=self.valcom))
             self.paramNameLabels.append(tk.Label(self.pframe, text="Name: ", background=self.backgroundColor, foreground=self.foregroundColor))
             self.paramValueLabels.append(tk.Label(self.pframe, text="Value: ", background=self.backgroundColor, foreground=self.foregroundColor))
             self.paramComboboxValues.append(tk.StringVar(self, "+ or -"))
-            self.paramComboboxes.append(ttk.Combobox(self.pframe, textvariable=self.paramComboboxValues[self.numParams-1], value=("+", "+ or -", "-", "fixed"), justify=tk.CENTER, state="readonly", exportselection=0, width=6))
+            self.paramComboboxes.append(ttk.Combobox(self.pframe, textvariable=self.paramComboboxValues[self.numParams-1], value=("+", "+ or -", "-", "fixed", "custom"), justify=tk.CENTER, state="readonly", exportselection=0, width=6))
+            self.paramComboboxes[-1].bind("<<ComboboxSelected>>", partial(limitChanged, self.numParams-1))
             self.paramValueValues.append(tk.StringVar(self, "0"))
             self.paramValueEntries.append(ttk.Entry(self.pframe, textvariable=self.paramValueValues[self.numParams-1], width=10))
             self.paramDeleteButtons.append(ttk.Button(self.pframe, text="Delete", command=partial(deleteParam, self.numParams-1)))
@@ -1110,6 +1611,10 @@ class fF(tk.Frame):
                 self.multistartSpacing.configure(textvariable=self.multistartSpacingVariables[0])
                 self.multistartNumberEntry.configure(textvariable=self.multistartNumberVariables[0])
                 self.multistartCustomEntry.configure(textvariable=self.multistartCustomVariables[0])
+                self.advancedLowerLimitEntry.configure(textvariable=self.lowerLimits[0])
+                self.advancedUpperLimitEntry.configure(textvariable=self.upperLimits[0])
+                self.advancedLowerLimitFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5)
+                self.advancedUpperLimitFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5, pady=5)
                 self.multistartCheckbox.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5)
                 self.multistartSpacingFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5)
                 self.multistartLowerFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5, pady=5)
@@ -1120,6 +1625,8 @@ class fF(tk.Frame):
                 self.multistartLowerEntry.configure(state="disabled")
                 self.multistartNumberEntry.configure(state="disabled")
                 self.multistartCustomEntry.configure(state="disabled")
+                self.advancedLowerLimitEntry.configure(state="normal")
+                self.advancedUpperLimitEntry.configure(state="normal")
             keyup("")
         
         def removeParam():
@@ -1136,15 +1643,19 @@ class fF(tk.Frame):
                 self.numParams -= 1
                 self.howMany.configure(text="Number of parameters: " + str(self.numParams))
                 self.paramListbox.delete(tk.END)
+                self.paramListbox.selection_clear(0, tk.END)
                 self.paramListbox.select_set(0)
                 self.paramListboxSelection = 0
-                self.paramListbox.event_generate("<<ListboxSelect>>")
+                onSelect(None, n=0)
+                #self.paramListbox.event_generate("<<ListboxSelect>>")
                 self.multistartCheckboxVariables.pop()
                 self.multistartLowerVariables.pop()
                 self.multistartUpperVariables.pop()
                 self.multistartSpacingVariables.pop()
                 self.multistartCustomVariables.pop()
                 self.multistartNumberVariables.pop()
+                self.upperLimits.pop()
+                self.lowerLimits.pop()
                 keyup("")
         
         def advCheck():
@@ -1174,6 +1685,68 @@ class fF(tk.Frame):
                 self.multistartUpperFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5)
                 self.multistartNumberFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5, pady=5)
         
+        def onSelect(e, n=-1):
+            try:
+                if (n == -1):
+                    num_selected = self.paramListbox.curselection()[0]
+                else:
+                    num_selected = n
+                self.paramListboxSelection = num_selected
+                self.advancedOptionsLabel.configure(text=self.paramNameValues[num_selected].get())
+                self.advancedLowerLimitFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5)
+                self.advancedUpperLimitFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5, pady=5)
+                self.multistartCheckbox.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5)
+                self.multistartSpacingFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5)
+                if (self.paramComboboxValues[num_selected].get() == "fixed"):
+                    self.advancedLowerLimitEntry.configure(state="disabled")
+                    self.advancedUpperLimitEntry.configure(state="disabled")
+                else:
+                    self.advancedLowerLimitEntry.configure(state="normal")
+                    self.advancedUpperLimitEntry.configure(state="normal")
+                if (self.multistartSpacingVariables[num_selected].get() == "Custom"):
+                    self.multistartLowerFrame.pack_forget()
+                    self.multistartUpperFrame.pack_forget()
+                    self.multistartNumberFrame.pack_forget()
+                    self.multistartCustomFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5, pady=5)
+                else:
+                    self.multistartCustomFrame.pack_forget()
+                    self.multistartLowerFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5, pady=5)
+                    self.multistartUpperFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5)
+                    self.multistartNumberFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5, pady=5)
+                if (self.multistartCheckboxVariables[num_selected].get()):
+                    self.multistartSpacing.configure(state="readonly")
+                    self.multistartUpperEntry.configure(state="normal")
+                    self.multistartLowerEntry.configure(state="normal")
+                    self.multistartNumberEntry.configure(state="normal")
+                    self.multistartCustomEntry.configure(state="normal")
+                else:
+                    self.multistartSpacing.configure(state="disabled")
+                    self.multistartUpperEntry.configure(state="disabled")
+                    self.multistartLowerEntry.configure(state="disabled")
+                    self.multistartNumberEntry.configure(state="disabled")
+                    self.multistartCustomEntry.configure(state="disabled")
+                self.multistartCheckbox.configure(variable=self.multistartCheckboxVariables[num_selected])
+                self.multistartLowerEntry.configure(textvariable=self.multistartLowerVariables[num_selected])
+                self.multistartUpperEntry.configure(textvariable=self.multistartUpperVariables[num_selected])
+                self.multistartSpacing.configure(textvariable=self.multistartSpacingVariables[num_selected])
+                self.multistartNumberEntry.configure(textvariable=self.multistartNumberVariables[num_selected])
+                self.multistartCustomEntry.configure(textvariable=self.multistartCustomVariables[num_selected])
+                self.advancedLowerLimitEntry.configure(textvariable=self.lowerLimits[num_selected])
+                self.advancedUpperLimitEntry.configure(textvariable=self.upperLimits[num_selected])
+            except:     #No parameters left
+                self.paramListboxSelection = 0
+                self.advancedOptionsLabel.configure(text="")
+                self.advancedLowerLimitFrame.pack_forget()
+                self.advancedUpperLimitFrame.pack_forget()
+                self.multistartCheckbox.pack_forget()
+                self.multistartSpacingFrame.pack_forget()
+                self.multistartLowerFrame.pack_forget()
+                self.multistartUpperFrame.pack_forget()
+                self.multistartNumberFrame.pack_forget()
+                self.multistartCustomFrame.pack_forget()
+                self.advancedLowerLimitEntry.configure(state="normal")
+                self.advancedUpperLimitEntry.configure(state="normal")
+        
         def advancedOptionsPopup():
             self.advancedOptionsWindow.deiconify()
             self.advancedOptionsWindow.lift()
@@ -1185,52 +1758,287 @@ class fF(tk.Frame):
             #print(self.multistartSpacing)
             def onClose():
                 self.advancedOptionsWindow.withdraw()
-            def onSelect(e):
-                try:
-                    num_selected = self.paramListbox.curselection()[0]
-                    self.paramListboxSelection = num_selected
-                    self.advancedOptionsLabel.configure(text=self.paramNameValues[num_selected].get())
-                    self.multistartCheckbox.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5)
-                    self.multistartSpacingFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5)
-                    if (self.multistartSpacingVariables[num_selected].get() == "Custom"):
-                        self.multistartLowerFrame.pack_forget()
-                        self.multistartUpperFrame.pack_forget()
-                        self.multistartNumberFrame.pack_forget()
-                        self.multistartCustomFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5, pady=5)
-                    else:
-                        self.multistartCustomFrame.pack_forget()
-                        self.multistartLowerFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5, pady=5)
-                        self.multistartUpperFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5)
-                        self.multistartNumberFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5, pady=5)
-                    if (self.multistartCheckboxVariables[num_selected].get()):
-                        self.multistartSpacing.configure(state="readonly")
-                        self.multistartUpperEntry.configure(state="normal")
-                        self.multistartLowerEntry.configure(state="normal")
-                        self.multistartNumberEntry.configure(state="normal")
-                        self.multistartCustomEntry.configure(state="normal")
-                    else:
-                        self.multistartSpacing.configure(state="disabled")
-                        self.multistartUpperEntry.configure(state="disabled")
-                        self.multistartLowerEntry.configure(state="disabled")
-                        self.multistartNumberEntry.configure(state="disabled")
-                        self.multistartCustomEntry.configure(state="disabled")
-                    self.multistartCheckbox.configure(variable=self.multistartCheckboxVariables[num_selected])
-                    self.multistartLowerEntry.configure(textvariable=self.multistartLowerVariables[num_selected])
-                    self.multistartUpperEntry.configure(textvariable=self.multistartUpperVariables[num_selected])
-                    self.multistartSpacing.configure(textvariable=self.multistartSpacingVariables[num_selected])
-                    self.multistartNumberEntry.configure(textvariable=self.multistartNumberVariables[num_selected])
-                    self.multistartCustomEntry.configure(textvariable=self.multistartCustomVariables[num_selected])
-                except:     #No parameters left
-                    self.paramListboxSelection = 0
-                    self.advancedOptionsLabel.configure(text="")
-                    self.multistartCheckbox.pack_forget()
-                    self.multistartSpacingFrame.pack_forget()
-                    self.multistartLowerFrame.pack_forget()
-                    self.multistartUpperFrame.pack_forget()
-                    self.multistartNumberFrame.pack_forget()
-                    self.multistartCustomFrame.pack_forget()
+            
             self.advancedOptionsWindow.protocol("WM_DELETE_WINDOW", onClose)
             self.paramListbox.bind("<<ListboxSelect>>", onSelect)
+        
+        def loadParams():
+            a = True
+            if (len(self.paramNameEntries) > 0):
+                a = messagebox.askokcancel("Remove parameters", "Loading parameters will remove existing parameters. Continue?", parent=self.paramPopup)
+            if a:
+                def OpenFileParam():
+                    name = askopenfilename(initialdir=self.topGUI.getCurrentDirectory(), filetypes = [("Custom fitting file", "*.mmcustom"), ("Measurement model custom fitting (*.mmcustom)", "*.mmcustom")], title = "Choose a file", parent=self.paramPopup)
+                    try:
+                        with open(name,'r') as UseFile:
+                            return name
+                    except:
+                        return "+"
+                n = OpenFile()
+                if (n != '+'):
+                    fname, fext = os.path.splitext(n)
+                    directory = os.path.dirname(str(n))
+                    self.topGUI.setCurrentDirectory(directory)
+                    if (fext == ".mmcustom"):
+                        try:
+                            toLoad = open(n)
+                            for i in range(13):
+                                toLoad.readline()
+                            while True:
+                                nextLineIn = toLoad.readline()
+                                if "mmparams:" in nextLineIn:
+                                    break
+                            for i in range(len(self.paramNameEntries)):
+                                self.paramNameEntries[i].grid_remove()
+                                self.paramNameLabels[i].grid_remove()
+                                self.paramValueEntries[i].grid_remove()
+                                self.paramValueLabels[i].grid_remove()
+                                self.paramComboboxes[i].grid_remove()
+                                self.paramDeleteButtons[i].grid_remove()
+                            self.numParams = 0
+                            self.paramNameValues.clear()
+                            self.paramNameEntries.clear()
+                            self.paramNameLabels.clear()
+                            self.paramValueLabels.clear()
+                            self.paramComboboxValues.clear()
+                            self.paramComboboxes.clear()
+                            self.paramValueValues.clear()
+                            self.paramValueEntries.clear()
+                            self.paramDeleteButtons.clear()
+                            self.paramListbox.delete(0, tk.END)
+                            self.multistartCheckboxVariables.clear()
+                            self.multistartSpacingVariables.clear()
+                            self.multistartLowerVariables.clear()
+                            self.multistartUpperVariables.clear()
+                            self.multistartNumberVariables.clear()
+                            self.multistartCustomVariables.clear()
+                            self.upperLimits.clear()
+                            self.lowerLimits.clear()
+                            while True:
+                                p = toLoad.readline()
+                                if not p:
+                                    break
+                                else:
+                                    p = p[:-1]
+                                    try:
+                                        pname, pval, pcombo, plimup, plimlow, pcheck, pspacing, pupper, plower, pnumber, pcustom = p.split("~=~")
+                                        self.multistartCheckboxVariables.append(tk.IntVar(self, int(pcheck)))
+                                        self.multistartLowerVariables.append(tk.StringVar(self, plower))
+                                        self.multistartUpperVariables.append(tk.StringVar(self, pupper))
+                                        self.multistartSpacingVariables.append(tk.StringVar(self, pspacing))
+                                        self.multistartCustomVariables.append(tk.StringVar(self, pcustom))
+                                        self.multistartNumberVariables.append(tk.StringVar(self, pnumber))
+                                        self.upperLimits.append(tk.StringVar(self, plimup))
+                                        self.lowerLimits.append(tk.StringVar(self, plimlow))
+                                    except:
+                                        pname, pval, pcombo = p.split("~=~")
+                                        self.multistartCheckboxVariables.append(tk.IntVar(self, 0))
+                                        self.multistartLowerVariables.append(tk.StringVar(self, "1E-5"))
+                                        self.multistartUpperVariables.append(tk.StringVar(self, "1E5"))
+                                        self.multistartSpacingVariables.append(tk.StringVar(self, "Logarithmic"))
+                                        self.multistartCustomVariables.append(tk.StringVar(self, "0.1,1,10,100,1000"))
+                                        self.multistartNumberVariables.append(tk.StringVar(self, "10"))
+                                        self.upperLimits.append(tk.StringVar(self, "inf"))
+                                        self.lowerLimits.append(tk.StringVar(self, "-inf"))
+                                    self.numParams += 1
+                                    if (self.numParams == 1):
+                                        self.multistartCheckbox.configure(variable=self.multistartCheckboxVariables[0])
+                                        self.multistartLowerEntry.configure(textvariable=self.multistartLowerVariables[0])
+                                        self.multistartUpperEntry.configure(textvariable=self.multistartUpperVariables[0])
+                                        self.multistartSpacing.configure(textvariable=self.multistartSpacingVariables[0])
+                                        self.multistartNumberEntry.configure(textvariable=self.multistartNumberVariables[0])
+                                        self.multistartCustomEntry.configure(textvariable=self.multistartCustomVariables[0])
+                                        self.advancedLowerLimitFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5)
+                                        self.advancedUpperLimitFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5, pady=5)
+                                        self.multistartCheckbox.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5)
+                                        self.multistartSpacingFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5)
+                                        self.multistartLowerFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5, pady=5)
+                                        self.multistartUpperFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5)
+                                        self.multistartNumberFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5, pady=5)
+                                        if (self.paramComboboxValues[0].get() == "fixed"):
+                                            self.advancedLowerLimitFrame.configure(state="disabled")
+                                            self.advancedUpperLimitFrame.configure(state="disabled")
+                                        if (self.multistartCheckboxVariables[0].get() == 0):
+                                            self.multistartSpacing.configure(state="disabled")
+                                            self.multistartUpperEntry.configure(state="disabled")
+                                            self.multistartLowerEntry.configure(state="disabled")
+                                            self.multistartNumberEntry.configure(state="disabled")
+                                            self.multistartCustomEntry.configure(state="disabled")
+                                        else:
+                                            if (self.multistartSpacingVariables[0].get() == "Custom"):
+                                                self.multistartSpacing.configure(state="readonly")
+                                                self.multistartUpperEntry.configure(state="normal")
+                                                self.multistartLowerEntry.configure(state="normal")
+                                                self.multistartNumberEntry.configure(state="normal")
+                                                self.multistartCustomEntry.configure(state="normal")
+                                                self.multistartLowerFrame.pack_forget()
+                                                self.multistartUpperFrame.pack_forget()
+                                                self.multistartNumberFrame.pack_forget()
+                                                self.multistartCustomFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5, pady=5)
+                                            else:
+                                                self.multistartSpacing.configure(state="readonly")
+                                                self.multistartUpperEntry.configure(state="normal")
+                                                self.multistartLowerEntry.configure(state="normal")
+                                                self.multistartNumberEntry.configure(state="normal")
+                                                self.multistartCustomEntry.configure(state="normal")
+                                    self.paramNameValues.append(tk.StringVar(self, pname))
+                                    self.paramNameEntries.append(ttk.Entry(self.pframe, textvariable=self.paramNameValues[self.numParams-1], width=10, validate="all", validatecommand=self.valcom))
+                                    self.paramNameLabels.append(tk.Label(self.pframe, text="Name: ", background=self.backgroundColor, foreground=self.foregroundColor))
+                                    self.paramValueLabels.append(tk.Label(self.pframe, text="Value: ", background=self.backgroundColor, foreground=self.foregroundColor))
+                                    self.paramComboboxValues.append(tk.StringVar(self, pcombo))
+                                    self.paramComboboxes.append(ttk.Combobox(self.pframe, textvariable=self.paramComboboxValues[self.numParams-1], value=("+", "+ or -", "-", "fixed", "custom"), justify=tk.CENTER, state="readonly", exportselection=0, width=6))
+                                    self.paramComboboxes[-1].bind("<<ComboboxSelected>>", partial(limitChanged, self.numParams-1))
+                                    self.paramValueValues.append(tk.StringVar(self, pval))
+                                    self.paramValueEntries.append(ttk.Entry(self.pframe, textvariable=self.paramValueValues[self.numParams-1], width=10))
+                                    self.paramDeleteButtons.append(ttk.Button(self.pframe, text="Delete", command=partial(deleteParam, self.numParams-1)))
+                                    self.paramNameLabels[len(self.paramNameLabels)-1].grid(column=0, row=self.numParams, pady=5)
+                                    self.paramNameEntries[len(self.paramNameEntries)-1].grid(column=1, row=self.numParams)
+                                    self.paramValueLabels[len(self.paramValueLabels)-1].grid(column=2, row=self.numParams, padx=(10, 3))
+                                    self.paramComboboxes[len(self.paramComboboxes)-1].grid(column=3, row=self.numParams)
+                                    self.paramValueEntries[len(self.paramValueEntries)-1].grid(column=4, row=self.numParams, padx=(3,0))
+                                    self.paramDeleteButtons[len(self.paramDeleteButtons)-1].grid(column=5, row=self.numParams, padx=3)
+                                    self.howMany.configure(text="Number of parameters: " + str(self.numParams))
+                                    self.paramNameLabels[len(self.paramNameLabels)-1].bind("<MouseWheel>", _on_mousewheel)
+                                    self.paramNameEntries[len(self.paramNameEntries)-1].bind("<MouseWheel>", _on_mousewheel)
+                                    self.paramValueLabels[len(self.paramValueLabels)-1].bind("<MouseWheel>", _on_mousewheel)
+                                    self.paramValueEntries[len(self.paramValueEntries)-1].bind("<MouseWheel>", _on_mousewheel)
+                                    self.paramDeleteButtons[len(self.paramDeleteButtons)-1].bind("<MouseWheel>", _on_mousewheel)
+                                    self.paramNameEntries[len(self.paramNameEntries)-1].bind("<KeyRelease>", keyup)
+                                    self.paramListbox.insert(tk.END, pname)
+                            toLoad.close()
+                            self.paramListbox.selection_clear(0, tk.END)
+                            self.paramListbox.select_set(0)
+                            self.paramListboxSelection = 0
+                            self.paramListbox.event_generate("<<ListboxSelect>>")
+                            keyup("")
+                            parameterPopup()
+                        except:
+                            messagebox.showerror("File error", "Error 42: \nThere was an error loading or reading the file")
+                    else:
+                        messagebox.showerror("File error", "Error 43:\n The file has an unknown extension")
+            else:   #Cancel is clicked
+                pass
+        
+        def simplexFit():
+            if (len(self.paramValueValues) < 1):    #If there are no parameters to fit
+                pass
+            else:
+                formula = self.customFormula.get("1.0", tk.END)
+                if ("".join(formula.split()) == ""):
+                    messagebox.showwarning("Error", "Error 44: \nFormula is empty", parent=self.paramPopup)
+                    return
+                
+                #---Check that none of the variable names are repeated, and that none are Python reserved words or variables used in this code
+                for i in range(len(self.paramNameValues)):
+                    name = self.paramNameValues[i].get()
+                    if (name == "False" or name == "None" or name == "True" or name == "and" or name == "as" or name == "assert" or name == "break" or name == "class" or name == "continue" or name == "def" or name == "del" or name == "elif" or name == "else" or name == "except"\
+                         or name == "finally" or name == "for" or name == "from" or name == "global" or name == "if" or name == "import" or name == "in" or name == "is" or name == "lambda" or name == "nonlocal" or name == "not" or name == "or" or name == "pass" or name == "raise"\
+                          or name == "return" or name == "try" or name == "while" or name == "with" or name == "yield"):
+                        messagebox.showwarning("Error", "Error 45: \nThe variable name \"" + name + "\" is a Python reserved word. Change the variable name.", parent=self.paramPopup)
+                        return
+                    #elif ("self." in name):
+                    #    messagebox.showwarning("Error", "Error 46: \nThe variable name \"" + name + "\" contains \"self.\"; change the variable name.")
+                    #    return
+                    elif (name == "freq" or name == "Zr" or name == "Zj" or name == "Zreal" or name == "Zimag" or name == "weighting"):
+                        messagebox.showwarning("Error", "Error 47: \nThe variable name \"" + name + "\" is used by the fitting program; change the variable name.", parent=self.paramPopup)
+                        return
+                    for j in range(i+1, len(self.paramNameValues)):
+                        if (name == self.paramNameValues[j].get()):
+                            messagebox.showwarning("Error", "Error 48: \nTwo or more variables have the same name.", parent=self.paramPopup)
+                            return
+                
+                #---Replace the functions with np.<function>, and then attempt to compile the code to look for syntax errors---        
+                try:
+                    prebuiltFormulas = ['PI', 'ARCSINH', 'ARCCOSH', 'ARCTANH', 'ARCSIN', 'ARCCOS', 'ARCTAN', 'COSH', 'SINH', 'TANH', 'SIN', 'COS', 'TAN', 'SQRT', 'EXP', 'ABS', 'DEG2RAD', 'RAD2DEG']
+                    formula = formula.replace("^", "**")    #Replace ^ with ** for exponentiation (this could prevent some features like regex from being used effectively)
+                    formula = formula.replace("LN", "np.emath.log")     #Replace LN with the natural log (the emath version returns complex numbers for negative arguments)
+                    formula = formula.replace("LOG", "np.emath.log10")  #Replace LOG with the base-10 log (the emath version returns complex numbers for negative arguments)
+                    for pf in prebuiltFormulas:
+                        toReplace = "np." + pf.lower()
+                        formula = formula.replace(pf, toReplace)
+                    formula = formula.replace("\n", "\n\t")
+                    formula = "try:\n\t" + formula
+                    formula = formula.rstrip()
+                    formula += "\n\tif any(np.isnan(Zreal)) or any(np.isnan(Zimag)):\n\t\traise Exception\nexcept:\n\tZreal = np.full(len(freq), 1E300)\n\tZimag = np.full(len(freq), 1E300)"
+                    #print(formula)
+                    compile(formula, 'user_generated_formula', 'exec')
+                except:
+                    messagebox.showwarning("Compile error", "There was an issue compiling the code", parent=self.paramPopup)
+                    return
+                
+                #---Check if the variable "freq" appears in the code, as it's likely a mistake if it doesn't---
+                textToSearch = self.customFormula.get("1.0", tk.END)
+                whereFreq = [m.start() for m in re.finditer(r'\bfreq\b', textToSearch)]
+                if (len(whereFreq) == 0):
+                    messagebox.showwarning("No \"freq\"", "The variable \"freq\" does not appear in the code. This may cause an error.", parent=self.paramPopup)
+                elif (len(whereFreq) == 1 and whereFreq[0] == 5):
+                    messagebox.showwarning("No \"freq\"", "The variable \"freq\" does not seem to be in the code. This may cause an error.", parent=self.paramPopup)
+                
+                self.queue = queue.Queue()
+                fit_type = 3
+                if (self.fittingTypeComboboxValue.get() == "Real"):
+                    fit_type = 1
+                elif (self.fittingTypeCombobox.get() == "Imaginary"):
+                    fit_type = 2
+                param_names = []
+                for pNV in self.paramNameValues:
+                    param_names.append(pNV.get())
+                param_guesses = []
+                try:
+                    for pG in self.paramValueValues:
+                        param_guesses.append(float(pG.get()))
+                except:
+                    messagebox.showwarning("Value error", "Error 54: \nThe parameter guesses must be real numbers", parent=self.paramPopup)
+                    return
+                weight = 0
+                errorModelParams = np.zeros(5)
+                if (self.weightingComboboxValue.get() == "Modulus"):
+                    weight = 1
+                elif (self.weightingComboboxValue.get() == "Proportional"):
+                    weight = 2
+                elif (self.weightingComboboxValue.get() == "Error model"):
+                    if (self.errorAlphaCheckboxVariable.get() != 1 and self.errorBetaCheckboxVariable.get() != 1 and self.errorGammaCheckboxVariable.get() != 1 and self.errorDeltaCheckboxVariable.get() != 1):
+                        messagebox.showwarning("Bad error structure", "At least one error structure value must be checkd", parent=self.paramPopup)
+                        return
+                    try:
+                        if (self.errorAlphaCheckboxVariable.get() == 1):
+                            if (self.errorAlphaVariable.get() == "" or self.errorAlphaVariable.get() == " " or self.errorAlphaVariable.get() == "."):
+                                errorModelParams[0] = 0
+                            else:
+                                errorModelParams[0] = float(self.errorAlphaVariable.get())
+                        if (self.errorBetaCheckboxVariable.get() == 1):
+                            if (self.errorBetaVariable.get() == "" or self.errorBetaVariable.get() == " " or self.errorBetaVariable.get() == "."):
+                                errorModelParams[1] = 0
+                            else:
+                                errorModelParams[1] = float(self.errorBetaVariable.get())
+                        if (self.errorBetaReCheckboxVariable.get() == 1):
+                            if (self.errorBetaReVariable.get() == "" or self.errorBetaReVariable.get() == " " or self.errorBetaReVariable.get() == "."):
+                                errorModelParams[2] = 0
+                            else:
+                                errorModelParams[2] = float(self.errorBetaReVariable.get())
+                        if (self.errorGammaCheckboxVariable.get() == 1):
+                            if (self.errorGammaVariable.get() == "" or self.errorGammaVariable.get() == " " or self.errorGammaVariable.get() == "."):
+                                errorModelParams[3] = 0
+                            else:
+                                errorModelParams[3] = float(self.errorGammaVariable.get())
+                        if (self.errorDeltaCheckboxVariable.get() == 1):
+                            if (self.errorDeltaVariable.get() == "" or self.errorDeltaVariable.get() == " " or self.errorDeltaVariable.get() == "."):
+                                errorModelParams[4] = 0
+                            else:
+                                errorModelParams[4] = float(self.errorDeltaVariable.get())
+                    except:
+                        messagebox.showerror("Value error", "One of the error structure parameters has an invalid value", parent=self.paramPopup)
+                        return
+                    if (errorModelParams[0] == 0 and errorModelParams[1] == 0 and errorModelParams[3] == 0 and errorModelParams[4] == 0):
+                        messagebox.showerror("Value error", "At least one of the error structure parameters must be nonzero", parent=self.paramPopup)
+                        return
+                    weight = 3
+                elif (self.weightingComboboxValue.get() == "Custom"):
+                    weight = 4
+                assumed_noise = float(self.noiseEntryValue.get())
+                result = simplexFitting.findFit(fit_type, weight, assumed_noise, formula, self.wdata, self.rdata, self.jdata, param_names, param_guesses, errorModelParams)
+                for i in range(len(self.paramValueValues)):
+                    self.paramValueValues[i].set(str(round(result.x[i], -int(np.floor(np.log10(abs(result.x[i])))) + (4 - 1))))
         
         def _on_mousewheel(event):
             xpos, ypos = self.vsb.get()
@@ -1253,6 +2061,8 @@ class fF(tk.Frame):
             self.addButton.configure(command=addParam)
             self.removeButton.configure(command=removeParam)
             self.advancedOptionsButton.configure(command=advancedOptionsPopup)
+            self.simplexButton.configure(command=simplexFit)
+            #self.loadParamsButton.configure(command=loadParams)
             self.paramPopup.title("Custom fitting parameters")
             self.paramPopup.iconbitmap(resource_path("img/elephant3.ico"))
             self.paramPopup.geometry("500x400")
@@ -1284,11 +2094,49 @@ class fF(tk.Frame):
             self.helpPopup.bind("<Configure>", helpConfigure)
             """
         
+        def graphLatex(e=None):
+            try:
+                tmptext = self.formulaDescriptionLatexVariable.get()
+                if tmptext == "":
+                   with plt.rc_context({'mathtext.fontset': "cm"}):
+                        self.latexAx.clear()
+                        self.latexAx.axis("off")
+                        #self.latexAx.text(0.01, 0.5, tmptext, transform=self.latexAx.transAxes, fontsize = 30)  
+                        self.latexCanvas.draw()
+                elif tmptext != '\\' and tmptext[-1] != '\\':
+                    tmptext = "$"+tmptext+"$"
+                    windowWidth = self.latexAx.get_window_extent().transformed(self.latexFig.dpi_scale_trans.inverted()).width*self.latexFig.dpi
+                    with plt.rc_context({'mathtext.fontset': "cm"}):
+                        self.latexAx.clear()
+                        rLatex = self.latexFig.canvas.get_renderer()
+                        latexSize = 30
+                        tLatex = self.latexAx.text(0.01, 0.5, tmptext, transform=self.latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
+                        bb = tLatex.get_window_extent(renderer=rLatex)
+                        while (bb.width > windowWidth):
+                            self.latexAx.clear()
+                            latexSize -= 1
+                            tLatex = self.latexAx.text(0.01, 0.5, tmptext, transform=self.latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
+                            bb = tLatex.get_window_extent(renderer=rLatex)
+                        self.latexAx.axis("off")
+                        self.latexCanvas.draw()
+            except:
+                pass
+        
+        def formulaDescriptionPopup(event):
+            self.formulaDescriptionWindow.deiconify()
+            self.formulaDescriptionWindow.lift()
+            self.formulaDescriptionLatexEntry.bind('<KeyRelease>', graphLatex)
+            def on_closing_description():   #Clear the figure before closing the popup
+                self.formulaDescriptionWindow.withdraw()
+            
+            self.formulaDescriptionWindow.protocol("WM_DELETE_WINDOW", on_closing_description)
+        
         def process_queue_bootstrap():
             try:
                 r,s,sdR,sdI,chi,aic,realF,imagF = self.queueBootstrap.get(0)
                 self.progStatus.grid_remove()
                 self.progStatus.destroy()
+                self.simplexButton.configure(state="normal")
                 self.runButton.configure(state="normal")
                 self.browseButton.configure(state="normal")
                 self.customFormula.configure(state="normal")
@@ -1302,7 +2150,10 @@ class fF(tk.Frame):
                 self.cancelButton.grid_remove()
                 self.prog_bar.stop()
                 self.prog_bar.destroy()
-                
+                try:
+                    self.taskbar.SetProgressState(self.masterWindowId, 0x0)
+                except:
+                    pass
                 if (len(r) == 1):
                     if (r == "b"):
                         messagebox.showerror("Fitting error", "There was an error in the simulations.")
@@ -1474,6 +2325,14 @@ class fF(tk.Frame):
                     param_limits.append("-")
                 elif (pL.get() == "fixed"):
                     param_limits.append("f")
+                elif (pL.get() == "custom"):
+                    try:
+                        float(self.upperLimits[i].get())
+                        float(self.lowerLimits[i].get())
+                    except:
+                        messagebox.showwarning("Value error", "Error 61: \nThe upper and lower limits must be real numbers")
+                        return
+                    param_limits.append(str(self.upperLimits[i].get()) + ";" + str(self.lowerLimits[i].get()))
                 else:
                     param_limits.append("n")
             weight = 0
@@ -1522,6 +2381,7 @@ class fF(tk.Frame):
             elif (self.weightingComboboxValue.get() == "Custom"):
                 weight = 4
             assumed_noise = float(self.noiseEntryValue.get())
+            self.simplexButton.configure(state="disabled")
             self.runButton.configure(state="disabled")
             self.browseButton.configure(state="disabled")
             self.customFormula.configure(state="disabled")
@@ -1536,6 +2396,15 @@ class fF(tk.Frame):
             self.prog_bar.grid(column=3, row=0, padx=5)
             self.progStatus = tk.Label(self.runFrame, text="Initializing...", bg=self.backgroundColor, fg=self.foregroundColor)
             self.progStatus.grid(column=4, row=0)
+            try:
+                cc.GetModule('tl.tlb')
+                import comtypes.gen.TaskbarLib as tbl
+                self.taskbar = cc.CreateObject('{56FDF344-FD6D-11d0-958A-006097C9A090}', interface=tbl.ITaskbarList3)
+                self.taskbar.HrInit()
+                self.taskbar.ActivateTab(self.masterWindowId)
+                self.taskbar.SetProgressState(self.masterWindowId, 0x2)
+            except:
+                pass
             #self.prog_bar.start(40)
             self.listPercent = [bootstrapNum]
             self.currentThreads.append(ThreadedTaskBootstrap(self.queueBootstrap, self.listPercent, bootstrapNum, r,s,sdR,sdI,chi,aic,realF,imagF,fit_type, num_monte, weight, assumed_noise, formula, self.wdata, self.jdata, self.rdata, param_names, self.bestParams, param_limits, errorModelParams))
@@ -1549,6 +2418,7 @@ class fF(tk.Frame):
         def process_queue_custom():
             try:
                 r,s,sdR,sdI,chi,aic,realF,imagF, bestP = self.queue.get(0)
+                self.simplexButton.configure(state="normal")
                 self.runButton.configure(state="normal")
                 self.browseButton.configure(state="normal")
                 self.customFormula.configure(state="normal")
@@ -1565,6 +2435,10 @@ class fF(tk.Frame):
                 try:
                     self.progStatus.grid_remove()
                     self.progStatus.destroy()
+                except:
+                    pass
+                try:
+                    self.taskbar.SetProgressState(self.masterWindowId, 0x0)
                 except:
                     pass
                 if (len(r) == 1):
@@ -1680,7 +2554,10 @@ class fF(tk.Frame):
                 self.after(100, process_queue_custom)
         
         def checkFitting():
-            
+            try:
+                self.masterWindowId = ctypes.windll.user32.GetForegroundWindow()
+            except:
+                pass
             #---Check if a formula has been entered----
             formula = self.customFormula.get("1.0", tk.END)
             if ("".join(formula.split()) == ""):
@@ -1823,14 +2700,24 @@ class fF(tk.Frame):
                                 param_guesses[i].extend(float(val) for val in [x.strip() for x in self.multistartCustomVariables[i].get().split(',')])
                             except:
                                 messagebox.showwarning("Value error", "Error 60: \nThere was a problem with the custom multistart choices")
+                                return
             param_limits = []
-            for pL in self.paramComboboxValues:
+            for i in range(len(self.paramComboboxValues)): #pL in self.paramComboboxValues:
+                pL = self.paramComboboxValues[i]
                 if (pL.get() == "+"):
                     param_limits.append("+")
                 elif (pL.get() == "-"):
                     param_limits.append("-")
                 elif (pL.get() == "fixed"):
                     param_limits.append("f")
+                elif (pL.get() == "custom"):
+                    try:
+                        float(self.upperLimits[i].get())
+                        float(self.lowerLimits[i].get())
+                    except:
+                        messagebox.showwarning("Value error", "Error 61: \nThe upper and lower limits must be real numbers")
+                        return
+                    param_limits.append(str(self.upperLimits[i].get()) + ";" + str(self.lowerLimits[i].get()))
                 else:
                     param_limits.append("n")
             weight = 0
@@ -1879,6 +2766,7 @@ class fF(tk.Frame):
             elif (self.weightingComboboxValue.get() == "Custom"):
                 weight = 4
             assumed_noise = float(self.noiseEntryValue.get())
+            self.simplexButton.configure(state="disabled")
             self.runButton.configure(state="disabled")
             self.browseButton.configure(state="disabled")
             self.customFormula.configure(state="disabled")
@@ -1898,11 +2786,28 @@ class fF(tk.Frame):
                 self.prog_bar.grid(column=3, row=0, padx=5)
                 self.progStatus = tk.Label(self.runFrame, text="Initializing...", bg=self.backgroundColor, fg=self.foregroundColor)
                 self.progStatus.grid(column=4, row=0)
+                try:
+                    cc.GetModule('tl.tlb')
+                    import comtypes.gen.TaskbarLib as tbl
+                    self.taskbar = cc.CreateObject('{56FDF344-FD6D-11d0-958A-006097C9A090}', interface=tbl.ITaskbarList3)
+                    self.taskbar.HrInit()
+                    self.taskbar.ActivateTab(self.masterWindowId)
+                    self.taskbar.SetProgressState(self.masterWindowId, 0x2)
+                except:
+                    pass
             else:
                 self.prog_bar = ttk.Progressbar(self.runFrame, orient="horizontal", length=150, mode="indeterminate")
                 self.prog_bar.grid(column=3, row=0, padx=5)
                 self.prog_bar.start(40)
-            
+                try:
+                    cc.GetModule('tl.tlb')
+                    import comtypes.gen.TaskbarLib as tbl
+                    self.taskbar = cc.CreateObject('{56FDF344-FD6D-11d0-958A-006097C9A090}', interface=tbl.ITaskbarList3)
+                    self.taskbar.HrInit()
+                    self.taskbar.ActivateTab(self.masterWindowId)
+                    self.taskbar.SetProgressState(self.masterWindowId, 0x1)
+                except:
+                    pass
             self.currentThreads.append(ThreadedTaskCustom(self.queue, self.listPercent, fit_type, num_monte, weight, assumed_noise, formula, self.wdata, self.rdata, self.jdata, param_names, param_guesses, param_limits, errorModelParams))
             self.currentThreads[len(self.currentThreads) - 1].start()
             self.cancelButton.configure(command=lambda: self.currentThreads[len(self.currentThreads) - 1].terminate())
@@ -1970,6 +2875,7 @@ class fF(tk.Frame):
         
         def advancedResults():
             self.resultsWindow = tk.Toplevel()
+            self.resultsWindows.append(self.resultsWindow)
             self.resultsWindow.title("Advanced results")
             self.resultsWindow.iconbitmap(resource_path("img/elephant3.ico"))
             self.resultsWindow.geometry("1000x550")
@@ -1983,11 +2889,13 @@ class fF(tk.Frame):
                 if (not event.inaxes):      #If a subplot isn't clicked
                     return
                 resultPlotBig = tk.Toplevel()
+                self.resultPlotBigs.append(resultPlotBig)
                 resultPlotBig.iconbitmap(resource_path('img/elephant3.ico'))
                 w, h = self.winfo_screenwidth(), self.winfo_screenheight()
                 resultPlotBig.geometry("%dx%d+0+0" % (w/2, h/2))
                 with plt.rc_context({'axes.edgecolor':self.foregroundColor, 'xtick.color':self.foregroundColor, 'ytick.color':self.foregroundColor, 'figure.facecolor':self.backgroundColor}):
                     fig = Figure()
+                    self.resultPlotBigFigs.append(fig)
                     fig.set_facecolor(self.backgroundColor)
                     RealFit = np.array(self.realFit)
                     ImagFit = np.array(self.imagFit)
@@ -2274,6 +3182,7 @@ class fF(tk.Frame):
         
         def plotResults():
             self.resultPlot = tk.Toplevel(background=self.backgroundColor)
+            self.resultPlots.append(self.resultPlot)
             self.resultPlot.title("Measurement Model Plots")
             self.resultPlot.iconbitmap(resource_path('img/elephant3.ico'))
             self.resultPlot.state("zoomed")
@@ -2282,7 +3191,8 @@ class fF(tk.Frame):
             ImagFit = np.array(self.imagFit)
             phase_fit = np.arctan2(self.imagFit, self.realFit) * (180/np.pi)
             with plt.rc_context({'axes.edgecolor':self.foregroundColor, 'xtick.color':self.foregroundColor, 'ytick.color':self.foregroundColor, 'figure.facecolor':self.backgroundColor}):
-                self.f = Figure()#figsize=((5,4), dpi=100)
+                self.f = Figure()   #figsize=((5,4), dpi=100)
+                self.resultPlotFigs.append(self.f)
                 self.f.set_facecolor(self.backgroundColor)
                 dataColor = "tab:blue"
                 fitColor = "orange"
@@ -2715,7 +3625,9 @@ class fF(tk.Frame):
                     self.saveNyCanvasButton.configure(text="Saved")
                     self.after(500, lambda: self.saveNyCanvasButton.configure(text="Save All"))
             self.saveNyCanvasButton = ttk.Button(self.resultPlot, text="Save All", command=saveAllPlots)
+            self.saveNyCanvasButtons.append(self.saveNyCanvasButton)
             saveNyCanvasButton_ttp = CreateToolTip(self.saveNyCanvasButton, "Save all plots")
+            self.saveNyCanvasButton_ttps.append(saveNyCanvasButton_ttp)
             self.saveNyCanvasButton.pack(side=tk.BOTTOM, pady=5, expand=False)
             enterAxes = self.f.canvas.mpl_connect('axes_enter_event', graphOver)
             leaveAxes = self.f.canvas.mpl_connect('axes_leave_event', graphOut)
@@ -2747,10 +3659,11 @@ class fF(tk.Frame):
                     if (dontMatch):
                         a = messagebox.askokcancel("Values do not match", "The values under \"Edit Parameters\" do not match the current fitted values. Only values under \"Edit Parameters\" will be saved. Continue?")
             if (a):
+                stringToSave = "version: 1.1\n"
                 if (self.browseEntry.get() == ""):
-                    stringToSave = "filename: NONE\n"
+                    stringToSave += "filename: NONE\n"
                 else:
-                    stringToSave = "filename: " + self.browseEntry.get() + "\n"
+                    stringToSave += "filename: " + self.browseEntry.get() + "\n"
                 stringToSave += "number_simulations: " + self.monteCarloValue.get() + "\n"
                 stringToSave += "fit_type: " + self.fittingTypeComboboxValue.get() + "\n"
                 stringToSave += "alpha: " + self.noiseEntryValue.get() + "\n"
@@ -2779,9 +3692,13 @@ class fF(tk.Frame):
                     stringToSave += "error_delta: " + self.errorDeltaVariable.get() + "\n"
                 stringToSave += "formula: \n"
                 stringToSave += self.customFormula.get("1.0", tk.END)
+                stringToSave += "description: \n"
+                stringToSave += self.formulaDescriptionEntry.get("1.0", tk.END)
+                stringToSave += "latex: \n"
+                stringToSave += self.formulaDescriptionLatexVariable.get()
                 stringToSave += "\nmmparams: \n"
                 for i in range(len(self.paramNameValues)):
-                    stringToSave += self.paramNameValues[i].get() + "~=~" + self.paramValueValues[i].get() + "~=~" + self.paramComboboxValues[i].get() + "\n"
+                    stringToSave += self.paramNameValues[i].get() + "~=~" + self.paramValueValues[i].get() + "~=~" + self.paramComboboxValues[i].get() + "~=~" + self.upperLimits[i].get() + "~=~" + self.lowerLimits[i].get() + "~=~" + str(self.multistartCheckboxVariables[i].get()) + "~=~" + self.multistartSpacingVariables[i].get() + "~=~" + self.multistartUpperVariables[i].get() + "~=~" + self.multistartLowerVariables[i].get() + "~=~" + self.multistartNumberVariables[i].get() + "~=~" + self.multistartCustomVariables[i].get() + "\n"
                 defaultSaveName, ext = os.path.splitext(os.path.basename(self.browseEntry.get()))
                 saveName = asksaveasfile(mode='w', defaultextension=".mmcustom", initialfile=defaultSaveName, filetypes=[("Measurement model custom fitting", ".mmcustom")])
                 directory = os.path.dirname(str(saveName))
@@ -2793,6 +3710,59 @@ class fF(tk.Frame):
                 self.saveNeeded = False
                 self.saveFormulaButton.configure(text="Saved")
                 self.after(1000, lambda : self.saveFormulaButton.configure(text="Save Fitting"))
+        
+        def saveFormula():
+            stringToSave = "version: 1.1\n"
+            if (self.browseEntry.get() == ""):
+                stringToSave += "filename: NONE\n"
+            else:
+                stringToSave += "filename: " + self.browseEntry.get() + "\n"
+            stringToSave += "number_simulations: " + self.monteCarloValue.get() + "\n"
+            stringToSave += "fit_type: " + self.fittingTypeComboboxValue.get() + "\n"
+            stringToSave += "alpha: " + self.noiseEntryValue.get() + "\n"
+            stringToSave += "upDelete: " + str(self.upDelete) + "\n"
+            stringToSave += "lowDelete: " + str(self.lowDelete) + "\n"
+            stringToSave += "weighting: " + self.weightingComboboxValue.get() + "\n"
+            if (self.errorAlphaCheckboxVariable.get() == 0):
+                stringToSave += "error_alpha: n" + self.errorAlphaVariable.get() + "\n"
+            else:
+                stringToSave += "error_alpha: " + self.errorAlphaVariable.get() + "\n"
+            if (self.errorBetaCheckboxVariable.get() == 0):
+                stringToSave += "error_beta: n" + self.errorBetaVariable.get() + "\n"
+            else:
+                stringToSave += "error_beta: " + self.errorBetaVariable.get() + "\n"
+            if (self.errorBetaReCheckboxVariable.get() == 0):
+                stringToSave += "error_betaRe: n" + self.errorBetaReVariable.get() + "\n"
+            else:
+                stringToSave += "error_betaRe: " + self.errorBetaReVariable.get() + "\n"
+            if (self.errorGammaCheckboxVariable.get() == 0):
+                stringToSave += "error_gamma: n" + self.errorGammaVariable.get() + "\n"
+            else:
+                stringToSave += "error_gamma: " + self.errorGammaVariable.get() + "\n"
+            if (self.errorDeltaCheckboxVariable.get() == 0):
+                stringToSave += "error_delta: n" + self.errorDeltaVariable.get() + "\n"
+            else:
+                stringToSave += "error_delta: " + self.errorDeltaVariable.get() + "\n"
+            stringToSave += "formula: \n"
+            stringToSave += self.customFormula.get("1.0", tk.END)
+            stringToSave += "description: \n"
+            stringToSave += self.formulaDescriptionEntry.get("1.0", tk.END)
+            stringToSave += "latex: \n"
+            stringToSave += self.formulaDescriptionLatexVariable.get()
+            stringToSave += "\nmmparams: \n"
+            for i in range(len(self.paramNameValues)):
+                stringToSave += self.paramNameValues[i].get() + "~=~" + self.paramValueValues[i].get() + "~=~" + self.paramComboboxValues[i].get() + "~=~" + self.upperLimits[i].get() + "~=~" + self.lowerLimits[i].get() + "~=~" + str(self.multistartCheckboxVariables[i].get()) + "~=~" + self.multistartSpacingVariables[i].get() + "~=~" + self.multistartUpperVariables[i].get() + "~=~" + self.multistartLowerVariables[i].get() + "~=~" + self.multistartNumberVariables[i].get() + "~=~" + self.multistartCustomVariables[i].get() + "\n"
+            defaultSaveName, ext = os.path.splitext(os.path.basename(self.browseEntry.get()))
+            saveName = asksaveasfile(mode='w', defaultextension=".mmformula", initialfile=defaultSaveName, filetypes=[("Measurement model custom formula", ".mmformula")])
+            directory = os.path.dirname(str(saveName))
+            self.topGUI.setCurrentDirectory(directory)
+            if saveName is None:     #If save is cancelled
+                return
+            saveName.write(stringToSave)
+            saveName.close()
+            #self.saveNeeded = False
+            self.formulaSaveButton.configure(text="Saved")
+            self.after(1000, lambda : self.formulaSaveButton.configure(text="Save formula"))
         
         def saveResiduals():
             messagebox.showinfo("Warning", "Note: The \"ohmic resistance\" for custom data sets is saved as 0.")
@@ -2882,6 +3852,27 @@ class fF(tk.Frame):
             else:
                 self.errorDeltaEntry.configure(state="disabled")
         
+        def loadFormulaDirectory():
+            folder = askdirectory(initialdir=self.loadFormulaDirectoryEntry.get(), parent=self.loadFormulaWindow)
+            folder_str = str(folder)
+            if len(folder_str) == 0:
+                pass
+            else:
+                self.loadFormulaDirectoryEntry.configure(state="normal")
+                self.loadFormulaDirectoryEntry.delete(0,tk.END)
+                self.loadFormulaDirectoryEntry.insert(0, folder_str)
+                self.loadFormulaDirectoryEntry.configure(state="readonly")
+                self.loadFormulaTree.delete(*self.loadFormulaTree.get_children())
+                self.insert_node('', folder_str, folder_str)
+        
+        def loadCode():
+            self.loadFormulaWindow.deiconify()
+            self.loadFormulaWindow.lift()
+            self.loadFormulaDirectoryButton.configure(command=loadFormulaDirectory)
+            def on_closing_loadCode():
+                self.loadFormulaWindow.withdraw()
+            self.loadFormulaWindow.protocol("WM_DELETE_WINDOW", on_closing_loadCode)
+        
         self.browseFrame = tk.Frame(self, bg=self.backgroundColor)
         self.browseEntry = ttk.Entry(self.browseFrame, state="readonly", width=40)
         self.browseLabel = tk.Label(self.browseFrame, text="File to fit:   ", bg=self.backgroundColor, fg=self.foregroundColor)
@@ -2904,10 +3895,15 @@ class fF(tk.Frame):
         self.monteCarloLabel = tk.Label(self.fittingButtonFrame, text="Number of Simulations: ", background=self.backgroundColor, foreground=self.foregroundColor)
         self.monteCarloEntry = ttk.Entry(self.fittingButtonFrame, textvariable=self.monteCarloValue, width=8)
         self.codeLabel = tk.Label(self.fittingButtonFrame, text="Code:", bg=self.backgroundColor, fg=self.foregroundColor)
+        self.formulaDescriptionLink = tk.Label(self.fittingButtonFrame, text="Formula description", bg=self.backgroundColor, fg="blue", cursor="hand2")
         self.helpLabel = tk.Label(self.fittingButtonFrame, text="Help", bg=self.backgroundColor, fg="blue", cursor="hand2")
         if (self.topGUI.getTheme() == "dark"):
             self.helpLabel.configure(fg="skyblue")
         self.helpLabel.bind("<Button-1>", helpPopup)
+        self.formulaDescriptionLink.bind("<Button-1>", formulaDescriptionPopup)
+        if (self.topGUI.getTheme() == "dark"):
+            self.formulaDescriptionLink.configure(fg="skyblue")
+        self.loadCodeButton = ttk.Button(self.fittingButtonFrame, text="Load Formula", command=loadCode)
         self.weightingLabel = tk.Label(self.fittingButtonFrame, text="Weighting:", bg=self.backgroundColor, fg=self.foregroundColor)
         self.weightingComboboxValue = tk.StringVar(self, "Modulus")
         self.weightingCombobox = ttk.Combobox(self.fittingButtonFrame, textvariable=self.weightingComboboxValue, value=("None", "Modulus", "Proportional", "Error model", "Custom"), state="readonly", exportselection=0, width=13)
@@ -2922,12 +3918,14 @@ class fF(tk.Frame):
         self.monteCarloLabel.grid(column=3, row=0, sticky="W", padx=(0, 4))
         self.monteCarloEntry.grid(column=4, row=0, sticky="W")
         self.codeLabel.grid(column=0, row=3, pady=(5, 0), sticky="W")
+        self.formulaDescriptionLink.grid(column=2, row=3, pady=(5,0), sticky="W")
         self.weightingLabel.grid(column=1, row=1, pady=(5,0), sticky="W")
         self.weightingCombobox.grid(column=2, row=1, pady=(5,0), sticky="W")
         self.noiseFrame.grid(column=3, row=1, pady=(5,0), sticky="W")
         self.noiseLabel.grid(column=0, row=0, sticky="E")
         self.noiseEntry.grid(column=1, row=0, sticky="W")
-        self.helpLabel.grid(column=3, row=3, pady=(5, 0), sticky="E")
+        self.helpLabel.grid(column=4, row=3, pady=(5, 0), sticky="E")
+        self.loadCodeButton.grid(column=4, row=1, sticky="E")
         self.fittingButtonFrame.grid(column=0, row=1, pady=(10, 0), sticky="W")
         paramButton_ttp = CreateToolTip(self.parametersButton, 'Add, remove, or edit fitting parameters')
         fittingType_ttp = CreateToolTip(self.fittingTypeCombobox, 'Change which part of the data is fitted')
@@ -2935,6 +3933,8 @@ class fF(tk.Frame):
         weighting_ttp = CreateToolTip(self.weightingCombobox, 'Weighting used in objective function')
         noise_ttp = CreateToolTip(self.noiseEntry, 'Assumed noise (multiplied by weighting)')
         help_ttp = CreateToolTip(self.helpLabel, 'Opens a custom formula guide PDF')
+        loadCode_ttp = CreateToolTip(self.loadCodeButton, 'Load formula from a .mmformula file')
+        formulaDescription_ttp = CreateToolTip(self.formulaDescriptionLink, 'Opens a popup to edit the formula description')
         
         #---If error structure weighting is chosen---
         self.errorStructureFrame = tk.Frame(self.fittingButtonFrame, bg=self.backgroundColor)
@@ -3118,13 +4118,13 @@ class fF(tk.Frame):
         
         self.runFrame = tk.Frame(self, bg=self.backgroundColor)
         self.runButton = ttk.Button(self.runFrame, text="Run fitting", state="disabled", command=checkFitting)
-        self.saveFormulaButton = ttk.Button(self.runFrame, text="Save fitting", command=saveFitting)
+        self.formulaSaveButton = ttk.Button(self.runFrame, text="Save formula", command=saveFormula)
         self.cancelButton = ttk.Button(self.runFrame, text="Cancel fitting")
         self.runButton.grid(column=0, row=0, sticky="W")
-        self.saveFormulaButton.grid(column=1, row=0, sticky="W", padx=5)
+        self.formulaSaveButton.grid(column=1, row=0, sticky="W", padx=5)
         self.runFrame.grid(column=0, row=3, sticky="W")
+        formulaSaveButton_ttp = CreateToolTip(self.formulaSaveButton, 'Save the current formula and parameters as a .mmformula file')
         runButton_ttp = CreateToolTip(self.runButton, 'Fit formula using Levenberg-Marquardt algorithm')
-        saveFormualButton_ttp = CreateToolTip(self.saveFormulaButton, 'Save the current formula and parameter values as a .mmcustom file')
         cancelButton_ttp = CreateToolTip(self.cancelButton, 'Cancel fitting')
         
         self.sep = ttk.Separator(self, orient=tk.HORIZONTAL)
@@ -3181,11 +4181,19 @@ class fF(tk.Frame):
         self.saveFrame = tk.Frame(self, bg=self.backgroundColor)
         self.saveResiduals = ttk.Button(self.saveFrame, text="Save Residuals", command=saveResiduals)
         self.saveAll = ttk.Button(self.saveFrame, text="Export All Results", command=saveAll)
-        self.saveResiduals.grid(column=0, row=0, sticky="W", padx=(0, 5))
-        self.saveAll.grid(column=1, row=0)
+        self.saveFormulaButton = ttk.Button(self.saveFrame, text="Save Fitting", command=saveFitting)
+        saveFormualButton_ttp = CreateToolTip(self.saveFormulaButton, 'Save the current formula and parameter values as a .mmcustom file')
+        self.saveResiduals.grid(column=0, row=0, sticky="W")
+        self.saveFormulaButton.grid(column=1, row=0, sticky="W", padx=5)
+        self.saveAll.grid(column=2, row=0)
         saveResiduals_ttp = CreateToolTip(self.saveResiduals, 'Save residuals for error analysis')
         saveAll_ttp = CreateToolTip(self.saveAll, 'Export all results, including data, fits, formula, and parameters')
-    
+        
+         #---Close all popups---
+        self.closeAllPopupsButton = ttk.Button(self, text="Close all popups", command=self.topGUI.closeAllPopups)
+        self.closeAllPopupsButton.grid(column=0, row=8, sticky="W", pady=10)
+        closeAllPopups_ttp = CreateToolTip(self.closeAllPopupsButton, 'Close all open popup windows')
+        
     def _on_mousewheel(self, event):
             xpos, ypos = self.vsb.get()
             xpos_round = round(xpos, 2)     #Avoid floating point errors
@@ -3400,6 +4408,62 @@ class fF(tk.Frame):
                 self.paramValueValues[i].set(self.paramValueValues[i+1].get())
             self.removeParam()
     
+    def limitChanged(self, num, e):
+        if (self.paramComboboxValues[num].get() == "+"):
+            self.upperLimits[num].set("inf")
+            self.lowerLimits[num].set("0")
+            self.advancedLowerLimitEntry.configure(state="normal")
+            self.advancedUpperLimitEntry.configure(state="normal")
+        elif (self.paramComboboxValues[num].get() == "+ or -"):
+            self.upperLimits[num].set("inf")
+            self.lowerLimits[num].set("-inf")
+            self.advancedLowerLimitEntry.configure(state="normal")
+            self.advancedUpperLimitEntry.configure(state="normal")
+        elif (self.paramComboboxValues[num].get() == "-"):
+            self.upperLimits[num].set("0")
+            self.lowerLimits[num].set("-inf")
+            self.advancedLowerLimitEntry.configure(state="normal")
+            self.advancedUpperLimitEntry.configure(state="normal")
+        elif (self.paramComboboxValues[num].get() == "fixed" and self.paramListboxSelection == num):
+            self.advancedLowerLimitEntry.configure(state="disabled")
+            self.advancedUpperLimitEntry.configure(state="disabled")
+        elif (self.paramComboboxValues[num].get() == "custom"):
+            self.advancedLowerLimitEntry.configure(state="normal")
+            self.advancedUpperLimitEntry.configure(state="normal")
+            self.advancedOptionsPopup()
+            self.paramListbox.selection_clear(0, tk.END)
+            self.paramListbox.select_set(num)
+            self.paramListboxSelection = num
+            self.onSelect(None, n=num)
+    
+    def graphLatex(self, e=None):
+        try:
+            tmptext = self.formulaDescriptionLatexVariable.get()
+            if tmptext == "":
+               with plt.rc_context({'mathtext.fontset': "cm"}):
+                    self.latexAx.clear()
+                    self.latexAx.axis("off")
+                    #self.latexAx.text(0.01, 0.5, tmptext, transform=self.latexAx.transAxes, fontsize = 30)  
+                    self.latexCanvas.draw()
+            elif tmptext != '\\' and tmptext[-1] != '\\':
+                tmptext = "$"+tmptext+"$"
+                windowWidth = self.latexAx.get_window_extent().transformed(self.latexFig.dpi_scale_trans.inverted()).width*self.latexFig.dpi
+                with plt.rc_context({'mathtext.fontset': "cm"}):
+                    self.latexAx.clear()
+                    rLatex = self.latexFig.canvas.get_renderer()
+                    latexSize = 30
+                    tLatex = self.latexAx.text(0.01, 0.5, tmptext, transform=self.latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
+                    bb = tLatex.get_window_extent(renderer=rLatex)
+                    while (bb.width > windowWidth):
+                        self.latexAx.clear()
+                        latexSize -= 1
+                        tLatex = self.latexAx.text(0.01, 0.5, tmptext, transform=self.latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
+                        bb = tLatex.get_window_extent(renderer=rLatex)
+                    self.latexAx.axis("off")
+                    self.latexCanvas.draw()
+        except:
+            pass
+    
     def formulaEnter(self, n):
         fname, fext = os.path.splitext(n)
         directory = os.path.dirname(str(n))
@@ -3438,12 +4502,12 @@ class fF(tk.Frame):
                 self.wdata = self.wdataRaw.copy()
                 self.rdata = self.rdataRaw.copy()
                 self.jdata = self.jdataRaw.copy()
-                self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
-                self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
-                self.rs.setNumberOfMajorTicks(10)
-                self.rs.showMinorTicks(False)
-                self.rs.setLower(np.log10(min(self.wdata)))
-                self.rs.setUpper(np.log10(max(self.wdata)))
+                #self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
+                #self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
+                #self.rs.setNumberOfMajorTicks(10)
+                #self.rs.showMinorTicks(False)
+                #self.rs.setLower(np.log10(min(self.wdata)))
+                #self.rs.setUpper(np.log10(max(self.wdata)))
                 self.lowestUndeleted.configure(text="Lowest remaining frequency: {:.4e}".format(min(self.wdata)))
                 self.highestUndeleted.configure(text="Highest remaining frequency: {:.4e}".format(max(self.wdata)))
                 self.lengthOfData = len(self.wdata)
@@ -3453,12 +4517,20 @@ class fF(tk.Frame):
                 self.browseEntry.insert(0, n)
                 self.browseEntry.configure(state="readonly")
                 self.runButton.configure(state="normal")
+                self.simplexButton.configure(state="normal")
             except:
                 messagebox.showerror("File error", "Error 42: \nThere was an error loading or reading the file")
         elif (fext == ".mmcustom"):
             try:
                 toLoad = open(n)
-                fileToLoad = toLoad.readline().split("filename: ")[1][:-1]
+                firstLine = toLoad.readline()
+                fileVersion = 0
+                if "version: 1.1" in firstLine:
+                    fileVersion = 1
+                if (fileVersion == 0):
+                    fileToLoad = firstLine.split("filename: ")[1][:-1]
+                else:
+                    fileToLoad = toLoad.readline().split("filename: ")[1][:-1]
                 numberOfSimulations = int(toLoad.readline().split("number_simulations: ")[1][:-1])
                 if (numberOfSimulations < 1):
                     raise ValueError
@@ -3516,10 +4588,16 @@ class fF(tk.Frame):
                 formulaIn = ""
                 while True:
                     nextLineIn = toLoad.readline()
-                    if "mmparams:" in nextLineIn:
-                        break
+                    if (fileVersion == 0):
+                        if "mmparams:" in nextLineIn:
+                            break
+                        else:
+                            formulaIn += nextLineIn
                     else:
-                        formulaIn += nextLineIn
+                        if "description:" in nextLineIn:
+                            break
+                        else:
+                            formulaIn += nextLineIn
                 for i in range(len(self.paramNameEntries)):
                     self.paramNameEntries[i].grid_remove()
                     self.paramNameLabels[i].grid_remove()
@@ -3537,20 +4615,113 @@ class fF(tk.Frame):
                 self.paramValueValues.clear()
                 self.paramValueEntries.clear()
                 self.paramDeleteButtons.clear()
+                self.paramListbox.delete(0, tk.END)
+                self.multistartCheckboxVariables.clear()
+                self.multistartSpacingVariables.clear()
+                self.multistartLowerVariables.clear()
+                self.multistartUpperVariables.clear()
+                self.multistartNumberVariables.clear()
+                self.multistartCustomVariables.clear()
+                self.advancedLowerLimitEntry.configure(state="normal")
+                self.advancedUpperLimitEntry.configure(state="normal")
+                if (fileVersion != 0):
+                    self.formulaDescriptionEntry.delete("1.0", tk.END)
+                    descriptionIn = ""
+                    while True:
+                        nextLineIn = toLoad.readline()
+                        if "latex:" in nextLineIn:
+                            break
+                        else:
+                            descriptionIn += nextLineIn
+                    latexIn = toLoad.readline()
+                    self.formulaDescriptionEntry.insert("1.0", descriptionIn.rstrip())
+                    self.formulaDescriptionLatexVariable.set(latexIn.rstrip())
+                    self.graphLatex()
+                    toLoad.readline()
                 while True:
                     p = toLoad.readline()
                     if not p:
                         break
                     else:
                         p = p[:-1]
-                        pname, pval, pcombo = p.split("~=~")
+                        try:
+                            pname, pval, pcombo, plimup, plimlow, pcheck, pspacing, pupper, plower, pnumber, pcustom = p.split("~=~")
+                            self.multistartCheckboxVariables.append(tk.IntVar(self, int(pcheck)))
+                            self.multistartLowerVariables.append(tk.StringVar(self, plower))
+                            self.multistartUpperVariables.append(tk.StringVar(self, pupper))
+                            self.multistartSpacingVariables.append(tk.StringVar(self, pspacing))
+                            self.multistartCustomVariables.append(tk.StringVar(self, pcustom))
+                            self.multistartNumberVariables.append(tk.StringVar(self, pnumber))
+                            self.upperLimits.append(tk.StringVar(self, plimup))
+                            self.lowerLimits.append(tk.StringVar(self, plimlow))
+                        except:
+                            try:
+                                pname, pval, pcombo, pcheck, pspacing, pupper, plower, pnumber, pcustom = p.split("~=~")
+                                self.multistartCheckboxVariables.append(tk.IntVar(self, int(pcheck)))
+                                self.multistartLowerVariables.append(tk.StringVar(self, plower))
+                                self.multistartUpperVariables.append(tk.StringVar(self, pupper))
+                                self.multistartSpacingVariables.append(tk.StringVar(self, pspacing))
+                                self.multistartCustomVariables.append(tk.StringVar(self, pcustom))
+                                self.multistartNumberVariables.append(tk.StringVar(self, pnumber))
+                                self.upperLimits.append(tk.StringVar(self, "inf"))
+                                self.lowerLimits.append(tk.StringVar(self, "-inf"))
+                            except:
+                                pname, pval, pcombo = p.split("~=~")
+                                self.multistartCheckboxVariables.append(tk.IntVar(self, 0))
+                                self.multistartLowerVariables.append(tk.StringVar(self, "1E-5"))
+                                self.multistartUpperVariables.append(tk.StringVar(self, "1E5"))
+                                self.multistartSpacingVariables.append(tk.StringVar(self, "Logarithmic"))
+                                self.multistartCustomVariables.append(tk.StringVar(self, "0.1,1,10,100,1000"))
+                                self.multistartNumberVariables.append(tk.StringVar(self, "10"))
+                                self.upperLimits.append(tk.StringVar(self, "inf"))
+                                self.lowerLimits.append(tk.StringVar(self, "-inf"))
                         self.numParams += 1
+                        if (self.numParams == 1):
+                            self.multistartCheckbox.configure(variable=self.multistartCheckboxVariables[0])
+                            self.multistartLowerEntry.configure(textvariable=self.multistartLowerVariables[0])
+                            self.multistartUpperEntry.configure(textvariable=self.multistartUpperVariables[0])
+                            self.multistartSpacing.configure(textvariable=self.multistartSpacingVariables[0])
+                            self.multistartNumberEntry.configure(textvariable=self.multistartNumberVariables[0])
+                            self.multistartCustomEntry.configure(textvariable=self.multistartCustomVariables[0])
+                            self.advancedLowerLimitFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5)
+                            self.advancedUpperLimitFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5, pady=5)
+                            self.multistartCheckbox.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5)
+                            self.multistartSpacingFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5)
+                            self.multistartLowerFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5, pady=5)
+                            self.multistartUpperFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5)
+                            self.multistartNumberFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5, pady=5)
+                            self.advancedLowerLimitEntry.configure(textvariable=self.lowerLimits[0])
+                            self.advancedUpperLimitEntry.configure(textvariable=self.upperLimits[0])
+                            if (self.multistartCheckboxVariables[0].get() == 0):
+                                self.multistartSpacing.configure(state="disabled")
+                                self.multistartUpperEntry.configure(state="disabled")
+                                self.multistartLowerEntry.configure(state="disabled")
+                                self.multistartNumberEntry.configure(state="disabled")
+                                self.multistartCustomEntry.configure(state="disabled")
+                            else:
+                                if (self.multistartSpacingVariables[0].get() == "Custom"):
+                                    self.multistartSpacing.configure(state="readonly")
+                                    self.multistartUpperEntry.configure(state="normal")
+                                    self.multistartLowerEntry.configure(state="normal")
+                                    self.multistartNumberEntry.configure(state="normal")
+                                    self.multistartCustomEntry.configure(state="normal")
+                                    self.multistartLowerFrame.pack_forget()
+                                    self.multistartUpperFrame.pack_forget()
+                                    self.multistartNumberFrame.pack_forget()
+                                    self.multistartCustomFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5, pady=5)
+                                else:
+                                    self.multistartSpacing.configure(state="readonly")
+                                    self.multistartUpperEntry.configure(state="normal")
+                                    self.multistartLowerEntry.configure(state="normal")
+                                    self.multistartNumberEntry.configure(state="normal")
+                                    self.multistartCustomEntry.configure(state="normal")
                         self.paramNameValues.append(tk.StringVar(self, pname))
-                        self.paramNameEntries.append(ttk.Entry(self.pframe, textvariable=self.paramNameValues[self.numParams-1], width=10, validate="all", validatecommand=valcom))
+                        self.paramNameEntries.append(ttk.Entry(self.pframe, textvariable=self.paramNameValues[self.numParams-1], width=10, validate="all", validatecommand=self.valcom))
                         self.paramNameLabels.append(tk.Label(self.pframe, text="Name: ", background=self.backgroundColor, foreground=self.foregroundColor))
                         self.paramValueLabels.append(tk.Label(self.pframe, text="Value: ", background=self.backgroundColor, foreground=self.foregroundColor))
                         self.paramComboboxValues.append(tk.StringVar(self, pcombo))
-                        self.paramComboboxes.append(ttk.Combobox(self.pframe, textvariable=self.paramComboboxValues[self.numParams-1], value=("+", "+ or -", "-", "fixed"), justify=tk.CENTER, state="readonly", exportselection=0, width=6))
+                        self.paramComboboxes.append(ttk.Combobox(self.pframe, textvariable=self.paramComboboxValues[self.numParams-1], value=("+", "+ or -", "-", "fixed", "custom"), justify=tk.CENTER, state="readonly", exportselection=0, width=6))
+                        self.paramComboboxes[-1].bind("<<ComboboxSelected>>", partial(self.limitChanged, self.numParams-1))
                         self.paramValueValues.append(tk.StringVar(self, pval))
                         self.paramValueEntries.append(ttk.Entry(self.pframe, textvariable=self.paramValueValues[self.numParams-1], width=10))
                         self.paramDeleteButtons.append(ttk.Button(self.pframe, text="Delete", command=partial(self.deleteParam, self.numParams-1)))
@@ -3568,6 +4739,9 @@ class fF(tk.Frame):
                         self.paramDeleteButtons[len(self.paramDeleteButtons)-1].bind("<MouseWheel>", self._on_mousewheel)
                         self.paramNameEntries[len(self.paramNameEntries)-1].bind("<KeyRelease>", self.keyup)
                         self.paramListbox.insert(tk.END, pname)
+                        if (self.paramComboboxValues[0].get() == "fixed"):
+                            self.advancedLowerLimitEntry.configure(state="disabled")
+                            self.advancedUpperLimitEntry.configure(state="disabled")
                 toLoad.close()
                 self.paramListbox.selection_clear(0, tk.END)
                 self.paramListbox.select_set(0)
@@ -3609,6 +4783,7 @@ class fF(tk.Frame):
                     self.lengthOfData = len(self.wdata)
                     self.freqRangeButton.configure(state="normal")
                     self.runButton.configure(state="normal")
+                    self.simplexButton.configure(state="normal")
                 except:
                     messagebox.showerror("File not found", "Error 53: \nThe linked .mmfile could not be found")
                     fileToLoad = ""
@@ -3661,6 +4836,7 @@ class fF(tk.Frame):
                         self.errorDeltaCheckboxVariable.set(1)
                         self.errorDeltaEntry.configure(state="normal")
                         self.errorDeltaVariable.set(errorDelta)
+                self.noiseEntryValue.set(alphaVal)
                 if (self.weightingComboboxValue.get() == "None"):
                     self.noiseFrame.grid_remove()
                     self.errorStructureFrame.grid_remove()
@@ -3678,7 +4854,7 @@ class fF(tk.Frame):
                 self.browseEntry.insert(0, fileToLoad)
                 self.browseEntry.configure(state="readonly")
                 self.customFormula.delete("1.0", tk.END)
-                self.customFormula.insert("1.0", formulaIn[:-2])    #Insert custom formula into code box and remove last two new line characters (they come from the saving format)
+                self.customFormula.insert("1.0", formulaIn.rstrip())    #Insert custom formula into code box and remove trailing whitespace
                 self.keyup("")
             except:
                 messagebox.showerror("File error", "Error 42: \nThere was an error loading or reading the file")
@@ -3693,6 +4869,7 @@ class fF(tk.Frame):
         self.fittingButtonFrame.configure(background="#FFFFFF")
         self.codeLabel.configure(background="#FFFFFF", foreground="#000000")
         self.helpLabel.configure(background="#FFFFFF", foreground="blue")
+        self.formulaDescriptionLink.configure(background="#FFFFFF", foreground="blue")
         self.runFrame.configure(background="#FFFFFF")
         self.pframe.configure(background="#FFFFFF")
         self.pcanvas.configure(background="#FFFFFF")
@@ -3711,10 +4888,99 @@ class fF(tk.Frame):
         self.noiseLabel.configure(background="#FFFFFF", foreground="#000000")
         self.noiseFrame.configure(background="#FFFFFF")
         self.freqWindow.configure(background="#FFFFFF")
-        self.rs.configure(background="#FFFFFF")
-        self.rs.configure(tickColor="#000000")
+        self.advancedOptionsWindow.configure(background="#FFFFFF")
+        self.advancedOptionsLabel.configure(background="#FFFFFF", foreground="#000000")
+        self.advancedUpperLimitLabel.configure(background="#FFFFFF", foreground="#000000")
+        self.advancedLowerLimitLabel.configure(background="#FFFFFF", foreground="#000000")
+        self.multistartSpacingLabel.configure(background="#FFFFFF", foreground="#000000")
+        self.multistartLowerLabel.configure(background="#FFFFFF", foreground="#000000")
+        self.multistartUpperLabel.configure(background="#FFFFFF", foreground="#000000")
+        self.multistartNumberLabel.configure(background="#FFFFFF", foreground="#000000")
+        self.multistartCustomLabel.configure(background="#FFFFFF", foreground="#000000")
+        self.paramListbox.configure(background="#FFFFFF", foreground="#000000")
+        self.formulaDescriptionWindow.configure(background="#FFFFFF")
+        self.formulaDescriptionLabel.configure(background="#FFFFFF", foreground="#000000")
+        self.formulaDescriptionFrame.configure(background="#FFFFFF")
+        self.formulaDescriptionContainer.configure(background="#FFFFFF")
+        self.formulaLatexFrame.configure(background="#FFFFFF")
+        self.formulaDescriptionLatexLabel.configure(background="#FFFFFF", foreground="#000000")
+        self.formulaDescriptionEntry.configure(background="#FFFFFF", foreground="#000000")
+        self.latexFig.set_facecolor("#FFFFFF")
+        self.graphLatex()
+        self.load_latexFig.set_facecolor("#FFFFFF")
+        try:
+            tmptext = self.latexIn.rstrip()
+            if tmptext == "":
+               with plt.rc_context({'mathtext.fontset': "cm"}):
+                    self.load_latexAx.clear()
+                    self.load_latexAx.axis("off")
+                    #self.latexAx.text(0.01, 0.5, tmptext, transform=self.latexAx.transAxes, fontsize = 30)  
+                    self.load_latexCanvas.draw()
+            elif tmptext != '\\' and tmptext[-1] != '\\':
+                tmptext = "$"+tmptext+"$"
+                windowWidth = self.load_latexAx.get_window_extent().transformed(self.load_latexFig.dpi_scale_trans.inverted()).width*self.load_latexFig.dpi
+                with plt.rc_context({'mathtext.fontset': "cm"}):
+                    self.load_latexAx.clear()
+                    rLatex = self.load_latexFig.canvas.get_renderer()
+                    latexSize = 30
+                    tLatex = self.load_latexAx.text(0.01, 0.5, tmptext, transform=self.load_latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
+                    bb = tLatex.get_window_extent(renderer=rLatex)
+                    while (bb.width > windowWidth):
+                        self.load_latexAx.clear()
+                        latexSize -= 1
+                        tLatex = self.load_latexAx.text(0.01, 0.5, tmptext, transform=self.load_latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
+                        bb = tLatex.get_window_extent(renderer=rLatex)
+                    self.load_latexAx.axis("off")
+                    self.load_latexCanvas.draw()
+        except:
+            pass
+        self.loadFormulaWindow.configure(background="#FFFFFF")
+        self.loadFormulaFrame.configure(background="#FFFFFF")
+        self.loadFormulaDirectoryFrame.configure(background="#FFFFFF")
+        self.loadFormulaDirectoryLabel.configure(background="#FFFFFF", foreground="#000000")
+        self.loadFormulaFrameTwo.configure(background="#FFFFFF")
+        self.loadFormulaDescriptionFrame.configure(background="#FFFFFF")
+        self.loadFormulaDescriptionLabel.configure(background="#FFFFFF", foreground="#000000")
+        self.loadFormulaDescription.configure(background="#FFFFFF", foreground="#000000")
+        self.loadFormulaCode.configure(background="#FFFFFF", foreground="#000000")
+        self.loadFormulaCodeLabel.configure(background="#FFFFFF", foreground="#000000")
+        self.loadFormulaEquationLabel.configure(background="#FFFFFF", foreground="#000000")
+        self.loadFormulaButtonFrame.configure(background="#FFFFFF")
+        self.loadFormulaIncludeLabel.configure(background="#FFFFFF", foreground="#000000")
+        try:
+            self.figFreq.clear()
+            dataColor = "tab:blue"
+            deletedColor = "#A9CCE3"
+            if (self.topGUI.getTheme() == "dark"):
+                dataColor = "cyan"
+            else:
+                dataColor = "tab:blue"
+            with plt.rc_context({'axes.edgecolor':self.foregroundColor, 'xtick.color':self.foregroundColor, 'ytick.color':self.foregroundColor, 'figure.facecolor':self.backgroundColor}):
+                self.figFreq = Figure(figsize=(5, 5), dpi=100)
+                self.canvasFreq = FigureCanvasTkAgg(self.figFreq, master=self.freqWindow)
+                self.canvasFreq.get_tk_widget().grid(row=1,column=1, rowspan=5)
+                self.realFreq = self.figFreq.add_subplot(211)
+                self.realFreq.set_facecolor(self.backgroundColor)
+                self.realFreqDeletedLow, = self.realFreq.plot(self.wdataRaw[:self.lowDelete], self.rdataRaw[:self.lowDelete], "o", markerfacecolor="None", color=deletedColor)
+                self.realFreqDeletedHigh, = self.realFreq.plot(self.wdataRaw[len(self.wdataRaw)-1-self.upDelete:], self.rdataRaw[len(self.wdataRaw)-1-self.upDelete:], "o", markerfacecolor="None", color=deletedColor)
+                self.realFreqPlot, = self.realFreq.plot(self.wdata, self.rdata, "o", color=dataColor)
+                self.realFreq.set_xscale("log")
+                self.realFreq.get_xaxis().set_visible(False)
+                self.realFreq.set_title("Real Impedance", color=self.foregroundColor)
+                self.imagFreq = self.figFreq.add_subplot(212)
+                self.imagFreq.set_facecolor(self.backgroundColor)
+                self.imagFreqDeletedLow, = self.imagFreq.plot(self.wdataRaw[:self.lowDelete], -1*self.jdataRaw[:self.lowDelete], "o", markerfacecolor="None", color=deletedColor)
+                self.imagFreqDeletedHigh, = self.imagFreq.plot(self.wdataRaw[len(self.wdataRaw)-1-self.upDelete:], -1*self.jdataRaw[len(self.wdataRaw)-1-self.upDelete:], "o", markerfacecolor="None", color=deletedColor)
+                self.imagFreqPlot, = self.imagFreq.plot(self.wdata, -1*self.jdata, "o", color=dataColor)
+                self.imagFreq.set_xscale("log")
+                self.imagFreq.set_title("Imaginary Impedance", color=self.foregroundColor)
+                self.imagFreq.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                self.canvasFreq.draw()
+        except:
+            pass
         self.howMany.configure(background="#FFFFFF", foreground="#000000")
         self.paramPopup.configure(background="#FFFFFF")
+        self.bottomButtonsFrame.configure(background="#FFFFFF")
         self.saveFrame.configure(background="#FFFFFF")
         self.lowestUndeleted.configure(background="#FFFFFF", foreground="#000000")
         self.highestUndeleted.configure(background="#FFFFFF", foreground="#000000")
@@ -3722,13 +4988,13 @@ class fF(tk.Frame):
             paramName.configure(background="#FFFFFF", foreground="#000000")
         for paramVal in self.paramValueLabels:
             paramVal.configure(background="#FFFFFF", foreground="#000000")
-        try:
-            self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
-            self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
-            self.rs.setLower(np.log10(min(self.wdata)))
-            self.rs.setUpper(np.log10(max(self.wdata)))
-        except:
-            pass
+        #try:
+        #    self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
+        #    self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
+        #    self.rs.setLower(np.log10(min(self.wdata)))
+        #    self.rs.setUpper(np.log10(max(self.wdata)))
+        #except:
+        #    pass
         try:
             self.upperLabel.configure(background="#FFFFFF", foreground="#000000")
             self.lowerLabel.configure(background="#FFFFFF", foreground="#000000")
@@ -3744,6 +5010,7 @@ class fF(tk.Frame):
         self.fittingButtonFrame.configure(background="#424242")
         self.codeLabel.configure(background="#424242", foreground="#FFFFFF")
         self.helpLabel.configure(background="#424242", foreground="skyblue")
+        self.formulaDescriptionLink.configure(background="#424242", foreground="skyblue")
         self.runFrame.configure(background="#424242")
         self.pframe.configure(background="#424242")
         self.pcanvas.configure(background="#424242")
@@ -3766,19 +5033,109 @@ class fF(tk.Frame):
         self.highestUndeleted.configure(background="#424242", foreground="#FFFFFF")
         self.howMany.configure(background="#424242", foreground="#FFFFFF")
         self.paramPopup.configure(background="#424242")
+        self.bottomButtonsFrame.configure(background="#424242")
         for paramName in self.paramNameLabels:
             paramName.configure(background="#424242", foreground="#FFFFFF")
         for paramVal in self.paramValueLabels:
             paramVal.configure(background="#424242", foreground="#FFFFFF")
-        self.rs.configure(background="#424242")
-        self.rs.configure(tickColor="#FFFFFF")
+        self.advancedOptionsWindow.configure(background="#424242")
+        self.advancedOptionsLabel.configure(background="#424242", foreground="#FFFFFF")
+        self.advancedUpperLimitLabel.configure(background="#424242", foreground="#FFFFFF")
+        self.advancedLowerLimitLabel.configure(background="#424242", foreground="#FFFFFF")
+        self.multistartSpacingLabel.configure(background="#424242", foreground="#FFFFFF")
+        self.multistartLowerLabel.configure(background="#424242", foreground="#FFFFFF")
+        self.multistartUpperLabel.configure(background="#424242", foreground="#FFFFFF")
+        self.multistartNumberLabel.configure(background="#424242", foreground="#FFFFFF")
+        self.multistartCustomLabel.configure(background="#424242", foreground="#FFFFFF")
+        self.paramListbox.configure(background="#424242", foreground="#FFFFFF")
+        self.formulaDescriptionWindow.configure(background="#424242")
+        self.formulaDescriptionLabel.configure(background="#424242", foreground="#FFFFFF")
+        self.formulaDescriptionFrame.configure(background="#424242")
+        self.formulaDescriptionContainer.configure(background="#424242")
+        self.formulaLatexFrame.configure(background="#424242")
+        self.formulaDescriptionLatexLabel.configure(background="#424242", foreground="#FFFFFF")
+        self.formulaDescriptionEntry.configure(background="#6B6B6B", foreground="#FFFFFF")
+        self.latexFig.set_facecolor("#424242")
+        self.graphLatex()
+        self.load_latexFig.set_facecolor("#424242")
         try:
-            self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
-            self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
-            self.rs.setLower(np.log10(min(self.wdata)))
-            self.rs.setUpper(np.log10(max(self.wdata)))
+            tmptext = self.latexIn.rstrip()
+            if tmptext == "":
+               with plt.rc_context({'mathtext.fontset': "cm"}):
+                    self.load_latexAx.clear()
+                    self.load_latexAx.axis("off")
+                    #self.latexAx.text(0.01, 0.5, tmptext, transform=self.latexAx.transAxes, fontsize = 30)  
+                    self.load_latexCanvas.draw()
+            elif tmptext != '\\' and tmptext[-1] != '\\':
+                tmptext = "$"+tmptext+"$"
+                windowWidth = self.load_latexAx.get_window_extent().transformed(self.load_latexFig.dpi_scale_trans.inverted()).width*self.load_latexFig.dpi
+                with plt.rc_context({'mathtext.fontset': "cm"}):
+                    self.load_latexAx.clear()
+                    rLatex = self.load_latexFig.canvas.get_renderer()
+                    latexSize = 30
+                    tLatex = self.load_latexAx.text(0.01, 0.5, tmptext, transform=self.load_latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
+                    bb = tLatex.get_window_extent(renderer=rLatex)
+                    while (bb.width > windowWidth):
+                        self.load_latexAx.clear()
+                        latexSize -= 1
+                        tLatex = self.load_latexAx.text(0.01, 0.5, tmptext, transform=self.load_latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
+                        bb = tLatex.get_window_extent(renderer=rLatex)
+                    self.load_latexAx.axis("off")
+                    self.load_latexCanvas.draw()
         except:
             pass
+        self.loadFormulaWindow.configure(background="#424242")
+        self.loadFormulaFrame.configure(background="#424242")
+        self.loadFormulaDirectoryFrame.configure(background="#424242")
+        self.loadFormulaDirectoryLabel.configure(background="#424242", foreground="#FFFFFF")
+        self.loadFormulaFrameTwo.configure(background="#424242")
+        self.loadFormulaDescriptionFrame.configure(background="#424242")
+        self.loadFormulaDescriptionLabel.configure(background="#424242", foreground="#FFFFFF")
+        self.loadFormulaDescription.configure(background="#6B6B6B", foreground="#FFFFFF")
+        self.loadFormulaCode.configure(background="#6B6B6B", foreground="#FFFFFF")
+        self.loadFormulaCodeLabel.configure(background="#424242", foreground="#FFFFFF")
+        self.loadFormulaEquationLabel.configure(background="#424242", foreground="#FFFFFF")
+        self.loadFormulaButtonFrame.configure(background="#424242")
+        self.loadFormulaIncludeLabel.configure(background="#424242", foreground="#FFFFFF")
+        try:
+            self.figFreq.clear()
+            dataColor = "tab:blue"
+            deletedColor = "#A9CCE3"
+            if (self.topGUI.getTheme() == "dark"):
+                dataColor = "cyan"
+            else:
+                dataColor = "tab:blue"
+            with plt.rc_context({'axes.edgecolor':self.foregroundColor, 'xtick.color':self.foregroundColor, 'ytick.color':self.foregroundColor, 'figure.facecolor':self.backgroundColor}):
+                self.figFreq = Figure(figsize=(5, 5), dpi=100)
+                self.canvasFreq = FigureCanvasTkAgg(self.figFreq, master=self.freqWindow)
+                self.canvasFreq.get_tk_widget().grid(row=1,column=1, rowspan=5)
+                self.realFreq = self.figFreq.add_subplot(211)
+                self.realFreq.set_facecolor(self.backgroundColor)
+                self.realFreqDeletedLow, = self.realFreq.plot(self.wdataRaw[:self.lowDelete], self.rdataRaw[:self.lowDelete], "o", markerfacecolor="None", color=deletedColor)
+                self.realFreqDeletedHigh, = self.realFreq.plot(self.wdataRaw[len(self.wdataRaw)-1-self.upDelete:], self.rdataRaw[len(self.wdataRaw)-1-self.upDelete:], "o", markerfacecolor="None", color=deletedColor)
+                self.realFreqPlot, = self.realFreq.plot(self.wdata, self.rdata, "o", color=dataColor)
+                self.realFreq.set_xscale("log")
+                self.realFreq.get_xaxis().set_visible(False)
+                self.realFreq.set_title("Real Impedance", color=self.foregroundColor)
+                self.imagFreq = self.figFreq.add_subplot(212)
+                self.imagFreq.set_facecolor(self.backgroundColor)
+                self.imagFreqDeletedLow, = self.imagFreq.plot(self.wdataRaw[:self.lowDelete], -1*self.jdataRaw[:self.lowDelete], "o", markerfacecolor="None", color=deletedColor)
+                self.imagFreqDeletedHigh, = self.imagFreq.plot(self.wdataRaw[len(self.wdataRaw)-1-self.upDelete:], -1*self.jdataRaw[len(self.wdataRaw)-1-self.upDelete:], "o", markerfacecolor="None", color=deletedColor)
+                self.imagFreqPlot, = self.imagFreq.plot(self.wdata, -1*self.jdata, "o", color=dataColor)
+                self.imagFreq.set_xscale("log")
+                self.imagFreq.set_title("Imaginary Impedance", color=self.foregroundColor)
+                self.imagFreq.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                self.canvasFreq.draw()
+        except:
+            pass
+        self.saveFrame.configure(background="#FFFFFF")
+        #try:
+        #    self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
+        #    self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
+        #    self.rs.setLower(np.log10(min(self.wdata)))
+        #    self.rs.setUpper(np.log10(max(self.wdata)))
+        #except:
+        #    pass
         try:
             self.upperLabel.configure(background="#424242", foreground="#FFFFFF")
             self.lowerLabel.configure(background="#424242", foreground="#FFFFFF")
@@ -3791,6 +5148,482 @@ class fF(tk.Frame):
     
     def needToSave(self):
         return self.saveNeeded
+    
+    def insert_node(self, parent, text, abspath):
+        if (text.endswith(".mmformula") or os.path.isdir(abspath)):
+            try:
+                if (os.path.isdir(abspath)):
+                    os.listdir(abspath)
+                node = self.loadFormulaTree.insert(parent, 'end', text=text, open=False)
+                if os.path.isdir(abspath):
+                    self.loadFormulaNodes[node] = abspath
+                    self.loadFormulaTree.insert(node, 'end')
+            except:
+                pass    #Don't show directories we don't have permission to access
+    def open_node(self, event):
+        node = self.loadFormulaTree.focus()
+        abspath = self.loadFormulaNodes.pop(node, None)
+        if abspath:
+            self.loadFormulaTree.delete(self.loadFormulaTree.get_children(node))
+            for p in os.listdir(abspath):
+                self.insert_node(node, p, os.path.join(abspath, p))
+    
+    def clickFormula(self, event):
+        try:
+            item = self.loadFormulaTree.selection()[0]        
+            if (self.loadFormulaTree.item(item,"text").endswith(".mmformula")):
+                path_to_child = self.loadFormulaTree.item(item,"text")
+                parent_iid = self.loadFormulaTree.parent(item)
+                parent_node = self.loadFormulaTree.item(parent_iid)['text']
+                while parent_iid != '':
+                    path_to_child = os.path.join(parent_node, path_to_child)
+                    parent_iid = self.loadFormulaTree.parent(parent_iid)
+                    parent_node = self.loadFormulaTree.item(parent_iid)['text']
+                try:
+                    toLoad = open(path_to_child)
+                    firstLine = toLoad.readline()
+                    fileVersion = 0
+                    if "version: 1.1" in firstLine:
+                        fileVersion = 1
+                    if (fileVersion == 0):
+                        fileToLoad = firstLine.split("filename: ")[1][:-1]
+                    else:
+                        fileToLoad = toLoad.readline().split("filename: ")[1][:-1]
+                    for i in range(12):
+                        toLoad.readline()
+                    formulaIn = ""
+                    while True:
+                        nextLineIn = toLoad.readline()
+                        if (fileVersion == 0):
+                            if "mmparams:" in nextLineIn:
+                                break
+                            else:
+                                formulaIn += nextLineIn
+                        else:
+                            if "description:" in nextLineIn:
+                                break
+                            else:
+                                formulaIn += nextLineIn
+                    descriptionIn = ""
+                    while True:
+                        nextLineIn = toLoad.readline()
+                        if "latex:" in nextLineIn:
+                            break
+                        else:
+                            descriptionIn += nextLineIn
+                    self.loadFormulaDescription.configure(state="normal")
+                    self.loadFormulaDescription.delete("1.0", tk.END)
+                    self.loadFormulaDescription.insert("1.0", descriptionIn.rstrip())
+                    self.loadFormulaDescription.configure(state="disabled")
+                    self.loadFormulaCode.configure(state="normal")
+                    self.loadFormulaCode.delete("1.0", tk.END)
+                    self.loadFormulaCode.insert("1.0", formulaIn.rstrip())
+                    self.loadFormulaCode.configure(state="disabled")
+                    self.loadFormula.configure(state="normal")
+                    self.latexIn = toLoad.readline()
+                    try:
+                        tmptext = self.latexIn.rstrip()
+                        if tmptext == "":
+                           with plt.rc_context({'mathtext.fontset': "cm"}):
+                                self.load_latexAx.clear()
+                                self.load_latexAx.axis("off")
+                                #self.latexAx.text(0.01, 0.5, tmptext, transform=self.latexAx.transAxes, fontsize = 30)  
+                                self.load_latexCanvas.draw()
+                        elif tmptext != '\\' and tmptext[-1] != '\\':
+                            tmptext = "$"+tmptext+"$"
+                            windowWidth = self.load_latexAx.get_window_extent().transformed(self.load_latexFig.dpi_scale_trans.inverted()).width*self.load_latexFig.dpi
+                            with plt.rc_context({'mathtext.fontset': "cm"}):
+                                self.load_latexAx.clear()
+                                rLatex = self.load_latexFig.canvas.get_renderer()
+                                latexSize = 30
+                                tLatex = self.load_latexAx.text(0.01, 0.5, tmptext, transform=self.load_latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
+                                bb = tLatex.get_window_extent(renderer=rLatex)
+                                while (bb.width > windowWidth):
+                                    self.load_latexAx.clear()
+                                    latexSize -= 1
+                                    tLatex = self.load_latexAx.text(0.01, 0.5, tmptext, transform=self.load_latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
+                                    bb = tLatex.get_window_extent(renderer=rLatex)
+                                self.load_latexAx.axis("off")
+                                self.load_latexCanvas.draw()
+                    except:
+                        pass        
+                    toLoad.close()
+                except:
+                   messagebox.showerror("File error", "Error 62: \nThere was an error loading or reading the file")
+            else:
+                self.loadFormulaDescription.configure(state="normal")
+                self.loadFormulaDescription.delete("1.0", tk.END)
+                self.loadFormulaDescription.configure(state="disabled")
+                self.loadFormulaCode.configure(state="normal")
+                self.loadFormulaCode.delete("1.0", tk.END)
+                self.loadFormulaCode.configure(state="disabled")
+                self.loadFormula.configure(state="disabled")
+                with plt.rc_context({'mathtext.fontset': "cm"}):
+                    self.load_latexAx.clear()
+                    self.load_latexAx.axis("off")
+                    #self.latexAx.text(0.01, 0.5, tmptext, transform=self.latexAx.transAxes, fontsize = 30)  
+                    self.load_latexCanvas.draw()
+        except:
+            pass    #Ignore clicks that would be out-of-range
+    
+    def loadFormulaCommand(self, e=None):
+        item = self.loadFormulaTree.selection()[0]        
+        if (self.loadFormulaTree.item(item,"text").endswith(".mmformula")):
+            path_to_child = self.loadFormulaTree.item(item,"text")
+            parent_iid = self.loadFormulaTree.parent(item)
+            parent_node = self.loadFormulaTree.item(parent_iid)['text']
+            while parent_iid != '':
+                path_to_child = os.path.join(parent_node, path_to_child)
+                parent_iid = self.loadFormulaTree.parent(parent_iid)
+                parent_node = self.loadFormulaTree.item(parent_iid)['text']
+        try:
+            toLoad = open(path_to_child)
+            firstLine = toLoad.readline()
+            fileVersion = 0
+            if "version: 1.1" in firstLine:
+                fileVersion = 1
+            if (fileVersion == 0):
+                fileToLoad = firstLine.split("filename: ")[1][:-1]
+            else:
+                fileToLoad = toLoad.readline().split("filename: ")[1][:-1]
+            numberOfSimulations = int(toLoad.readline().split("number_simulations: ")[1][:-1])
+            if (numberOfSimulations < 1):
+                raise ValueError
+            fitType = toLoad.readline().split("fit_type: ")[1][:-1]
+            if (fitType != "Real" and fitType != "Complex" and fitType != "Imaginary"):
+                raise ValueError
+            alphaVal = float(toLoad.readline().split("alpha: ")[1][:-1])
+            if (alphaVal <= 0):
+                raise ValueError
+            uD = int(toLoad.readline().split("upDelete: ")[1][:-1])
+            if (uD < 0):
+                raise ValueError
+            lD = int(toLoad.readline().split("lowDelete: ")[1][:-1])
+            if (lD < 0):
+                raise ValueError
+            weightType = toLoad.readline().split("weighting: ")[1][:-1]
+            if (weightType != "None" and weightType != "Modulus" and weightType != "Proportional" and weightType != "Error model" and weightType != "Custom"):
+                raise ValueError
+            errorAlpha = toLoad.readline().split("error_alpha: ")[1][:-1]
+            errorBeta = toLoad.readline().split("error_beta: ")[1][:-1]
+            errorBetaRe = toLoad.readline().split("error_betaRe: ")[1][:-1]
+            errorGamma = toLoad.readline().split("error_gamma: ")[1][:-1]
+            errorDelta = toLoad.readline().split("error_delta: ")[1][:-1]
+            useAlpha = False
+            useBeta = False
+            useBetaRe = False
+            useGamma = False
+            useDelta = False
+            if (errorAlpha[0] != "n"):
+                errorAlpha = float(errorAlpha)
+                useAlpha = True
+            else:
+                errorAlpha = float(errorAlpha[1:])
+            if (errorBeta[0] != "n"):
+                errorBeta = float(errorBeta)
+                useBeta = True
+            else:
+                errorBeta = float(errorBeta[1:])
+            if (errorBetaRe[0] != "n"):
+                errorBetaRe = float(errorBetaRe)
+                useBetaRe = True
+            else:
+                errorBetaRe = float(errorBetaRe[1:])
+            if (errorGamma[0] != "n"):
+                errorGamma = float(errorGamma)
+                useGamma = True
+            else:
+                errorGamma = float(errorGamma[1:])
+            if (errorDelta[0] != "n"):
+                errorDelta = float(errorDelta)
+                useDelta = True
+            else:
+                errorDelta = float(errorDelta[1:])
+            toLoad.readline() #Skip the "formula:"
+            formulaIn = ""
+            while True:
+                nextLineIn = toLoad.readline()
+                if (fileVersion == 0):
+                    if "mmparams:" in nextLineIn:
+                        break
+                    else:
+                        formulaIn += nextLineIn
+                else:
+                    if "description:" in nextLineIn:
+                        break
+                    else:
+                        formulaIn += nextLineIn
+            if (self.loadFormulaParamsVariable.get()):
+                for i in range(len(self.paramNameEntries)):
+                    self.paramNameEntries[i].grid_remove()
+                    self.paramNameLabels[i].grid_remove()
+                    self.paramValueEntries[i].grid_remove()
+                    self.paramValueLabels[i].grid_remove()
+                    self.paramComboboxes[i].grid_remove()
+                    self.paramDeleteButtons[i].grid_remove()
+                self.numParams = 0
+                self.paramNameValues.clear()
+                self.paramNameEntries.clear()
+                self.paramNameLabels.clear()
+                self.paramValueLabels.clear()
+                self.paramComboboxValues.clear()
+                self.paramComboboxes.clear()
+                self.paramValueValues.clear()
+                self.paramValueEntries.clear()
+                self.paramDeleteButtons.clear()
+                self.paramListbox.delete(0, tk.END)
+                self.multistartCheckboxVariables.clear()
+                self.multistartSpacingVariables.clear()
+                self.multistartLowerVariables.clear()
+                self.multistartUpperVariables.clear()
+                self.multistartNumberVariables.clear()
+                self.multistartCustomVariables.clear()
+                self.advancedLowerLimitEntry.configure(state="normal")
+                self.advancedUpperLimitEntry.configure(state="normal")
+            if (fileVersion != 0):
+                self.formulaDescriptionEntry.delete("1.0", tk.END)
+                descriptionIn = ""
+                while True:
+                    nextLineIn = toLoad.readline()
+                    if "latex:" in nextLineIn:
+                        break
+                    else:
+                        descriptionIn += nextLineIn
+                latexIn = toLoad.readline()
+                self.formulaDescriptionEntry.insert("1.0", descriptionIn.rstrip())
+                self.formulaDescriptionLatexVariable.set(latexIn.rstrip())
+                self.graphLatex()
+                toLoad.readline()
+            if (self.loadFormulaParamsVariable.get()):
+                while True:
+                    p = toLoad.readline()
+                    if not p:
+                        break
+                    else:
+                        p = p[:-1]
+                        try:
+                            pname, pval, pcombo, plimup, plimlow, pcheck, pspacing, pupper, plower, pnumber, pcustom = p.split("~=~")
+                            self.multistartCheckboxVariables.append(tk.IntVar(self, int(pcheck)))
+                            self.multistartLowerVariables.append(tk.StringVar(self, plower))
+                            self.multistartUpperVariables.append(tk.StringVar(self, pupper))
+                            self.multistartSpacingVariables.append(tk.StringVar(self, pspacing))
+                            self.multistartCustomVariables.append(tk.StringVar(self, pcustom))
+                            self.multistartNumberVariables.append(tk.StringVar(self, pnumber))
+                            self.upperLimits.append(tk.StringVar(self, plimup))
+                            self.lowerLimits.append(tk.StringVar(self, plimlow))
+                        except:
+                            try:
+                                pname, pval, pcombo, pcheck, pspacing, pupper, plower, pnumber, pcustom = p.split("~=~")
+                                self.multistartCheckboxVariables.append(tk.IntVar(self, int(pcheck)))
+                                self.multistartLowerVariables.append(tk.StringVar(self, plower))
+                                self.multistartUpperVariables.append(tk.StringVar(self, pupper))
+                                self.multistartSpacingVariables.append(tk.StringVar(self, pspacing))
+                                self.multistartCustomVariables.append(tk.StringVar(self, pcustom))
+                                self.multistartNumberVariables.append(tk.StringVar(self, pnumber))
+                                self.upperLimits.append(tk.StringVar(self, "inf"))
+                                self.lowerLimits.append(tk.StringVar(self, "-inf"))
+                            except:
+                                pname, pval, pcombo = p.split("~=~")
+                                self.multistartCheckboxVariables.append(tk.IntVar(self, 0))
+                                self.multistartLowerVariables.append(tk.StringVar(self, "1E-5"))
+                                self.multistartUpperVariables.append(tk.StringVar(self, "1E5"))
+                                self.multistartSpacingVariables.append(tk.StringVar(self, "Logarithmic"))
+                                self.multistartCustomVariables.append(tk.StringVar(self, "0.1,1,10,100,1000"))
+                                self.multistartNumberVariables.append(tk.StringVar(self, "10"))
+                                self.upperLimits.append(tk.StringVar(self, "inf"))
+                                self.lowerLimits.append(tk.StringVar(self, "-inf"))
+                        self.numParams += 1
+                        if (self.numParams == 1):
+                            self.multistartCheckbox.configure(variable=self.multistartCheckboxVariables[0])
+                            self.multistartLowerEntry.configure(textvariable=self.multistartLowerVariables[0])
+                            self.multistartUpperEntry.configure(textvariable=self.multistartUpperVariables[0])
+                            self.multistartSpacing.configure(textvariable=self.multistartSpacingVariables[0])
+                            self.multistartNumberEntry.configure(textvariable=self.multistartNumberVariables[0])
+                            self.multistartCustomEntry.configure(textvariable=self.multistartCustomVariables[0])
+                            self.advancedLowerLimitFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5)
+                            self.advancedUpperLimitFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5, pady=5)
+                            self.multistartCheckbox.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5)
+                            self.multistartSpacingFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5)
+                            self.multistartLowerFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5, pady=5)
+                            self.multistartUpperFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5)
+                            self.multistartNumberFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5, pady=5)
+                            self.advancedLowerLimitEntry.configure(textvariable=self.lowerLimits[0])
+                            self.advancedUpperLimitEntry.configure(textvariable=self.upperLimits[0])
+                            if (self.multistartCheckboxVariables[0].get() == 0):
+                                self.multistartSpacing.configure(state="disabled")
+                                self.multistartUpperEntry.configure(state="disabled")
+                                self.multistartLowerEntry.configure(state="disabled")
+                                self.multistartNumberEntry.configure(state="disabled")
+                                self.multistartCustomEntry.configure(state="disabled")
+                            else:
+                                if (self.multistartSpacingVariables[0].get() == "Custom"):
+                                    self.multistartSpacing.configure(state="readonly")
+                                    self.multistartUpperEntry.configure(state="normal")
+                                    self.multistartLowerEntry.configure(state="normal")
+                                    self.multistartNumberEntry.configure(state="normal")
+                                    self.multistartCustomEntry.configure(state="normal")
+                                    self.multistartLowerFrame.pack_forget()
+                                    self.multistartUpperFrame.pack_forget()
+                                    self.multistartNumberFrame.pack_forget()
+                                    self.multistartCustomFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5, pady=5)
+                                else:
+                                    self.multistartSpacing.configure(state="readonly")
+                                    self.multistartUpperEntry.configure(state="normal")
+                                    self.multistartLowerEntry.configure(state="normal")
+                                    self.multistartNumberEntry.configure(state="normal")
+                                    self.multistartCustomEntry.configure(state="normal")
+                        self.paramNameValues.append(tk.StringVar(self, pname))
+                        self.paramNameEntries.append(ttk.Entry(self.pframe, textvariable=self.paramNameValues[self.numParams-1], width=10, validate="all", validatecommand=self.valcom))
+                        self.paramNameLabels.append(tk.Label(self.pframe, text="Name: ", background=self.backgroundColor, foreground=self.foregroundColor))
+                        self.paramValueLabels.append(tk.Label(self.pframe, text="Value: ", background=self.backgroundColor, foreground=self.foregroundColor))
+                        self.paramComboboxValues.append(tk.StringVar(self, pcombo))
+                        self.paramComboboxes.append(ttk.Combobox(self.pframe, textvariable=self.paramComboboxValues[self.numParams-1], value=("+", "+ or -", "-", "fixed", "custom"), justify=tk.CENTER, state="readonly", exportselection=0, width=6))
+                        self.paramComboboxes[-1].bind("<<ComboboxSelected>>", partial(self.limitChanged, self.numParams-1))
+                        self.paramValueValues.append(tk.StringVar(self, pval))
+                        self.paramValueEntries.append(ttk.Entry(self.pframe, textvariable=self.paramValueValues[self.numParams-1], width=10))
+                        self.paramDeleteButtons.append(ttk.Button(self.pframe, text="Delete", command=partial(self.deleteParam, self.numParams-1)))
+                        self.paramNameLabels[len(self.paramNameLabels)-1].grid(column=0, row=self.numParams, pady=5)
+                        self.paramNameEntries[len(self.paramNameEntries)-1].grid(column=1, row=self.numParams)
+                        self.paramValueLabels[len(self.paramValueLabels)-1].grid(column=2, row=self.numParams, padx=(10, 3))
+                        self.paramComboboxes[len(self.paramComboboxes)-1].grid(column=3, row=self.numParams)
+                        self.paramValueEntries[len(self.paramValueEntries)-1].grid(column=4, row=self.numParams, padx=(3,0))
+                        self.paramDeleteButtons[len(self.paramDeleteButtons)-1].grid(column=5, row=self.numParams, padx=3)
+                        self.howMany.configure(text="Number of parameters: " + str(self.numParams))
+                        self.paramNameLabels[len(self.paramNameLabels)-1].bind("<MouseWheel>", self._on_mousewheel)
+                        self.paramNameEntries[len(self.paramNameEntries)-1].bind("<MouseWheel>", self._on_mousewheel)
+                        self.paramValueLabels[len(self.paramValueLabels)-1].bind("<MouseWheel>", self._on_mousewheel)
+                        self.paramValueEntries[len(self.paramValueEntries)-1].bind("<MouseWheel>", self._on_mousewheel)
+                        self.paramDeleteButtons[len(self.paramDeleteButtons)-1].bind("<MouseWheel>", self._on_mousewheel)
+                        self.paramNameEntries[len(self.paramNameEntries)-1].bind("<KeyRelease>", self.keyup)
+                        self.paramListbox.insert(tk.END, pname)
+                        if (self.paramComboboxValues[0].get() == "fixed"):
+                            self.advancedLowerLimitEntry.configure(state="disabled")
+                            self.advancedUpperLimitEntry.configure(state="disabled")
+            toLoad.close()
+            self.paramListbox.selection_clear(0, tk.END)
+            self.paramListbox.select_set(0)
+            self.paramListboxSelection = 0
+            self.paramListbox.event_generate("<<ListboxSelect>>")
+            
+            if (self.loadFormulaOtherVariable.get()):
+                self.monteCarloValue.set(str(numberOfSimulations))
+                self.fittingTypeComboboxValue.set(str(fitType))
+                self.weightingComboboxValue.set(weightType)
+                if (weightType == "Error model"):
+                    if (not useAlpha):
+                        self.errorAlphaCheckboxVariable.set(0)
+                        self.errorAlphaEntry.configure(state="disabled")
+                        self.errorAlphaVariable.set(errorAlpha)
+                    else:
+                        self.errorAlphaCheckboxVariable.set(1)
+                        self.errorAlphaEntry.configure(state="normal")
+                        self.errorAlphaVariable.set(errorAlpha)
+                    if (not useBeta):
+                        self.errorBetaCheckboxVariable.set(0)
+                        self.errorBetaEntry.configure(state="disabled")
+                        self.errorBetaVariable.set(errorBeta)
+                    else:
+                        self.errorBetaCheckboxVariable.set(1)
+                        self.errorBetaEntry.configure(state="normal")
+                        self.errorBetaVariable.set(errorBeta)
+                    if (not useBetaRe):
+                        self.errorBetaReCheckboxVariable.set(0)
+                        self.errorBetaReEntry.configure(state="disabled")
+                        self.errorBetaReVariable.set(errorBetaRe)
+                    else:
+                        self.errorBetaReCheckboxVariable.set(1)
+                        self.errorBetaReCheckbox.configure(state="normal")
+                        self.errorBetaReEntry.configure(state="normal")
+                        self.errorBetaReVariable.set(errorBetaRe)
+                    if (not useGamma):
+                        self.errorGammaCheckboxVariable.set(0)
+                        self.errorGammaEntry.configure(state="disabled")
+                        self.errorGammaVariable.set(errorGamma)
+                    else:
+                        self.errorGammaCheckboxVariable.set(1)
+                        self.errorGammaEntry.configure(state="normal")
+                        self.errorGammaVariable.set(errorGamma)
+                    if (not useDelta):
+                        self.errorDeltaCheckboxVariable.set(0)
+                        self.errorDeltaEntry.configure(state="disabled")
+                        self.errorDeltaVariable.set(errorDelta)
+                    else:
+                        self.errorDeltaCheckboxVariable.set(1)
+                        self.errorDeltaEntry.configure(state="normal")
+                        self.errorDeltaVariable.set(errorDelta)
+                self.noiseEntryValue.set(alphaVal)
+                if (self.weightingComboboxValue.get() == "None"):
+                    self.noiseFrame.grid_remove()
+                    self.errorStructureFrame.grid_remove()
+                elif (self.weightingComboboxValue.get() == "Error model"):
+                    self.noiseFrame.grid_remove()
+                    self.errorStructureFrame.grid(column=0, row=2, pady=(5,0), columnspan=8)
+                elif (self.weightingComboboxValue.get() == "Custom"):
+                    self.noiseFrame.grid_remove()
+                    self.errorStructureFrame.grid_remove()
+                else:
+                    self.noiseFrame.grid(column=3, row=1, pady=(5,0), sticky="W")
+                    self.errorStructureFrame.grid_remove()
+            if (self.loadFormulaCodeVariable.get()):
+                self.customFormula.delete("1.0", tk.END)
+                self.customFormula.insert("1.0", formulaIn.rstrip())    #Insert custom formula into code box and remove trailing whitespace
+            self.keyup("")
+            self.loadFormulaWindow.withdraw()
+        except:
+            messagebox.showerror("File error", "Error 42: \nThere was an error loading or reading the file")
+    
+    def closeWindows(self):
+        self.upperSpinboxVariable.set(str(self.upDelete))
+        self.lowerSpinboxVariable.set(str(self.lowDelete))
+        self.freqWindow.withdraw()
+        self.formulaDescriptionWindow.withdraw()
+        self.loadFormulaWindow.withdraw()
+        self.paramPopup.withdraw()
+        self.advancedOptionsWindow.withdraw()
+        try:
+            self.bootstrapLabel.destroy()
+            self.bootstrapEntry.destroy()
+            self.bootstrapButton.destroy()
+            self.bootstrapCancel.destroy()
+            self.bootstrapPopup.destroy()
+        except:
+            pass
+        for resultWindow in self.resultsWindows:
+            try:
+                resultWindow.destroy()
+            except:
+                pass
+        for resultPlotBig in self.resultPlotBigs:
+            try:
+                resultPlotBig.destroy()
+            except:
+                pass
+        for resultPlotBigFig in self.resultPlotBigFigs:
+            try:
+                resultPlotBigFig.clear()
+            except:
+                pass
+        for resultPlot in self.resultPlots:
+            try:
+                resultPlot.destroy()
+            except:
+                pass
+        for resultPlotFig in self.resultPlotFigs:
+            try:
+                resultPlotFig.clear()
+            except:
+                pass
+        for nyCanvasButton in self.saveNyCanvasButtons:
+            try:
+                nyCanvasButton.destroy()
+            except:
+                pass
+        for nyCanvasButton_ttp in self.saveNyCanvasButton_ttps:
+            try:
+                del nyCanvasButton_ttp
+            except:
+                pass
+        self.alreadyPlotted = False
     
     def cancelThreads(self):
         for t in self.currentThreads:

@@ -2,7 +2,21 @@
 """
 Created on Wed Jun 20 15:23:25 2018
 
-@author: willdwat
+©Copyright 2020 University of Florida Research Foundation, Inc. All Rights Reserved.
+    William Watson and Mark Orazem
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 import tkinter as tk
 import tkinter.ttk as ttk
@@ -232,6 +246,9 @@ class iF(tk.Frame):
         
         self.topGUI = topOne
         self.parent = parent
+        self.nyPlots = []
+        self.fInputs = []
+        self.textPopups = []
         self.real_data = []
         self.imag_data = []
         self.freq_data = []
@@ -571,12 +588,14 @@ class iF(tk.Frame):
         #---Plot the data---
         def plotRawData():
             nyPlot = tk.Toplevel(background=self.backgroundColor)
+            self.nyPlots.append(nyPlot)
             nyPlot.title("Current Loaded Data")     #Plot window title
             nyPlot.iconbitmap(resource_path('img/elephant3.ico'))
             x = np.array(self.real_data)    #Doesn't plot without this
             y = np.array(self.imag_data)
             with plt.rc_context({'axes.edgecolor':self.foregroundColor, 'xtick.color':self.foregroundColor, 'ytick.color':self.foregroundColor, 'figure.facecolor':self.backgroundColor}):
                 fInput = Figure(figsize=(5,4), dpi=100)
+                self.fInputs.append(fInput)
                 fInput.set_facecolor(self.backgroundColor)
                 a = fInput.add_subplot(111)
                 a.set_facecolor(self.backgroundColor)
@@ -621,6 +640,7 @@ class iF(tk.Frame):
             def _on_change(event):
                 self.linenumbers.redraw()
             self.textPopup = tk.Toplevel()
+            self.textPopups.append(self.textPopup)
             self.textPopup.title(self.inputFileText.get())
             self.textPopup.iconbitmap(resource_path("img/elephant3.ico"))
             self.text = CustomText(self.textPopup, bg=self.backgroundColor, fg=self.foregroundColor)
@@ -834,6 +854,11 @@ class iF(tk.Frame):
         saveButton_ttp = CreateToolTip(self.saveButton, 'Save loaded data as .mmfile')
         saveContinue_ttp = CreateToolTip(self.saveContinueButton, 'Save loaded data as .mmfile and load to Measurement Model tab')
         plot_ttp = CreateToolTip(self.plotButton, 'Display Nyquist plot')
+        
+        #---Close all popups---
+        self.closeAllPopupsButton = ttk.Button(self, text="Close all popups", command=self.topGUI.closeAllPopups)
+        self.closeAllPopupsButton.grid(column=0, row=9, sticky="W", pady=10)
+        closeAllPopups_ttp = CreateToolTip(self.closeAllPopupsButton, 'Close all open popup windows')
     
     def needToSave(self):
         return self.savedNeeded
@@ -941,7 +966,24 @@ class iF(tk.Frame):
     
     def unbindIt(self, e=None):
         self.unbind_all("<Control-s>")
-            
+    
+    def closeWindows(self):
+        for textPopup in self.textPopups:
+            try:
+                textPopup.destroy()
+            except:
+                pass
+        for popup in self.nyPlots:
+            try:
+                popup.destroy()
+            except:
+                pass
+        for fInput in self.fInputs:
+            try:
+                fInput.clear()
+            except:
+                pass
+        
     def inputEnter(self, fileName):
         n, filetext = self.OpenFileNoPrompt(fileName)
         fname, fext = os.path.splitext(fileName)

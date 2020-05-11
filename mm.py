@@ -2,13 +2,28 @@
 """
 Created on Wed Jul 25 15:47:07 2018
 
-@author: willdwat
+©Copyright 2020 University of Florida Research Foundation, Inc. All Rights Reserved.
+    William Watson and Mark Orazem
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 #---Import necessary libraries/modules---
 import ctypes
 import sys
 import tkinter as tk
+import tkinter.ttk as ttk
 from tkinter import messagebox
 import inputFrame
 import helpFrame
@@ -22,6 +37,7 @@ import os
 import re
 import multiprocessing
 from PIL import ImageTk, Image
+import webbrowser
 
 class CreateToolTip(object):
     """
@@ -113,7 +129,7 @@ class myGUI:
         self.backgroundColor = '#333333'    #Default bar color (gray20)
         self.highlightColor = '#999999'     #Default color on mouseover (lighter gray)
         self.activeColor = '#737373'        #Default color when tab is active (light gray)
-        
+                                            #6B6B6B - gray for text entries with dark theme
         #---Application defaults for other classes; used in getters/setters at the end of this file---
         self.detectCommentsDefault = 1      #Whether or not to detect comments
         self.detectDelimiterDefault = 1     #Whether or not to detect delimiters
@@ -134,6 +150,7 @@ class myGUI:
         self.ellipseColor = "#FF0000"               #Default ellipse color
         self.currentDirectory = "C:\\"              #The current directory; used in various other classes, but not a default setting
         self.defaultDirectory = "C:\\"              #The default directory
+        self.defaultFormulaDirectory = "C:\\"       #The default directory for .mmformula files
         self.inputExitAlert = 0                     #Whether or not to alert before closing the input tab
         self.customFormulaExitAlert = 0             #Whether or not to alert before closing the custom fitting tab
         self.defaultTab = 0                         #The default tab when the program is opened
@@ -196,6 +213,8 @@ class myGUI:
                 if (self.defaultScroll != 0 and self.defaultScroll != 1):
                     self.defaultScroll = 1
                     raise Exception
+                
+                self.defaultFormulaDirectory = config['settings']['formulaDir']
                 
                 self.detectCommentsDefault = int(config['input']['detect'])
                 if (self.detectCommentsDefault != 0 and self.detectCommentsDefault != 1):       #Value must be true or false
@@ -346,7 +365,7 @@ class myGUI:
                     messagebox.showerror("File error", "Error: 3\nError opening file")
         
         master.title("Measurement Model")                       #The program title
-        master.geometry('{}x{}'.format(840, 800))               #GUI size
+        master.geometry('{}x{}'.format(840, 830))               #GUI size
         master.iconbitmap(resource_path('img/elephant3.ico'))           #GUI icon
         #---Change the background color depeding on the theme---
         if (self.theme == "dark"):
@@ -599,7 +618,7 @@ class myGUI:
         self.runCanvas = tk.Canvas(self.canvasFrame, background=self.backgroundColor, bd=0, highlightthickness=0, relief='ridge', width=self.canvasWidth, height=self.runModel.winfo_height())
         self.errorFileCanvas = tk.Canvas(self.canvasFrame, background=self.backgroundColor, bd=0, highlightthickness=0, relief='ridge', width=self.canvasWidth, height=self.errorFileLabel.winfo_height())
         self.errorCanvas = tk.Canvas(self.canvasFrame, background=self.backgroundColor, bd=0, highlightthickness=0, relief='ridge', width=self.canvasWidth, height=self.errorLabel.winfo_height())
-        self.formulaCanvas= tk.Canvas(self.canvasFrame, background=self.backgroundColor, bd=0, highlightthickness=0, relief='ridge', width=self.canvasWidth, height=self.formulaLabel.winfo_height())
+        self.formulaCanvas= tk.Canvas(self.canvasFrame, background=self.backgroundColor, bd=0, highlightthickness=0, relief='ridge', width=self.canvasWidth, height=self.errorFileLabel.winfo_height())
         self.settingsCanvas = tk.Canvas(self.canvasFrame, background=self.backgroundColor, bd=0, highlightthickness=0, relief='ridge', width=self.canvasWidth, height=self.settingsLabel.winfo_height())
         self.helpCanvas = tk.Canvas(self.canvasFrame, background=self.backgroundColor, bd=0, highlightthickness=0, relief='ridge', width=self.canvasWidth, height=self.helpLabel.winfo_height())
         
@@ -1255,6 +1274,12 @@ class myGUI:
     def setDefaultDirectory(self, directory):
         self.defaultDirectory = directory
     
+    def getDefaultFormulaDirectory(self):
+        return self.defaultFormulaDirectory
+    
+    def setDefaultFormulaDirectory(self, directory):
+        self.defaultFormulaDirectory = directory
+    
     def getInputExitAlert(self):
         return self.inputExitAlert
     
@@ -1417,6 +1442,13 @@ class myGUI:
         elif (overTab == 6):
             self.formulaLabel.configure(image=self.imgFormula2 if self.currentTab != 6 else self.imgFormula4)
 
+    def closeAllPopups(self, e=None):
+        self.input_frame.closeWindows()
+        self.error_file_frame.closeWindows()
+        self.model_frame.closeWindows()
+        self.error_frame.closeWindows()
+        self.formula_frame.closeWindows()
+
 if (__name__ == "__main__"):        #If the code is being run as the main module
     multiprocessing.freeze_support()    #Allows multiprocessing to work on Windows
     try:
@@ -1424,16 +1456,62 @@ if (__name__ == "__main__"):        #If the code is being run as the main module
             ctypes.windll.shcore.SetProcessDpiAwareness(1)
     except:
         pass
-    root = tk.Tk()                  #The root window
-    gui = myGUI(root, sys.argv)     #The GUI object
     
+    def resource_path(relative_path):
+        """ Get absolute path to resource, works for dev and for PyInstaller """
+        try:
+            # PyInstaller creates a temp folder and stores path in _MEIPASS
+            base_path = sys._MEIPASS
+        except Exception:
+            base_path = os.path.abspath(".")
+    
+        return os.path.join(base_path, relative_path)
+    
+    root = tk.Tk()                  #The root window
+    root.withdraw()
+    gui = myGUI(root, sys.argv)     #The GUI object
+    splashScreen = tk.Toplevel(bg="white")
+    splashScreen.after(1, lambda: splashScreen.focus_force())
+    splashScreen.title("Measurement Model")
+    splashScreen.iconbitmap(resource_path('img/elephant3.ico'))
+    copyrightLabel = tk.Label(splashScreen, text="©Copyright 2020 University of Florida Research Foundation, Inc. All Rights Reserved.\n\nThis program is free software: you can redistribute it and/or modify \
+it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.\n\n\
+\
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the \
+GNU General Public License for more details.\n\n\
+You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.", justify=tk.LEFT, wraplength=600, bg="white", fg="black")
+        
+    gnuLicenseLink = tk.Label(splashScreen, text="GNU General Public License", cursor="hand2", bg="white", fg="blue")
+    gnuLicenseLink.bind('<Button-1>', lambda e: webbrowser.open_new("gpl-3.0-standalone.html"))
+    buttonFrame = tk.Frame(splashScreen, bg="white")
+    def on_start_splash():
+        splashScreen.destroy()
+        root.deiconify()
+        root.lift()
+    okButton = ttk.Button(buttonFrame, text="Start program", command=on_start_splash)
+    okButton.bind("<Return>", lambda e: on_start_splash())
+    def on_cancel_splash():
+        splashScreen.destroy()
+        root.destroy()
+    cancelButton = ttk.Button(buttonFrame, text="Cancel", command=on_cancel_splash)
+    cancelButton.bind("<Return>", lambda e: on_cancel_splash())
+    copyrightLabel.pack(side=tk.TOP, fill=tk.X, expand=True)
+    gnuLicenseLink.pack(side=tk.TOP, fill=tk.X, expand=True)
+    okButton.pack(side=tk.LEFT, fill=tk.X, expand=True)
+    cancelButton.pack(side=tk.RIGHT, fill=tk.X, expand=True)
+    buttonFrame.pack(side=tk.BOTTOM, fill=tk.X, expand=True)
+    splashScreen.protocol("WM_DELETE_WINDOW", on_cancel_splash)
+    okButton.focus_set()
+    splashScreen.resizable(False, False)
     def on_closing():               #Check what's happening on closing
         if (not gui.canCloseInput() or not gui.canCloseCustom()):   #If there is a need to save and alerting is turned on, ask before closing
-            if (messagebox.askokcancel("Exit", "You have not saved. Do you still wish to exit?")):
+            if (messagebox.askokcancel("Exit?", "You have not saved. Do you still wish to exit?")):
                 gui.model_frame.cancelThreads()     #Close running threads before exit
+                gui.formula_frame.cancelThreads()
                 root.destroy()
         else:
             gui.model_frame.cancelThreads()         #Close running threads before exit
+            gui.formula_frame.cancelThreads()
             root.destroy()
     
     root.protocol("WM_DELETE_WINDOW", on_closing)   #Catch the closing command

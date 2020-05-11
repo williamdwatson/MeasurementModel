@@ -2,7 +2,21 @@
 """
 Created on Mon Jul  9 16:30:37 2018
 
-@author: willdwat
+©Copyright 2020 University of Florida Research Foundation, Inc. All Rights Reserved.
+    William Watson and Mark Orazem
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 import tkinter as tk
@@ -47,10 +61,12 @@ from rangeSlider import RangeSlider
 from functools import partial
 
 class ThreadedTaskAuto(threading.Thread):
-    def __init__(self, queue, max_nve, nMC, w, r, j, per, c, t, errA, errB, errBRe, errG, errD):
+    def __init__(self, queue, max_nve, fRe, fReV, nMC, w, r, j, per, c, t, errA, errB, errBRe, errG, errD):
         threading.Thread.__init__(self)
         self.queue = queue
         self.nve_max = max_nve
+        self.reFix = fReV
+        self.reFixVal = fReV
         self.nMC = nMC
         self.wdat = w
         self.rdat = r
@@ -66,7 +82,7 @@ class ThreadedTaskAuto(threading.Thread):
         self.fittingObject = autoFitter.autoFitter()
     def run(self):
         try:
-            r, s, sdr, sdi, zz, zzs, zp, zps, chi, cor, aic, ft, fw = self.fittingObject.autoFit(self.nve_max, self.nMC, self.wdat, self.rdat, self.jdat, self.listPer, self.choice, self.autoType, self.errAlpha, self.errBeta, self.errBetaRe, self.errGamma, self.errDelta)  
+            r, s, sdr, sdi, zz, zzs, zp, zps, chi, cor, aic, ft, fw = self.fittingObject.autoFit(self.nve_max, self.reFix, self.reFixVal, self.nMC, self.wdat, self.rdat, self.jdat, self.listPer, self.choice, self.autoType, self.errAlpha, self.errBeta, self.errBetaRe, self.errGamma, self.errDelta)  
             self.queue.put((r, s, sdr, sdi, zz, zzs, zp, zps, chi, cor, aic, ft, fw))
         except:
             self.queue.put(("@", "@", "@", "@", "@", "@", "@", "@", "@", "@", "@", "@", "@"))
@@ -295,6 +311,16 @@ class mmF(tk.Frame):
         
         self.omega = np.zeros(1)
         self.nVoigt = 1
+        self.resultsWindows = []
+        self.resultPlotBigs = []
+        self.resultPlotBigFigs = []
+        self.updateWindows = []
+        self.updateFigs = []
+        self.simplePopups = []
+        self.pltFigs = []
+        self.resultPlots = []
+        self.saveNyCanvasButtons = []
+        self.saveNyCanvasButton_ttps = []
         self.paramLabels = []
         self.paramEntries = []
         self.paramEntryVariables = []
@@ -390,6 +416,8 @@ class mmF(tk.Frame):
         self.autoFitWindow.resizable(False, False)
         self.autoMaxNVEVariable = tk.StringVar(self, "15")
         self.autoNMCVariable = tk.StringVar(self, str(self.topGUI.getMC()))
+        self.autoReFixVariable = tk.IntVar(self, 0)
+        self.autoReFixEntryVariable = tk.StringVar(self, "0")
         self.autoWeightingVariable = tk.StringVar(self, "Modulus")
         self.errorAlphaCheckboxVariableAuto = tk.IntVar(self, 0)
         self.errorAlphaVariableAuto = tk.StringVar(self, "0.1")
@@ -406,8 +434,8 @@ class mmF(tk.Frame):
         self.freqWindow.withdraw()
         self.freqWindow.title("Change Frequency Range")
         self.freqWindow.iconbitmap(resource_path('img/elephant3.ico'))
-        self.rs = RangeSlider(self.freqWindow, lowerBound=-4, upperBound=7, background=self.backgroundColor, tickColor=self.foregroundColor)
-        self.rs.grid(column=1, row=1, rowspan=5)
+        #self.rs = RangeSlider(self.freqWindow, lowerBound=-4, upperBound=7, background=self.backgroundColor, tickColor=self.foregroundColor)
+        #self.rs.grid(column=1, row=1, rowspan=5)
         self.lowestUndeleted = tk.Label(self.freqWindow, text="Lowest Remaining Frequency: 0", background=self.backgroundColor, foreground=self.foregroundColor)
         self.highestUndeleted = tk.Label(self.freqWindow, text="Highest Remaining Frequency: 0", background=self.backgroundColor, foreground=self.foregroundColor)
         self.lowerSpinboxVariable = tk.StringVar(self, "0")
@@ -514,14 +542,14 @@ class mmF(tk.Frame):
                                 self.wdata = self.wdataRaw.copy()
                                 self.rdata = self.rdataRaw.copy()
                                 self.jdata = self.jdataRaw.copy()
-                            self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
-                            self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
+                            #self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
+                            #self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
                             #self.rs.setMajorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
-                            self.rs.setNumberOfMajorTicks(10)
-                            self.rs.showMinorTicks(False)
+                            #self.rs.setNumberOfMajorTicks(10)
+                            #self.rs.showMinorTicks(False)
                             #self.rs.setMinorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
-                            self.rs.setLower(np.log10(min(self.wdata)))
-                            self.rs.setUpper(np.log10(max(self.wdata)))
+                            #self.rs.setLower(np.log10(min(self.wdata)))
+                            #self.rs.setUpper(np.log10(max(self.wdata)))
                             self.lowestUndeleted.configure(text="Lowest remaining frequency: {:.4e}".format(min(self.wdata))) #%f" % round_to_n(min(self.wdata), 6)).strip("0"))
                             self.highestUndeleted.configure(text="Highest remaining frequency: {:.4e}".format(max(self.wdata))) #%f" % round_to_n(max(self.wdata), 6)).strip("0"))
                             #self.wdata = self.wdataRaw.copy()
@@ -535,14 +563,45 @@ class mmF(tk.Frame):
                             self.wdata = self.wdataRaw.copy()
                             self.rdata = self.rdataRaw.copy()
                             self.jdata = self.jdataRaw.copy()
-                            self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
-                            self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
-                            self.rs.setNumberOfMajorTicks(10)
-                            self.rs.showMinorTicks(False)
-                            self.rs.setLower(np.log10(min(self.wdata)))
-                            self.rs.setUpper(np.log10(max(self.wdata)))
+                            #self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
+                            #self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
+                            #self.rs.setNumberOfMajorTicks(10)
+                            #self.rs.showMinorTicks(False)
+                            #self.rs.setLower(np.log10(min(self.wdata)))
+                            #self.rs.setUpper(np.log10(max(self.wdata)))
                             self.lowestUndeleted.configure(text="Lowest remaining frequency: {:.4e}".format(min(self.wdata))) #%f" % round_to_n(min(self.wdata), 6)).strip("0"))
                             self.highestUndeleted.configure(text="Highest remaining frequency: {:.4e}".format(max(self.wdata))) #%f" % round_to_n(max(self.wdata), 6)).strip("0"))
+                        try:
+                            self.figFreq.clear()
+                            dataColor = "tab:blue"
+                            deletedColor = "#A9CCE3"
+                            if (self.topGUI.getTheme() == "dark"):
+                                dataColor = "cyan"
+                            else:
+                                dataColor = "tab:blue"
+                            with plt.rc_context({'axes.edgecolor':self.foregroundColor, 'xtick.color':self.foregroundColor, 'ytick.color':self.foregroundColor, 'figure.facecolor':self.backgroundColor}):
+                                self.figFreq = Figure(figsize=(5, 5), dpi=100)
+                                self.canvasFreq = FigureCanvasTkAgg(self.figFreq, master=self.freqWindow)
+                                self.canvasFreq.get_tk_widget().grid(row=1,column=1, rowspan=5)
+                                self.realFreq = self.figFreq.add_subplot(211)
+                                self.realFreq.set_facecolor(self.backgroundColor)
+                                self.realFreqDeletedLow, = self.realFreq.plot(self.wdataRaw[:self.lowDelete], self.rdataRaw[:self.lowDelete], "o", markerfacecolor="None", color=deletedColor)
+                                self.realFreqDeletedHigh, = self.realFreq.plot(self.wdataRaw[len(self.wdataRaw)-1-self.upDelete:], self.rdataRaw[len(self.wdataRaw)-1-self.upDelete:], "o", markerfacecolor="None", color=deletedColor)
+                                self.realFreqPlot, = self.realFreq.plot(self.wdata, self.rdata, "o", color=dataColor)
+                                self.realFreq.set_xscale("log")
+                                self.realFreq.get_xaxis().set_visible(False)
+                                self.realFreq.set_title("Real Impedance", color=self.foregroundColor)
+                                self.imagFreq = self.figFreq.add_subplot(212)
+                                self.imagFreq.set_facecolor(self.backgroundColor)
+                                self.imagFreqDeletedLow, = self.imagFreq.plot(self.wdataRaw[:self.lowDelete], -1*self.jdataRaw[:self.lowDelete], "o", markerfacecolor="None", color=deletedColor)
+                                self.imagFreqDeletedHigh, = self.imagFreq.plot(self.wdataRaw[len(self.wdataRaw)-1-self.upDelete:], -1*self.jdataRaw[len(self.wdataRaw)-1-self.upDelete:], "o", markerfacecolor="None", color=deletedColor)
+                                self.imagFreqPlot, = self.imagFreq.plot(self.wdata, -1*self.jdata, "o", color=dataColor)
+                                self.imagFreq.set_xscale("log")
+                                self.imagFreq.set_title("Imaginary Impedance", color=self.foregroundColor)
+                                self.imagFreq.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                                self.canvasFreq.draw()
+                        except:
+                            pass
                         self.lengthOfData = len(self.wdata)
                         self.tauDefault = 1/((max(w_in)-min(w_in))/(np.log10(abs(max(w_in)/min(w_in)))))
                         self.rDefault = (max(r_in)+min(r_in))/2
@@ -713,14 +772,45 @@ class mmF(tk.Frame):
                             self.wdata = self.wdataRaw.copy()[self.lowDelete:-1*self.upDelete]
                             self.rdata = self.rdataRaw.copy()[self.lowDelete:-1*self.upDelete]
                             self.jdata = self.jdataRaw.copy()[self.lowDelete:-1*self.upDelete]
-                        self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
-                        self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
+                        #self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
+                        #self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
                         #self.rs.setMajorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
-                        self.rs.setNumberOfMajorTicks(10)
-                        self.rs.showMinorTicks(False)
+                        #self.rs.setNumberOfMajorTicks(10)
+                        #self.rs.showMinorTicks(False)
                         #self.rs.setMinorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
-                        self.rs.setLower(np.log10(min(self.wdata)))
-                        self.rs.setUpper(np.log10(max(self.wdata)))
+                        #self.rs.setLower(np.log10(min(self.wdata)))
+                        #self.rs.setUpper(np.log10(max(self.wdata)))
+                        try:
+                            self.figFreq.clear()
+                            dataColor = "tab:blue"
+                            deletedColor = "#A9CCE3"
+                            if (self.topGUI.getTheme() == "dark"):
+                                dataColor = "cyan"
+                            else:
+                                dataColor = "tab:blue"
+                            with plt.rc_context({'axes.edgecolor':self.foregroundColor, 'xtick.color':self.foregroundColor, 'ytick.color':self.foregroundColor, 'figure.facecolor':self.backgroundColor}):
+                                self.figFreq = Figure(figsize=(5, 5), dpi=100)
+                                self.canvasFreq = FigureCanvasTkAgg(self.figFreq, master=self.freqWindow)
+                                self.canvasFreq.get_tk_widget().grid(row=1,column=1, rowspan=5)
+                                self.realFreq = self.figFreq.add_subplot(211)
+                                self.realFreq.set_facecolor(self.backgroundColor)
+                                self.realFreqDeletedLow, = self.realFreq.plot(self.wdataRaw[:self.lowDelete], self.rdataRaw[:self.lowDelete], "o", markerfacecolor="None", color=deletedColor)
+                                self.realFreqDeletedHigh, = self.realFreq.plot(self.wdataRaw[len(self.wdataRaw)-1-self.upDelete:], self.rdataRaw[len(self.wdataRaw)-1-self.upDelete:], "o", markerfacecolor="None", color=deletedColor)
+                                self.realFreqPlot, = self.realFreq.plot(self.wdata, self.rdata, "o", color=dataColor)
+                                self.realFreq.set_xscale("log")
+                                self.realFreq.get_xaxis().set_visible(False)
+                                self.realFreq.set_title("Real Impedance", color=self.foregroundColor)
+                                self.imagFreq = self.figFreq.add_subplot(212)
+                                self.imagFreq.set_facecolor(self.backgroundColor)
+                                self.imagFreqDeletedLow, = self.imagFreq.plot(self.wdataRaw[:self.lowDelete], -1*self.jdataRaw[:self.lowDelete], "o", markerfacecolor="None", color=deletedColor)
+                                self.imagFreqDeletedHigh, = self.imagFreq.plot(self.wdataRaw[len(self.wdataRaw)-1-self.upDelete:], -1*self.jdataRaw[len(self.wdataRaw)-1-self.upDelete:], "o", markerfacecolor="None", color=deletedColor)
+                                self.imagFreqPlot, = self.imagFreq.plot(self.wdata, -1*self.jdata, "o", color=dataColor)
+                                self.imagFreq.set_xscale("log")
+                                self.imagFreq.set_title("Imaginary Impedance", color=self.foregroundColor)
+                                self.imagFreq.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                                self.canvasFreq.draw()
+                        except:
+                            pass
                         self.lengthOfData = len(self.wdata)
                         self.tauDefault = 1/((max(w_in)-min(w_in))/(np.log10(abs(max(w_in)/min(w_in)))))
                         self.rDefault = (max(r_in)+min(r_in))/2
@@ -937,6 +1027,34 @@ class mmF(tk.Frame):
         valcom = (self.register(validateEither), '%P')
         valfreqlow = (self.register(validateFreqLow), '%P')
         valfreqhigh = (self.register(validateFreqHigh), '%P')
+        
+        def validateFreqHigh2(P):
+            if (P == ""):
+                return True
+            try:
+                val = int(P)
+            except:
+                return False
+            if (val < 0):
+                return False
+            elif (val + self.lowDelete > len(self.wdataRaw)):
+                return False
+            return True
+        valfreqHigh2 = (self.register(validateFreqHigh2), '%P')
+        
+        def validateFreqLow2(P):
+            if (P == ""):
+                return True
+            try:
+                val = int(P)
+            except:
+                return False
+            if (val < 0):
+                return False
+            elif (val + self.upDelete > len(self.wdataRaw)):
+                return False
+            return True
+        valfreqLow2 = (self.register(validateFreqLow2), '%P')
         
         def removeElement(element_number):
             #---Copy each variable from "above" down by 1 (2 paramEntryVariables, 1 paramComboboxVariables, 1 tauComboboxVariables)---
@@ -1573,6 +1691,8 @@ class mmF(tk.Frame):
                 self.autoWeighting.configure(state="readonly")
                 self.autoRunButton.configure(state="normal")
                 self.autoCancelButton.configure(state="disabled")
+                self.autoReFixEntry.configure(state="normal")
+                self.autoReFix.configure(state="normal")
                 self.autoPercent = []
                 self.autoStatusLabel.configure(text="")
                 self.ellipsisPercent = 0
@@ -1602,6 +1722,9 @@ class mmF(tk.Frame):
                             self.numVoigtSpinbox.invoke("buttonup")
                     self.fitWeightR = np.zeros(len(self.wdata))
                     self.fitWeightJ = np.zeros(len(self.wdata))
+                    if (self.autoReFixVariable.get()):
+                        self.paramComboboxVariables[0].set("fixed")
+                        
                     if (fw == 2):
                         for i in range(len(self.wdata)):
                             self.fitWeightR[i] = float(self.alphaVariable.get()) * self.rdata[i]
@@ -1921,6 +2044,7 @@ class mmF(tk.Frame):
                                         annot.set_visible(False)
                                         self.magicInput.canvas.draw_idle()
                         self.magicInput.canvas.mpl_connect("motion_notify_event", hover)
+                    self.autoFitWindow.withdraw()
                     runMeasurementModel()
             except queue.Empty:
                 if (len(self.autoPercent) > 0):
@@ -3380,6 +3504,11 @@ class mmF(tk.Frame):
                     choice = 2
                 else:
                     choice = 3
+                try:
+                    fixReValue = float(self.autoReFixEntryVariable.get())
+                except:
+                    messagebox.showerror("Bad R\u2091 value", "The value for R\u2091 must be a real number.", parent=self.autoFitWindow)
+                    return
                 self.autoStatusLabel.configure(text="Initializing...")
                 self.autoPercent = []
                 self.measureModelButton.configure(state="disabled")
@@ -3408,6 +3537,8 @@ class mmF(tk.Frame):
                 self.autoMaxNVE.configure(state="disabled")
                 self.autoWeighting.configure(state="disabled")
                 self.autoRunButton.configure(state="disabled")
+                self.autoReFixEntry.configure(state="disabled")
+                self.autoReFix.configure(state="disabled")
                 self.autoCancelButton.configure(state="normal")
                 self.freqWindow.withdraw()
                 self.paramPopup.withdraw()
@@ -3422,13 +3553,19 @@ class mmF(tk.Frame):
                 except:
                     pass
                 
-                self.currentThreads.append(ThreadedTaskAuto(self.queueAuto, nve, nmc, self.wdata, self.rdata, self.jdata, self.autoPercent, choice, self.radioVal.get(), errA, errB, errBRe, errG, errD))
+                self.currentThreads.append(ThreadedTaskAuto(self.queueAuto, nve, self.autoReFixVariable.get(), fixReValue, nmc, self.wdata, self.rdata, self.jdata, self.autoPercent, choice, self.radioVal.get(), errA, errB, errBRe, errG, errD))
                 self.currentThreads[len(self.currentThreads)-1].start()
                 self.autoCancelButton.bind("<Button-1>", lambda e: terminateRun(self.currentThreads[len(self.currentThreads)-1]))
                 self.after(100, process_queue_auto)
             
+            def checkAutoFix(e=None):
+                if (self.autoReFixVariable.get()):
+                    self.autoReFixEntry.configure(state="normal")
+                else:
+                    self.autoReFixEntry.configure(state="disabled")
+            
             def checkWeightAuto(e):
-                if (self.autoWeightingVariable.get() == "Auto"):
+                if (self.autoWeightingVariable.get() == "Modulus" or self.autoWeightingVariable.get() == "Proportional"):
                     self.autoErrorFrame.grid_remove()
                 else:
                     self.autoErrorFrame.grid(column=0, row=2, columnspan=4, sticky="W")
@@ -3441,6 +3578,11 @@ class mmF(tk.Frame):
             self.autoMaxNVE = ttk.Entry(self.autoFitWindow, textvariable=self.autoMaxNVEVariable, width=7)
             self.autoNMCLabel = tk.Label(self.autoFitWindow, text="Number of Simulations: ", bg=self.backgroundColor, fg=self.foregroundColor)
             self.autoNMC = ttk.Entry(self.autoFitWindow, textvariable=self.autoNMCVariable, width=7)
+            self.autoReFrame = tk.Frame(self.autoFitWindow, bg=self.backgroundColor)
+            self.autoReFix = ttk.Checkbutton(self.autoReFrame, text="Fix R\u2091 = ", variable=self.autoReFixVariable, command=checkAutoFix)
+            self.autoReFixEntry = ttk.Entry(self.autoReFrame, width=7, textvariable=self.autoReFixEntryVariable, state="disabled")
+            if (self.autoReFixVariable.get()):
+                self.autoReFixEntry.configure(state="normal")
             self.autoWeightingLabel = tk.Label(self.autoFitWindow, text="Weighting: ", bg=self.backgroundColor, fg=self.foregroundColor)
             self.autoWeighting = ttk.Combobox(self.autoFitWindow, value=("Modulus", "Proportional", "Error structure"), textvariable=self.autoWeightingVariable, width=15, state="readonly")
             self.autoStatusLabel = tk.Label(self.autoFitWindow, text="", bg=self.backgroundColor, fg=self.foregroundColor)
@@ -3471,6 +3613,8 @@ class mmF(tk.Frame):
             radio2_ttp = CreateToolTip(self.radio2, "Fit both real and imaginary parts")
             radio3_ttp = CreateToolTip(self.radio3, "Fit real part only")
             radio4_ttp = CreateToolTip(self.radio4, "Fit imaginary part only")
+            autoReFix_ttp = CreateToolTip(self.autoReFix, "Fix (i.e. don't fit) R\u2091")
+            autoReFixEntry_ttp = CreateToolTip(self.autoReFixEntry, "The value of R\u2091 if it is fixed")
             
             self.autoMaxLabel.grid(column=0, row=0, sticky="W", padx=(3, 0))
             self.autoMaxNVE.grid(column=1, row=0, sticky="W", padx=3)
@@ -3483,10 +3627,13 @@ class mmF(tk.Frame):
             self.radio2.grid(column=1, row=0, sticky="W", padx=3)
             self.radio3.grid(column=2, row=0, sticky="W", padx=3)
             self.radio4.grid(column=3, row=0, sticky="W", padx=3)
-            self.autoSliderFrame.grid(column=0, row=3, sticky="W", columnspan=5, padx=3, pady=5)
-            self.autoStatusLabel.grid(column=0, row=4, sticky="EW", columnspan=5, pady=5)
-            self.autoRunButton.grid(column=0, row=5, sticky="EW", columnspan=2, pady=10, padx=(3, 0))
-            self.autoCancelButton.grid(column=2, row=5, sticky="EW", columnspan=2, pady=10, padx=3)
+            self.autoSliderFrame.grid(column=0, row=4, sticky="W", columnspan=5, padx=3, pady=5)
+            self.autoReFrame.grid(column=0, row=3, sticky="W", columnspan=2, pady=5)
+            self.autoReFix.grid(column=0, row=3, sticky="W", padx=3)
+            self.autoReFixEntry.grid(column=1, row=3, sticky="W")
+            self.autoStatusLabel.grid(column=0, row=5, sticky="EW", columnspan=5, pady=5)
+            self.autoRunButton.grid(column=0, row=6, sticky="EW", columnspan=2, pady=10, padx=(3, 0))
+            self.autoCancelButton.grid(column=2, row=6, sticky="EW", columnspan=2, pady=10, padx=3)
             
             #self.autoFitWindow.geometry("500x200")
             self.autoFitWindow.deiconify()
@@ -3588,6 +3735,7 @@ class mmF(tk.Frame):
             
         def advancedResults():
             self.resultsWindow = tk.Toplevel()
+            self.resultsWindows.append(self.resultsWindow)
             self.resultsWindow.title("Advanced results")
             self.resultsWindow.iconbitmap(resource_path("img/elephant3.ico"))
             self.resultsWindow.geometry("1000x550")
@@ -3753,11 +3901,13 @@ class mmF(tk.Frame):
                 if (not event.inaxes):      #If a subplot isn't clicked
                     return
                 resultPlotBig = tk.Toplevel()
+                self.resultPlotBigs.append(resultPlotBig)
                 resultPlotBig.iconbitmap(resource_path('img/elephant3.ico'))
                 w, h = self.winfo_screenwidth(), self.winfo_screenheight()
                 resultPlotBig.geometry("%dx%d+0+0" % (w/2, h/2))
                 with plt.rc_context({'axes.edgecolor':self.foregroundColor, 'xtick.color':self.foregroundColor, 'ytick.color':self.foregroundColor, 'figure.facecolor':self.backgroundColor}):
                     fig = Figure()
+                    self.resultPlotBigFigs.append(fig)
                     fig.set_facecolor(self.backgroundColor)
                     Zfit = np.zeros(len(self.wdata), dtype=np.complex128)
                     if (not self.capUsed):
@@ -4115,6 +4265,7 @@ class mmF(tk.Frame):
             self.alreadyPlotted = True
             self.currentNVEPlotted = self.currentNVEPlotNeeded
             self.resultPlot = tk.Toplevel(background=self.backgroundColor)
+            self.resultPlots.append(self.resultPlot)
             self.resultPlot.title("Measurement Model Plots")
             self.resultPlot.iconbitmap(resource_path('img/elephant3.ico'))
             #w, h = self.winfo_screenwidth(), self.winfo_screenheight()
@@ -4137,7 +4288,8 @@ class mmF(tk.Frame):
                 phase_fit = np.arctan2(Zfit.imag, Zfit.real) * (180/np.pi)  
             
             with plt.rc_context({'axes.edgecolor':self.foregroundColor, 'xtick.color':self.foregroundColor, 'ytick.color':self.foregroundColor, 'figure.facecolor':self.backgroundColor}):
-                pltFig = Figure()#figsize=((5,4), dpi=100)
+                pltFig = Figure()   #figsize=((5,4), dpi=100)
+                self.pltFigs.append(pltFig)
                 pltFig.set_facecolor(self.backgroundColor)
                 dataColor = "tab:blue"
                 fitColor = "orange"
@@ -4683,7 +4835,9 @@ class mmF(tk.Frame):
                     self.saveNyCanvasButton.configure(text="Saved")
                     self.after(500, lambda: self.saveNyCanvasButton.configure(text="Save All"))
             self.saveNyCanvasButton = ttk.Button(self.resultPlot, text="Save All", command=saveAllPlots)
+            self.saveNyCanvasButtons.append(self.saveNyCanvasButton)
             saveNyCanvasButton_ttp = CreateToolTip(self.saveNyCanvasButton, "Save all plots")
+            self.saveNyCanvasButton_ttps.append(saveNyCanvasButton_ttp)
             self.saveNyCanvasButton.pack(side=tk.BOTTOM, pady=5, expand=False)
             #self.nyCanvas._tkcanvas.config(cursor="hand2")
             enterAxes = pltFig.canvas.mpl_connect('axes_enter_event', graphOver)
@@ -5013,8 +5167,39 @@ class mmF(tk.Frame):
                             self.wdata = self.wdataRaw.copy()
                             self.rdata = self.rdataRaw.copy()
                             self.jdata = self.jdataRaw.copy()
-                        self.rs.setLower(np.log10(min(self.wdata)))
-                        self.rs.setUpper(np.log10(max(self.wdata)))
+                        #self.rs.setLower(np.log10(min(self.wdata)))
+                        #self.rs.setUpper(np.log10(max(self.wdata)))
+                        try:
+                            self.figFreq.clear()
+                            dataColor = "tab:blue"
+                            deletedColor = "#A9CCE3"
+                            if (self.topGUI.getTheme() == "dark"):
+                                dataColor = "cyan"
+                            else:
+                                dataColor = "tab:blue"
+                            with plt.rc_context({'axes.edgecolor':self.foregroundColor, 'xtick.color':self.foregroundColor, 'ytick.color':self.foregroundColor, 'figure.facecolor':self.backgroundColor}):
+                                self.figFreq = Figure(figsize=(5, 5), dpi=100)
+                                self.canvasFreq = FigureCanvasTkAgg(self.figFreq, master=self.freqWindow)
+                                self.canvasFreq.get_tk_widget().grid(row=1,column=1, rowspan=5)
+                                self.realFreq = self.figFreq.add_subplot(211)
+                                self.realFreq.set_facecolor(self.backgroundColor)
+                                self.realFreqDeletedLow, = self.realFreq.plot(self.wdataRaw[:self.lowDelete], self.rdataRaw[:self.lowDelete], "o", markerfacecolor="None", color=deletedColor)
+                                self.realFreqDeletedHigh, = self.realFreq.plot(self.wdataRaw[len(self.wdataRaw)-1-self.upDelete:], self.rdataRaw[len(self.wdataRaw)-1-self.upDelete:], "o", markerfacecolor="None", color=deletedColor)
+                                self.realFreqPlot, = self.realFreq.plot(self.wdata, self.rdata, "o", color=dataColor)
+                                self.realFreq.set_xscale("log")
+                                self.realFreq.get_xaxis().set_visible(False)
+                                self.realFreq.set_title("Real Impedance", color=self.foregroundColor)
+                                self.imagFreq = self.figFreq.add_subplot(212)
+                                self.imagFreq.set_facecolor(self.backgroundColor)
+                                self.imagFreqDeletedLow, = self.imagFreq.plot(self.wdataRaw[:self.lowDelete], -1*self.jdataRaw[:self.lowDelete], "o", markerfacecolor="None", color=deletedColor)
+                                self.imagFreqDeletedHigh, = self.imagFreq.plot(self.wdataRaw[len(self.wdataRaw)-1-self.upDelete:], -1*self.jdataRaw[len(self.wdataRaw)-1-self.upDelete:], "o", markerfacecolor="None", color=deletedColor)
+                                self.imagFreqPlot, = self.imagFreq.plot(self.wdata, -1*self.jdata, "o", color=dataColor)
+                                self.imagFreq.set_xscale("log")
+                                self.imagFreq.set_title("Imaginary Impedance", color=self.foregroundColor)
+                                self.imagFreq.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                                self.canvasFreq.draw()
+                        except:
+                            pass
                     for i in range(NVE_undo*2 + 1):
                         self.paramEntryVariables[i].set(str(self.undoStack[len(self.undoStack)-1][i]))
                         self.fits.append(self.undoStack[len(self.undoStack)-1][i])
@@ -5227,8 +5412,39 @@ class mmF(tk.Frame):
                             self.wdata = self.wdataRaw.copy()
                             self.rdata = self.rdataRaw.copy()
                             self.jdata = self.jdataRaw.copy()
-                        self.rs.setLower(np.log10(min(self.wdata)))
-                        self.rs.setUpper(np.log10(max(self.wdata)))
+                        #self.rs.setLower(np.log10(min(self.wdata)))
+                        #self.rs.setUpper(np.log10(max(self.wdata)))
+                        try:
+                            self.figFreq.clear()
+                            dataColor = "tab:blue"
+                            deletedColor = "#A9CCE3"
+                            if (self.topGUI.getTheme() == "dark"):
+                                dataColor = "cyan"
+                            else:
+                                dataColor = "tab:blue"
+                            with plt.rc_context({'axes.edgecolor':self.foregroundColor, 'xtick.color':self.foregroundColor, 'ytick.color':self.foregroundColor, 'figure.facecolor':self.backgroundColor}):
+                                self.figFreq = Figure(figsize=(5, 5), dpi=100)
+                                self.canvasFreq = FigureCanvasTkAgg(self.figFreq, master=self.freqWindow)
+                                self.canvasFreq.get_tk_widget().grid(row=1,column=1, rowspan=5)
+                                self.realFreq = self.figFreq.add_subplot(211)
+                                self.realFreq.set_facecolor(self.backgroundColor)
+                                self.realFreqDeletedLow, = self.realFreq.plot(self.wdataRaw[:self.lowDelete], self.rdataRaw[:self.lowDelete], "o", markerfacecolor="None", color=deletedColor)
+                                self.realFreqDeletedHigh, = self.realFreq.plot(self.wdataRaw[len(self.wdataRaw)-1-self.upDelete:], self.rdataRaw[len(self.wdataRaw)-1-self.upDelete:], "o", markerfacecolor="None", color=deletedColor)
+                                self.realFreqPlot, = self.realFreq.plot(self.wdata, self.rdata, "o", color=dataColor)
+                                self.realFreq.set_xscale("log")
+                                self.realFreq.get_xaxis().set_visible(False)
+                                self.realFreq.set_title("Real Impedance", color=self.foregroundColor)
+                                self.imagFreq = self.figFreq.add_subplot(212)
+                                self.imagFreq.set_facecolor(self.backgroundColor)
+                                self.imagFreqDeletedLow, = self.imagFreq.plot(self.wdataRaw[:self.lowDelete], -1*self.jdataRaw[:self.lowDelete], "o", markerfacecolor="None", color=deletedColor)
+                                self.imagFreqDeletedHigh, = self.imagFreq.plot(self.wdataRaw[len(self.wdataRaw)-1-self.upDelete:], -1*self.jdataRaw[len(self.wdataRaw)-1-self.upDelete:], "o", markerfacecolor="None", color=deletedColor)
+                                self.imagFreqPlot, = self.imagFreq.plot(self.wdata, -1*self.jdata, "o", color=dataColor)
+                                self.imagFreq.set_xscale("log")
+                                self.imagFreq.set_title("Imaginary Impedance", color=self.foregroundColor)
+                                self.imagFreq.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                                self.canvasFreq.draw()
+                        except:
+                            pass
                     for i in range(NVE_undo*2 + 1):
                         self.paramEntryVariables[i].set(str(self.undoStack[len(self.undoStack)-1][i]))
                         self.fits.append(self.undoStack[len(self.undoStack)-1][i])
@@ -5421,10 +5637,12 @@ class mmF(tk.Frame):
         
         def updateRe():
             updateWindow = tk.Toplevel(background=self.backgroundColor)
+            self.updateWindows.append(updateWindow)
             updateWindow.title("Update R\u2091")
             updateWindow.iconbitmap(resource_path('img/elephant3.ico'))
             with plt.rc_context({'axes.edgecolor':self.foregroundColor, 'xtick.color':self.foregroundColor, 'ytick.color':self.foregroundColor, 'figure.facecolor':self.backgroundColor}):
                 updateFig = Figure()
+                self.updateFigs.append(updateFig)
                 updatePlot = updateFig.add_subplot(111)
                 updateFig.set_facecolor(self.backgroundColor)
                 updatePlot.set_facecolor(self.backgroundColor)
@@ -5837,15 +6055,38 @@ class mmF(tk.Frame):
             self.magicPlot.protocol("WM_DELETE_WINDOW", on_closing)
         
         def changeFreqs():            
-            if (self.freqWindow.state() == "withdrawn"):
-                self.freqWindow.deiconify()
-            else:
-                self.freqWindow.deiconify()
-                self.freqWindow.lift()
+            self.freqWindow.deiconify()
+            self.freqWindow.lift()
             self.lowerSpinboxVariable.set(str(self.lowDelete))
             self.upperSpinboxVariable.set(str(self.upDelete))
             #round_to_n = lambda x, n: 0 if x == 0 else round(x, -int(np.floor(np.log10(abs(x)))) + (n - 1))   #To round to n sig figs; from Roy Hyunjin Han at https://stackoverflow.com/questions/3410976/how-to-round-a-number-to-significant-figures-in-python
-            
+            dataColor = "tab:blue"
+            deletedColor = "#A9CCE3"
+            if (self.topGUI.getTheme() == "dark"):
+                dataColor = "cyan"
+            else:
+                dataColor = "tab:blue"
+            with plt.rc_context({'axes.edgecolor':self.foregroundColor, 'xtick.color':self.foregroundColor, 'ytick.color':self.foregroundColor, 'figure.facecolor':self.backgroundColor}):
+                self.figFreq = Figure(figsize=(5, 5), dpi=100)
+                self.canvasFreq = FigureCanvasTkAgg(self.figFreq, master=self.freqWindow)
+                self.canvasFreq.get_tk_widget().grid(row=1,column=1, rowspan=5)
+                self.realFreq = self.figFreq.add_subplot(211)
+                self.realFreq.set_facecolor(self.backgroundColor)
+                self.realFreqDeletedLow, = self.realFreq.plot(self.wdataRaw[:self.lowDelete], self.rdataRaw[:self.lowDelete], "o", markerfacecolor="None", color=deletedColor)
+                self.realFreqDeletedHigh, = self.realFreq.plot(self.wdataRaw[len(self.wdataRaw)-1-self.upDelete:], self.rdataRaw[len(self.wdataRaw)-1-self.upDelete:], "o", markerfacecolor="None", color=deletedColor)
+                self.realFreqPlot, = self.realFreq.plot(self.wdata, self.rdata, "o", color=dataColor)
+                self.realFreq.set_xscale("log")
+                self.realFreq.get_xaxis().set_visible(False)
+                self.realFreq.set_title("Real Impedance", color=self.foregroundColor)
+                self.imagFreq = self.figFreq.add_subplot(212)
+                self.imagFreq.set_facecolor(self.backgroundColor)
+                self.imagFreqDeletedLow, = self.imagFreq.plot(self.wdataRaw[:self.lowDelete], -1*self.jdataRaw[:self.lowDelete], "o", markerfacecolor="None", color=deletedColor)
+                self.imagFreqDeletedHigh, = self.imagFreq.plot(self.wdataRaw[len(self.wdataRaw)-1-self.upDelete:], -1*self.jdataRaw[len(self.wdataRaw)-1-self.upDelete:], "o", markerfacecolor="None", color=deletedColor)
+                self.imagFreqPlot, = self.imagFreq.plot(self.wdata, -1*self.jdata, "o", color=dataColor)
+                self.imagFreq.set_xscale("log")
+                self.imagFreq.set_title("Imaginary Impedance", color=self.foregroundColor)
+                self.imagFreq.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                self.canvasFreq.draw()
             def updateFreqs():
                 try:
                     if (self.lowerSpinboxVariable.get() == ""):
@@ -5873,16 +6114,29 @@ class mmF(tk.Frame):
                     self.wdata = self.wdataRaw.copy()[self.lowDelete:-1*self.upDelete]
                     self.rdata = self.rdataRaw.copy()[self.lowDelete:-1*self.upDelete]
                     self.jdata = self.jdataRaw.copy()[self.lowDelete:-1*self.upDelete]
-                if (self.upperSpinboxVariable.get() == ""):
-                    self.upperSpinboxVariable.set("0")
-                if (self.lowerSpinboxVariable.get() == ""):
-                    self.lowerSpinboxVariable.set("0")
+                #if (self.upperSpinboxVariable.get() == ""):
+                #    self.upperSpinboxVariable.set("0")
+                #if (self.lowerSpinboxVariable.get() == ""):
+                #    self.lowerSpinboxVariable.set("0")
                 #self.rs.setLower(np.log10(min(self.wdata)))
                 #self.justUpdated = True
                 #self.rs.setUpper(np.log10(max(self.wdata)))
                 self.lengthOfData = len(self.wdata)
                 self.lowestUndeleted.configure(text="Lowest remaining frequency: {:.4e}".format(min(self.wdata))) #%f" % round_to_n(min(self.wdata), 6)).strip("0"))
                 self.highestUndeleted.configure(text="Highest remaining frequency: {:.4e}".format(max(self.wdata))) #%f" % round_to_n(max(self.wdata), 6)).strip("0"))
+                self.realFreqPlot.set_ydata(self.rdata)
+                self.realFreqPlot.set_xdata(self.wdata)
+                self.realFreqDeletedHigh.set_ydata(self.rdataRaw[len(self.wdataRaw)-1-self.upDelete:])
+                self.realFreqDeletedHigh.set_xdata(self.wdataRaw[len(self.wdataRaw)-1-self.upDelete:])
+                self.realFreqDeletedLow.set_ydata(self.rdataRaw[:self.lowDelete])
+                self.realFreqDeletedLow.set_xdata(self.wdataRaw[:self.lowDelete])
+                self.imagFreqDeletedHigh.set_ydata(-1*self.jdataRaw[len(self.wdataRaw)-1-self.upDelete:])
+                self.imagFreqDeletedHigh.set_xdata(self.wdataRaw[len(self.wdataRaw)-1-self.upDelete:])
+                self.imagFreqDeletedLow.set_ydata(-1*self.jdataRaw[:self.lowDelete])
+                self.imagFreqDeletedLow.set_xdata(self.wdataRaw[:self.lowDelete])
+                self.imagFreqPlot.set_ydata(-1*self.jdata)
+                self.imagFreqPlot.set_xdata(self.wdata)
+                self.canvasFreq.draw()
                 #self.updateFreqButton.configure(text="Updated")
                 #self.after(500, lambda : self.updateFreqButton.configure(text="Update Frequencies"))
             def changeFreqSpinboxLower(e = None):
@@ -5892,14 +6146,14 @@ class mmF(tk.Frame):
                     #print(len(self.wdataRaw)-1-higherDelete-lowerDelete)
                     #self.lowerSpinbox.configure(to=len(self.wdataRaw)-1-higherDelete-lowerDelete)
                     self.upperSpinbox.configure(to=len(self.wdataRaw)-1-lowerDelete)
-                    if (higherDelete == 0 and lowerDelete == 0):
-                        self.rs.setLower(np.log10(min(self.wdataRaw.copy())))
-                    elif (higherDelete == 0):
-                        self.rs.setLower(np.log10(min(self.wdataRaw.copy()[lowerDelete:])))
-                    elif (lowerDelete == 0):
-                        self.rs.setLower(np.log10(min(self.wdataRaw.copy()[:-1*higherDelete])))
-                    else:
-                        self.rs.setLower(np.log10(min(self.wdataRaw.copy()[lowerDelete:-1*higherDelete])))
+                    #if (higherDelete == 0 and lowerDelete == 0):
+                    #    self.rs.setLower(np.log10(min(self.wdataRaw.copy())))
+                    #elif (higherDelete == 0):
+                    #    self.rs.setLower(np.log10(min(self.wdataRaw.copy()[lowerDelete:])))
+                    #elif (lowerDelete == 0):
+                    #    self.rs.setLower(np.log10(min(self.wdataRaw.copy()[:-1*higherDelete])))
+                    #else:
+                    #    self.rs.setLower(np.log10(min(self.wdataRaw.copy()[lowerDelete:-1*higherDelete])))
                     updateFreqs()
                 except:
                     pass
@@ -5910,39 +6164,41 @@ class mmF(tk.Frame):
                     lowerDelete = 0 if self.lowerSpinboxVariable.get() == "" else int(self.lowerSpinboxVariable.get())
                     self.lowerSpinbox.configure(to=len(self.wdataRaw)-1-higherDelete)
                     #self.upperSpinbox.configure(to=len(self.wdataRaw)-1-higherDelete-lowerDelete)
-                    if (higherDelete == 0 and lowerDelete == 0):
-                        self.rs.setUpper(np.log10(max(self.wdataRaw.copy())))
-                    elif (higherDelete == 0):
-                        self.rs.setUpper(np.log10(max(self.wdataRaw.copy()[lowerDelete:])))
-                    elif (lowerDelete == 0):
-                        self.rs.setUpper(np.log10(max(self.wdataRaw.copy()[:-1*higherDelete])))
-                    else:
-                        self.rs.setUpper(np.log10(max(self.wdataRaw.copy()[lowerDelete:-1*higherDelete])))
+                    #if (higherDelete == 0 and lowerDelete == 0):
+                    #    self.rs.setUpper(np.log10(max(self.wdataRaw.copy())))
+                    #elif (higherDelete == 0):
+                    #    self.rs.setUpper(np.log10(max(self.wdataRaw.copy()[lowerDelete:])))
+                    #elif (lowerDelete == 0):
+                    #    self.rs.setUpper(np.log10(max(self.wdataRaw.copy()[:-1*higherDelete])))
+                    #else:
+                    #    self.rs.setUpper(np.log10(max(self.wdataRaw.copy()[lowerDelete:-1*higherDelete])))
                     updateFreqs()
                 except:
                     pass
             
-            self.rs.setPaintTicks(True)
-            self.rs.setSnapToTicks(False) 
-            self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
-            self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
+            #self.rs.setPaintTicks(True)
+            #self.rs.setSnapToTicks(False) 
+            #self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
+            #self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
 #            self.rs.setMajorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
-            self.rs.setNumberOfMajorTicks(10)
-            self.rs.showMinorTicks(False)
+            #self.rs.setNumberOfMajorTicks(10)
+            #self.rs.showMinorTicks(False)
 #            self.rs.setMinorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
-            self.rs.setLower(np.log10(min(self.wdata)))
-            self.rs.setUpper(np.log10(max(self.wdata)))
+            #self.rs.setLower(np.log10(min(self.wdata)))
+           # self.rs.setUpper(np.log10(max(self.wdata)))
             #self.rs.setFocus()
             self.lowerLabel = tk.Label(self.freqWindow, text="Number of low frequencies\n to delete", fg=self.foregroundColor, bg=self.backgroundColor)
-            self.rangeLabel = tk.Label(self.freqWindow, text="Log of Frequency", fg=self.foregroundColor, bg=self.backgroundColor)
+            #self.rangeLabel = tk.Label(self.freqWindow, text="Log of Frequency", fg=self.foregroundColor, bg=self.backgroundColor)
             self.upperLabel = tk.Label(self.freqWindow, text="Number of high frequencies\n to delete", fg=self.foregroundColor, bg=self.backgroundColor)
             self.lowerLabel.grid(column=0, row=1, pady=(80, 5), padx=3, sticky="N")
-            self.rangeLabel.grid(column=1, row=1, pady=(85, 5), sticky="N")
+            #self.rangeLabel.grid(column=1, row=1, pady=(85, 5), sticky="N")
             self.upperLabel.grid(column=2, row=1, pady=(80, 5), padx=3, sticky="N")
-            self.lowerSpinbox = tk.Spinbox(self.freqWindow, from_=0, to=(len(self.wdataRaw)-1), textvariable=self.lowerSpinboxVariable, state="readonly", width=3, command=changeFreqSpinboxLower)
+            self.lowerSpinbox = tk.Spinbox(self.freqWindow, from_=0, to=(len(self.wdataRaw)-1), textvariable=self.lowerSpinboxVariable, state="normal", width=6, validate="all", validatecommand=valfreqLow2, command=changeFreqSpinboxLower)
             self.lowerSpinbox.grid(column=0, row=2, padx=(3,0), sticky="N")
-            self.upperSpinbox = tk.Spinbox(self.freqWindow, from_=0, to=(len(self.wdataRaw)-1), textvariable=self.upperSpinboxVariable, state="readonly", width=3, command=changeFreqSpinboxUpper)
+            self.upperSpinbox = tk.Spinbox(self.freqWindow, from_=0, to=(len(self.wdataRaw)-1), textvariable=self.upperSpinboxVariable, state="normal", width=6, validate="all", validatecommand=valfreqHigh2, command=changeFreqSpinboxUpper)
             self.upperSpinbox.grid(column=2, row=2, padx=(0,3), sticky="N")
+            self.lowerSpinbox.bind("<KeyRelease>", changeFreqSpinboxLower)
+            self.upperSpinbox.bind("<KeyRelease>", changeFreqSpinboxUpper)
             self.lowestUndeleted.configure(text="Lowest remaining frequency: {:.4e}".format(min(self.wdata))) #%f" % round_to_n(min(self.wdata), 6)).strip("0"))
             self.highestUndeleted.configure(text="Highest remaining frequency: {:.4e}".format(max(self.wdata))) #%f" % round_to_n(max(self.wdata), 6)).strip("0"))
             self.lowestUndeleted.grid(column=0, row=3, sticky="N")
@@ -5990,7 +6246,7 @@ class mmF(tk.Frame):
         
         def simpleParams():
             simplePopup = tk.Toplevel()
-            
+            self.simplePopups.append(simplePopup)
             simplePopup.title("Evaluate Simple Parameters")
             simplePopup.iconbitmap(resource_path('img/elephant3.ico'))
             simplePopup.configure(background=self.backgroundColor)
@@ -6602,6 +6858,11 @@ class mmF(tk.Frame):
         saveResiduals_ttp = CreateToolTip(self.saveResiduals, 'Saves current residuals as a .mmresiduals file for use in the Error File Preparation tab')
         saveAll_ttp = CreateToolTip(self.saveAll, 'Saves all results as a .txt file, including data, fits, confidence intervals, parameters, and standard deviatons')
     
+         #---Close all popups---
+        self.closeAllPopupsButton = ttk.Button(self, text="Close all popups", command=self.topGUI.closeAllPopups)
+        self.closeAllPopupsButton.grid(column=0, row=8, sticky="W", pady=10)
+        closeAllPopups_ttp = CreateToolTip(self.closeAllPopupsButton, 'Close all open popup windows')
+    
     def plusNVE_self(self, event):
         self.numVoigtSpinbox.invoke("buttonup")
         self.numVoigtPlus.configure(bg="DodgerBlue1", fg="white")
@@ -6643,8 +6904,8 @@ class mmF(tk.Frame):
         self.advancedOptionsPopup.configure(background="#FFFFFF")
         self.paramListbox.configure(background="#FFFFFF", foreground="#000000")
         self.advancedChoiceLabel.configure(background="#FFFFFF", foreground="#000000")
-        self.rs.configure(background="#FFFFFF")
-        self.rs.configure(tickColor="#000000")
+        #self.rs.configure(background="#FFFFFF")
+        #self.rs.configure(tickColor="#000000")
         self.autoFitWindow.configure(bg="#FFFFFF")
         try:
             self.autoErrorFrame.configure(background="#FFFFFF")
@@ -6662,17 +6923,17 @@ class mmF(tk.Frame):
             self.highestUndeleted.configure(background="#FFFFFF", foreground="#000000")
         except:
             pass
-        try:
-            self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
-            self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
-            self.rs.setLower(np.log10(min(self.wdata)))
-            self.rs.setUpper(np.log10(max(self.wdata)))
-        except:
-            pass
+        #try:
+        #    self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
+        #    self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
+        #    self.rs.setLower(np.log10(min(self.wdata)))
+        #    self.rs.setUpper(np.log10(max(self.wdata)))
+        #except:
+        #    pass
         try:
             self.upperLabel.configure(background="#FFFFFF", foreground="#000000")
             self.lowerLabel.configure(background="#FFFFFF", foreground="#000000")
-            self.rangeLabel.configure(background="#FFFFFF", foreground="#000000")
+            #self.rangeLabel.configure(background="#FFFFFF", foreground="#000000")
         except:
             pass
         try:
@@ -6722,6 +6983,10 @@ class mmF(tk.Frame):
         s = ttk.Style()
         s.configure('TCheckbutton', background='#FFFFFF', foreground="#000000")
         s.configure('TRadiobutton', background='#FFFFFF', foreground='#000000')
+        try:
+            s.configure('Treeview', background='#FFFFFF', foreground='#000000', fieldbackground='#FFFFFF')
+        except:
+            pass
         
         try:
             if (tk.Toplevel.winfo_exists(self.resultsWindow)):
@@ -6760,8 +7025,8 @@ class mmF(tk.Frame):
         self.advancedOptionsPopup.configure(background="#424242")
         self.paramListbox.configure(background="#424242", foreground="#FFFFFF")
         self.advancedChoiceLabel.configure(background="#424242", foreground="#FFFFFF")
-        self.rs.configure(background="#424242")
-        self.rs.configure(tickColor="#FFFFFF")
+        #self.rs.configure(background="#424242")
+        #self.rs.configure(tickColor="#FFFFFF")
         self.autoFitWindow.configure(background="#424242")
         try:
             self.autoErrorFrame.configure(background="#424242")
@@ -6779,17 +7044,17 @@ class mmF(tk.Frame):
             self.highestUndeleted.configure(background="#424242", foreground="#FFFFFF")
         except:
             pass
-        try:
-            self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
-            self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
-            self.rs.setLower(np.log10(min(self.wdata)))
-            self.rs.setUpper(np.log10(max(self.wdata)))
-        except:
-            pass
+#        try:
+#            self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
+#            self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
+#            self.rs.setLower(np.log10(min(self.wdata)))
+#            self.rs.setUpper(np.log10(max(self.wdata)))
+#        except:
+#            pass
         try:
             self.upperLabel.configure(background="#424242", foreground="#FFFFFF")
             self.lowerLabel.configure(background="#424242", foreground="#FFFFFF")
-            self.rangeLabel.configure(background="#424242", foreground="#FFFFFF")
+            #self.rangeLabel.configure(background="#424242", foreground="#FFFFFF")
         except:
             pass
         try:
@@ -6839,6 +7104,7 @@ class mmF(tk.Frame):
         s = ttk.Style()
         s.configure('TCheckbutton', background='#424242', foreground="#FFFFFF")
         s.configure('TRadiobutton', background='#424242', foreground='#FFFFFF')
+        #s.configure('Treeview', background='#424242', foreground='#FFFFFF', fieldbackground='#424242')
         
         try:
             if (tk.Toplevel.winfo_exists(self.resultsWindow)):
@@ -6899,14 +7165,14 @@ class mmF(tk.Frame):
                     self.wdata = self.wdataRaw.copy()
                     self.rdata = self.rdataRaw.copy()
                     self.jdata = self.jdataRaw.copy()
-                self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
-                self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
+                #self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
+                #self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
                 #self.rs.setMajorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
-                self.rs.setNumberOfMajorTicks(10)
-                self.rs.showMinorTicks(False)
+                #self.rs.setNumberOfMajorTicks(10)
+                #self.rs.showMinorTicks(False)
                 #self.rs.setMinorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
-                self.rs.setLower(np.log10(min(self.wdata)))
-                self.rs.setUpper(np.log10(max(self.wdata)))
+                #self.rs.setLower(np.log10(min(self.wdata)))
+                #self.rs.setUpper(np.log10(max(self.wdata)))
                 self.lowestUndeleted.configure(text="Lowest remaining frequency: {:.4e}".format(min(self.wdata))) #%f" % round_to_n(min(self.wdata), 6)).strip("0"))
                 self.highestUndeleted.configure(text="Highest remaining frequency: {:.4e}".format(max(self.wdata))) #%f" % round_to_n(max(self.wdata), 6)).strip("0"))
                 #self.wdata = self.wdataRaw.copy()
@@ -6920,15 +7186,45 @@ class mmF(tk.Frame):
                 self.wdata = self.wdataRaw.copy()
                 self.rdata = self.rdataRaw.copy()
                 self.jdata = self.jdataRaw.copy()
-                self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
-                self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
-                self.rs.setNumberOfMajorTicks(10)
-                self.rs.showMinorTicks(False)
-                self.rs.setLower(np.log10(min(self.wdata)))
-                self.rs.setUpper(np.log10(max(self.wdata)))
+                #self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
+                #self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
+                #self.rs.setNumberOfMajorTicks(10)
+                #self.rs.showMinorTicks(False)
+                #self.rs.setLower(np.log10(min(self.wdata)))
+                #self.rs.setUpper(np.log10(max(self.wdata)))
                 self.lowestUndeleted.configure(text="Lowest remaining frequency: {:.4e}".format(min(self.wdata))) #%f" % round_to_n(min(self.wdata), 6)).strip("0"))
                 self.highestUndeleted.configure(text="Highest remaining frequency: {:.4e}".format(max(self.wdata))) #%f" % round_to_n(max(self.wdata), 6)).strip("0"))
-            
+            try:
+                self.figFreq.clear()
+                dataColor = "tab:blue"
+                deletedColor = "#A9CCE3"
+                if (self.topGUI.getTheme() == "dark"):
+                    dataColor = "cyan"
+                else:
+                    dataColor = "tab:blue"
+                with plt.rc_context({'axes.edgecolor':self.foregroundColor, 'xtick.color':self.foregroundColor, 'ytick.color':self.foregroundColor, 'figure.facecolor':self.backgroundColor}):
+                    self.figFreq = Figure(figsize=(5, 5), dpi=100)
+                    self.canvasFreq = FigureCanvasTkAgg(self.figFreq, master=self.freqWindow)
+                    self.canvasFreq.get_tk_widget().grid(row=1,column=1, rowspan=5)
+                    self.realFreq = self.figFreq.add_subplot(211)
+                    self.realFreq.set_facecolor(self.backgroundColor)
+                    self.realFreqDeletedLow, = self.realFreq.plot(self.wdataRaw[:self.lowDelete], self.rdataRaw[:self.lowDelete], "o", markerfacecolor="None", color=deletedColor)
+                    self.realFreqDeletedHigh, = self.realFreq.plot(self.wdataRaw[len(self.wdataRaw)-1-self.upDelete:], self.rdataRaw[len(self.wdataRaw)-1-self.upDelete:], "o", markerfacecolor="None", color=deletedColor)
+                    self.realFreqPlot, = self.realFreq.plot(self.wdata, self.rdata, "o", color=dataColor)
+                    self.realFreq.set_xscale("log")
+                    self.realFreq.get_xaxis().set_visible(False)
+                    self.realFreq.set_title("Real Impedance", color=self.foregroundColor)
+                    self.imagFreq = self.figFreq.add_subplot(212)
+                    self.imagFreq.set_facecolor(self.backgroundColor)
+                    self.imagFreqDeletedLow, = self.imagFreq.plot(self.wdataRaw[:self.lowDelete], -1*self.jdataRaw[:self.lowDelete], "o", markerfacecolor="None", color=deletedColor)
+                    self.imagFreqDeletedHigh, = self.imagFreq.plot(self.wdataRaw[len(self.wdataRaw)-1-self.upDelete:], -1*self.jdataRaw[len(self.wdataRaw)-1-self.upDelete:], "o", markerfacecolor="None", color=deletedColor)
+                    self.imagFreqPlot, = self.imagFreq.plot(self.wdata, -1*self.jdata, "o", color=dataColor)
+                    self.imagFreq.set_xscale("log")
+                    self.imagFreq.set_title("Imaginary Impedance", color=self.foregroundColor)
+                    self.imagFreq.set_xlabel("Frequency / Hz", color=self.foregroundColor)
+                    self.canvasFreq.draw()
+            except:
+                pass
             self.lengthOfData = len(self.wdata)
             self.tauDefault = 1/((max(w_in)-min(w_in))/(np.log10(abs(max(w_in)/min(w_in)))))
             self.rDefault = (max(r_in)+min(r_in))/2
@@ -6964,6 +7260,106 @@ class mmF(tk.Frame):
             self.browseEntry.configure(state="readonly")
         except:
             messagebox.showerror("File error", "Error 9:\nThere was an error loading or reading the file")
+    
+    def closeWindows(self):
+        try:
+            self.paramPopup.withdraw()
+            self.pframe.destroy()
+            self.pcanvas.destroy()
+            self.vsb.destroy()
+            self.addButton.destroy()
+            self.removeButton.destroy()
+            self.buttonFrame.destroy()
+            self.howMany.destroy()
+            self.advancedOptions.destroy()
+            self.paramComboboxes.clear()
+            self.tauComboboxes.clear()
+            self.paramLabels.clear()
+            self.paramEntries.clear()
+            self.paramFrames.clear()
+            self.paramDeleteButtons.clear()
+            if (self.paramEntryVariables[0].get() == ''):
+                self.paramEntryVariables[0].set(str(round(self.rDefault, -int(np.floor(np.log10(self.rDefault))) + (4 - 1))))
+            for i in range(1, len(self.paramEntryVariables), 2):
+                if (self.paramEntryVariables[i].get() == ''):
+                    self.paramEntryVariables[i].set(str(round(self.rDefault, -int(np.floor(np.log10(self.rDefault))) + (4 - 1))))
+                if (self.paramEntryVariables[i+1].get() == ''):
+                    self.paramEntryVariables[i+1].set(str(round(self.tauDefault, -int(np.floor(np.log10(self.tauDefault))) + (4 - 1))))
+        except:
+            pass
+        try:
+            self.advancedOptionsPopup.withdraw()
+            self.paramListbox.delete(0, tk.END)
+            self.advCustomLabel.destroy()
+            self.advCustomEntry.destroy()
+            self.advCheckbox.destroy()
+            self.advSelectionLabel.destroy()
+            self.advSelection.destroy()
+            self.advLowerLabel.destroy()
+            self.advLowerEntry.destroy()
+            self.advUpperLabel.destroy()
+            self.advUpperEntry.destroy()
+            self.advNumberLabel.destroy()
+            self.advNumberEntry.destroy()
+        except:
+            pass
+        self.autoFitWindow.withdraw()
+        self.upperSpinboxVariable.set(str(self.upDelete))
+        self.lowerSpinboxVariable.set(str(self.lowDelete))
+        self.freqWindow.withdraw()
+        self.magicInput.clf()
+        self.magicPlot.withdraw()
+        for resultWindow in self.resultsWindows:
+            try:
+                resultWindow.destroy()
+            except:
+                pass
+        for resultPlotBig in self.resultPlotBigs:
+            try:
+                resultPlotBig.destroy()
+            except:
+                pass
+        for resultPlotBigFig in self.resultPlotBigFigs:
+            try:
+                resultPlotBigFig.clear()
+            except:
+                pass
+        for updateWindow in self.updateWindows:
+            try:
+                updateWindow.destroy()
+            except:
+                pass
+        for updateFig in self.updateFigs:
+            try:
+                updateFig.clear()
+            except:
+                pass
+        for simplePopup in self.simplePopups:
+            try:
+                simplePopup.destroy()
+            except:
+                pass
+        for pltFig in self.pltFigs:
+            try:
+                pltFig.clear()
+            except:
+                pass
+        for resultPlot in self.resultPlots:
+            try:
+                resultPlot.destroy()
+            except:
+                pass
+        for nyCanvasButton in self.saveNyCanvasButtons:
+            try:
+                nyCanvasButton.destroy()
+            except:
+                pass
+        for nyCanvasButton_ttp in self.saveNyCanvasButton_ttps:
+            try:
+                del nyCanvasButton_ttp
+            except:
+                pass
+        self.alreadyPlotted = False
     
     def checkErrorStructure(self):
         if (self.errorAlphaCheckboxVariable.get() == 1):

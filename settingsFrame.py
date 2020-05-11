@@ -2,7 +2,21 @@
 """
 Created on Fri Sep  7 11:37:56 2018
 
-@author: willdwat
+©Copyright 2020 University of Florida Research Foundation, Inc. All Rights Reserved.
+    William Watson and Mark Orazem
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 import tkinter as tk
 from tkinter import messagebox
@@ -168,6 +182,7 @@ class sF(tk.Frame):
                 s.configure('TCheckbutton', background='#FFFFFF', foreground="#000000")
                 s.configure('TNotebook', background='#FFFFFF')
                 self.topGUI.setThemeLight()
+                self.defaultFormulaDirectoryLabel.configure(background="#FFFFFF", foreground="#000000")
             elif (self.themeChosen == "dark"):
                 self.configure(bg="#424242")
                 #self.themeFrame.configure(bg="#424242")
@@ -211,6 +226,7 @@ class sF(tk.Frame):
                 s.configure('TCheckbutton', background='#424242', foreground="#FFFFFF")
                 s.configure('TNotebook', background='#424242')
                 self.topGUI.setThemeDark()
+                self.defaultFormulaDirectoryLabel.configure(background="#424242", foreground="#FFFFFF")
             
             self.topGUI.setBarColor(self.barColor)
             self.barColorLabel.configure(bg=self.barColor)
@@ -264,8 +280,12 @@ class sF(tk.Frame):
                 self.defaultFreqLoadVariable.set(0)
                 self.customFreqLoadVariable.set(0)
                 self.defaultScrollVariable.set(1)
+                self.defaultFormulaDirectoryEntry.configure(state="normal")
+                self.defaultFormulaDirectoryEntry.delete(0,tk.END)
+                self.defaultFormulaDirectoryEntry.insert(0, "C:\\")
+                self.defaultFormulaDirectoryEntry.configure(state="readonly")
                 config = configparser.ConfigParser()
-                config['settings'] = {'theme': self.themeChosen, 'bar': self.barColor, 'highlight': self.highlightColor, 'accent': self.activeColor, 'dir': "C:\\", 'tab': self.defaultTabVariable.get(), 'scroll': self.defaultScrollVariable.get()}
+                config['settings'] = {'theme': self.themeChosen, 'bar': self.barColor, 'highlight': self.highlightColor, 'accent': self.activeColor, 'dir': "C:\\", 'tab': self.defaultTabVariable.get(), 'scroll': self.defaultScrollVariable.get(), 'formulaDir': "C:\\"}
                 config['input'] = {'detect': self.defaultDetectCommentsCheckboxVariable.get(),'comments': self.defaultCommentsVariable.get(), 'delimiter': self.defaultDelimiterVariable.get(), 'detectDelimiter': self.defaultDetectDelimiterCheckboxVariable.get()}
                 config['model'] = {'mc': self.defaultMCVariable.get(), 'fit': self.defaultFitVariable.get(), 'weight': self.defaultWeightingVariable.get(), 'alpha': self.defaultAlphaVariable.get(), 'ellipse': self.ellipseColor, 'freqLoad': self.defaultFreqLoadVariable.get(), 'freqUndo': self.defaultFreqUndoVariable.get()}
                 config['error'] = {'detrend': self.defaultDetrendVariable.get(), 'alphaError': self.defaultAlphaCheckboxVariable.get(), 'betaError': self.defaultBetaCheckboxVariable.get(), 'reError': self.defaultReCheckboxVariable.get(), 'gammaError': self.defaultGammaCheckboxVariable.get(), 'deltaError': self.defaultDeltaCheckboxVariable.get(), 'errorWeighting': self.defaultErrorWeightingVariable.get(), 'errorMA': self.defaultMovingAverageVariable.get()}
@@ -305,7 +325,7 @@ class sF(tk.Frame):
                 return
             try:
                 config = configparser.ConfigParser()
-                config['settings'] = {'theme': self.themeChosen, 'bar': self.barColor, 'highlight': self.highlightColor, 'accent': self.activeColor, 'dir': self.defaultDirectoryEntry.get(), 'tab': self.defaultTabVariable.get(), 'scroll': self.defaultScrollVariable.get()}
+                config['settings'] = {'theme': self.themeChosen, 'bar': self.barColor, 'highlight': self.highlightColor, 'accent': self.activeColor, 'dir': self.defaultDirectoryEntry.get(), 'tab': self.defaultTabVariable.get(), 'scroll': self.defaultScrollVariable.get(), 'formulaDir': self.defaultFormulaDirectoryEntry.get()}
                 config['input'] = {'detect': self.defaultDetectCommentsCheckboxVariable.get(), 'comments': numCommentDefault, 'delimiter': self.defaultDelimiterVariable.get(), 'detectDelimiter': self.defaultDetectDelimiterCheckboxVariable.get(), 'askInputExit': self.inputExitAlertVariable.get()}
                 config['model'] = {'mc': numMCDefault, 'fit': self.defaultFitVariable.get(), 'weight': self.defaultWeightingVariable.get(), 'alpha': numAlphaDefault, 'ellipse': self.ellipseColor, 'freqLoad': self.defaultFreqLoadVariable.get(), 'freqUndo': self.defaultFreqUndoVariable.get()}
                 config['error'] = {'detrend': self.defaultDetrendVariable.get(), 'alphaError': self.defaultAlphaCheckboxVariable.get(), 'betaError': self.defaultBetaCheckboxVariable.get(), 'reError': self.defaultReCheckboxVariable.get(), 'gammaError': self.defaultGammaCheckboxVariable.get(), 'deltaError': self.defaultDeltaCheckboxVariable.get(), 'errorWeighting': self.defaultErrorWeightingVariable.get(), 'errorMA': self.defaultMovingAverageVariable.get()}
@@ -356,6 +376,17 @@ class sF(tk.Frame):
                 self.defaultDirectoryEntry.delete(0,tk.END)
                 self.defaultDirectoryEntry.insert(0, folder_str)
                 self.defaultDirectoryEntry.configure(state="readonly")
+        
+        def findNewFormulaDirectory():
+            folder = askdirectory(initialdir=self.topGUI.getCurrentDirectory())
+            folder_str = str(folder)
+            if len(folder_str) == 0:
+                pass
+            else:
+                self.defaultFormulaDirectoryEntry.configure(state="normal")
+                self.defaultFormulaDirectoryEntry.delete(0,tk.END)
+                self.defaultFormulaDirectoryEntry.insert(0, folder_str)
+                self.defaultFormulaDirectoryEntry.configure(state="readonly")
         
         self.notebook = ttk.Notebook(self)
         self.tabOverall = tk.Frame(self.notebook, background=self.backgroundColor)
@@ -569,14 +600,28 @@ class sF(tk.Frame):
         ma_ttp = CreateToolTip(self.defaultMovingAverageCombobox, 'Default moving average choice for error structure regression (only if Variance weighting is chosen)')
         detrend_ttp = CreateToolTip(self.defaultDetrendCombobox, 'Whether or not detrending should be done by default')
         
+        #self.defaultFormulaDirectoryVariable = tk.StringVar(self, self.topGUI.getDefaultFormulaDirectory())
+        self.defaultFormulaDirectoryLabel = tk.Label(self.tabCustom, text="Directory: ", bg=self.backgroundColor, fg=self.foregroundColor)
+        self.defaultFormulaDirectoryEntry = ttk.Entry(self.tabCustom, width=22, state="readonly")
+        self.defaultFormulaDirectoryButton = ttk.Button(self.tabCustom, text="Browse...", command=findNewFormulaDirectory)
         self.customFormulaExitAlertVariable = tk.IntVar(self, self.topGUI.getCustomFormulaExitAlert())
         self.customFormulaExitAlertCheckbox = ttk.Checkbutton(self.tabCustom, variable=self.customFormulaExitAlertVariable, text="Alert on close if unsaved")
         self.customFreqLoadVariable = tk.IntVar(self, self.topGUI.getFreqLoadCustom())
         self.customFreqLoad = ttk.Checkbutton(self.tabCustom, variable=self.customFreqLoadVariable, text="Keep frequency range on loading new file")
-        self.customFormulaExitAlertCheckbox.grid(column=0, row=0, sticky="W")
-        self.customFreqLoad.grid(column=0, row=1, pady=2, sticky="W")
+        self.defaultFormulaDirectoryLabel.grid(column=0, row=0, sticky="W")
+        self.defaultFormulaDirectoryEntry.grid(column=1, row=0, sticky="W")
+        self.defaultFormulaDirectoryButton.grid(column=2, row=0, sticky="W", padx=2)
+        self.customFormulaExitAlertCheckbox.grid(column=0, row=1, pady=2, sticky="W", columnspan=3)
+        self.customFreqLoad.grid(column=0, row=2, sticky="W", columnspan=3)
         customAlert_ttp = CreateToolTip(self.customFormulaExitAlertCheckbox, 'Whether or not the program should alert prior to closing if an unsaved formula is present')
         customFreqLoad_ttp = CreateToolTip(self.customFreqLoad, 'Whether or not the adjusted frequency range should be kept when a new file is loaded')
+        formulaDirectoryEntry_ttp = CreateToolTip(self.defaultFormulaDirectoryEntry, 'Default directory for .mmformula files')
+        formulaDirectoryButton_ttp = CreateToolTip(self.defaultFormulaDirectoryButton, 'Default directory for .mmformula files')
+        
+        self.defaultFormulaDirectoryEntry.configure(state="normal")
+        self.defaultFormulaDirectoryEntry.delete(0,tk.END)
+        self.defaultFormulaDirectoryEntry.insert(0, self.topGUI.getDefaultFormulaDirectory())
+        self.defaultFormulaDirectoryEntry.configure(state="readonly")
         
         self.saveButton = ttk.Button(self, text="Save and Apply", width=20, command=saveSettings)
         self.saveButton.grid(column=0, row=5, sticky="W", pady=2)
@@ -585,6 +630,11 @@ class sF(tk.Frame):
         self.resetButton = ttk.Button(self, text="Reset Defaults", width=20, command=resetDefaults)
         self.resetButton.grid(column=1, row=5, sticky="W", pady=5, padx=2)
         reset_ttp = CreateToolTip(self.resetButton, 'Reset all settings to their default values')
+        
+        #---Close all popups---
+        self.closeAllPopupsButton = ttk.Button(self, text="Close all popups", command=self.topGUI.closeAllPopups)
+        self.closeAllPopupsButton.grid(column=0, row=6, sticky="W", pady=10)
+        closeAllPopups_ttp = CreateToolTip(self.closeAllPopupsButton, 'Close all open popup windows')
     
     def applySettings(self):
         if (self.themeChosen == "light"):
@@ -630,6 +680,7 @@ class sF(tk.Frame):
             s.configure('TCheckbutton', background='#FFFFFF', foreground="#000000")
             s.configure('TNotebook', background='#FFFFFF')
             self.topGUI.setThemeLight()
+            self.defaultFormulaDirectoryLabel.configure(background="#FFFFFF", foreground="#000000")
         elif (self.themeChosen == "dark"):
             self.configure(bg="#424242")
             #self.themeFrame.configure(bg="#424242")
@@ -673,6 +724,7 @@ class sF(tk.Frame):
             s.configure('TCheckbutton', background='#424242', foreground="#FFFFFF")
             s.configure('TNotebook', background='#424242')
             self.topGUI.setThemeDark()
+            self.defaultFormulaDirectoryLabel.configure(background="#424242", foreground="#FFFFFF")
         
         self.topGUI.setBarColor(self.barColor)
         self.barColorLabel.configure(bg=self.barColor)
@@ -684,6 +736,7 @@ class sF(tk.Frame):
         self.defaultEllipseColorLabel.configure(bg=self.ellipseColor)
         self.topGUI.setCurrentDirectory(self.defaultDirectoryEntry.get())
         self.topGUI.setDefaultDirectory(self.defaultDirectoryEntry.get())
+        self.topGUI.setDefaultFormulaDirectory(self.defaultFormulaDirectoryEntry.get())
         self.topGUI.setInputExitAlert(self.inputExitAlertVariable.get())
         self.topGUI.setCustomFormulaExitAlert(self.customFormulaExitAlertVariable.get())
         self.topGUI.setFreqLoad(self.defaultFreqLoadVariable.get())
@@ -715,7 +768,7 @@ class sF(tk.Frame):
             return
         try:
             config = configparser.ConfigParser()
-            config['settings'] = {'theme': self.themeChosen, 'bar': self.barColor, 'highlight': self.highlightColor, 'accent': self.activeColor, 'dir': self.defaultDirectoryEntry.get(), 'tab': self.defaultTabVariable.get(), 'scroll': self.defaultScrollVariable.get()}
+            config['settings'] = {'theme': self.themeChosen, 'bar': self.barColor, 'highlight': self.highlightColor, 'accent': self.activeColor, 'dir': self.defaultDirectoryEntry.get(), 'tab': self.defaultTabVariable.get(), 'scroll': self.defaultScrollVariable.get(), 'formulaDir': self.defaultFormulaDirectoryEntry.get()}
             config['input'] = {'detect': self.defaultDetectCommentsCheckboxVariable.get(), 'comments': numCommentDefault, 'delimiter': self.defaultDelimiterVariable.get(), 'detectDelimiter': self.defaultDetectDelimiterCheckboxVariable.get(), 'askInputExit': self.inputExitAlertVariable.get()}
             config['model'] = {'mc': numMCDefault, 'fit': self.defaultFitVariable.get(), 'weight': self.defaultWeightingVariable.get(), 'alpha': numAlphaDefault, 'ellipse': self.ellipseColor, 'freqLoad': self.defaultFreqLoadVariable.get(), 'freqUndo': self.defaultFreqUndoVariable.get()}
             config['error'] = {'detrend': self.defaultDetrendVariable.get(), 'alphaError': self.defaultAlphaCheckboxVariable.get(), 'betaError': self.defaultBetaCheckboxVariable.get(), 'reError': self.defaultReCheckboxVariable.get(), 'gammaError': self.defaultGammaCheckboxVariable.get(), 'deltaError': self.defaultDeltaCheckboxVariable.get(), 'errorWeighting': self.defaultErrorWeightingVariable.get(), 'errorMA': self.defaultMovingAverageVariable.get()}
