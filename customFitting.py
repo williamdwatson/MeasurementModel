@@ -22,7 +22,7 @@ Created on Tue Oct  8 16:19:24 2019
 import numpy as np
 from numpy.random import normal
 import lmfit
-#import cmath
+from numpy import nan    #This can be a necessary import if errors occur
 import itertools
 import multiprocessing as mp
 import threading
@@ -484,7 +484,7 @@ class customFitter:
         if (current_best_result != 0):
             minimized = current_best_result
         if (not minimized.success):     #If the fitting fails
-            return "^", "^", "^", "^", "^", "^", "^", "^"
+            return "^", "^", "^", "^", "^", "^", "^", "^", "^"
     
         fitted = minimized.params.valuesdict()
         result = []
@@ -524,7 +524,7 @@ class customFitter:
         
         if (not self.keepGoing):
             return
-        
+
         #---Calculate numMonteCarlo number of parameters, using a Gaussian distribution---
         randomParams = np.zeros((numParams, numMonteCarlo))
         randomlyCalculatedReal = np.zeros((len(w), numMonteCarlo))

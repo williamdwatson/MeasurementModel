@@ -38,7 +38,8 @@ import bootstrapFitting
 import simplexFitting
 import threading
 import queue
-from rangeSlider import RangeSlider
+#import time
+#from rangeSlider import RangeSlider
 #------------------------------Range Slider----------------------------------
 #  Source: https://github.com/halsafar/rangeslider
 #  "THE BEER-WARE LICENSE" (Revision 42):
@@ -92,7 +93,8 @@ class ThreadedTaskCustom(threading.Thread):
         try:
             r, s, sdr, sdi, chi, aic, rF, iF, bP = self.fittingObject.findFit(self.listPer, self.fT, self.nM, self.wght, self.aN, self.formula, self.wdat, self.rdat, self.jdat, self.pN, self.pG, self.pL, self.eP)
             self.queue.put((r, s, sdr, sdi, chi, aic, rF, iF, bP))
-        except:
+        except Exception as inst:
+            print(inst)
             self.queue.put(("@", "@", "@", "@", "@", "@", "@", "@", "@"))
     def get_id(self):
         # From https://www.geeksforgeeks.org/python-different-ways-to-kill-a-thread/
@@ -297,7 +299,7 @@ class fF(tk.Frame):
         
         self.formulaDescriptionWindow = tk.Toplevel(bg=self.backgroundColor)
         self.formulaDescriptionWindow.withdraw()
-        self.formulaDescriptionWindow.resizable(False, False)
+        #self.formulaDescriptionWindow.resizable(False, False)
         self.formulaDescriptionWindow.title("Custom formula description")
         self.formulaDescriptionWindow.iconbitmap(resource_path('img/elephant3.ico'))
         #self.formulaDescriptionVariable = tk.StringVar(self, "")
@@ -883,6 +885,9 @@ class fF(tk.Frame):
                             latexIn = toLoad.readline()
                             self.formulaDescriptionEntry.insert("1.0", descriptionIn.rstrip())
                             self.formulaDescriptionLatexVariable.set(latexIn.rstrip())
+                            self.latexAx.clear()
+                            self.latexAx.axis("off")
+                            self.latexCanvas.draw()
                             self.graphLatex()
                             toLoad.readline()
                         while True:
@@ -2097,25 +2102,54 @@ class fF(tk.Frame):
         def graphLatex(e=None):
             try:
                 tmptext = self.formulaDescriptionLatexVariable.get()
-                if tmptext == "":
+                tmptext2 = self.formulaDescriptionLatexVariable.get()
+                split_text = tmptext.split(r"\\")
+                tmptext = ""
+                first = True
+                for t in split_text:
+                    if first:
+                        tmptext = "$"+t+"$"
+                        first = False
+                    else:
+                        tmptext += "\n" + "$"+t+"$"
+                if tmptext2 == "":
                    with plt.rc_context({'mathtext.fontset': "cm"}):
                         self.latexAx.clear()
                         self.latexAx.axis("off")
-                        #self.latexAx.text(0.01, 0.5, tmptext, transform=self.latexAx.transAxes, fontsize = 30)  
                         self.latexCanvas.draw()
-                elif tmptext != '\\' and tmptext[-1] != '\\':
-                    tmptext = "$"+tmptext+"$"
+                elif tmptext2 != '\\' and tmptext2[-1] != '\\':
                     windowWidth = self.latexAx.get_window_extent().transformed(self.latexFig.dpi_scale_trans.inverted()).width*self.latexFig.dpi
+                    windowHeight = self.latexAx.get_window_extent().transformed(self.latexFig.dpi_scale_trans.inverted()).height*self.latexFig.dpi
                     with plt.rc_context({'mathtext.fontset': "cm"}):
                         self.latexAx.clear()
                         rLatex = self.latexFig.canvas.get_renderer()
                         latexSize = 30
-                        tLatex = self.latexAx.text(0.01, 0.5, tmptext, transform=self.latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
+                        latexHeight = 0.5
+                        tLatex = self.latexAx.text(0.01, latexHeight, tmptext, transform=self.latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
                         bb = tLatex.get_window_extent(renderer=rLatex)
+                        while (bb.height > (windowHeight*(1-latexHeight) + 9)):
+                            self.latexAx.clear()
+                            if (latexHeight <= 0.05):
+                                latexHeight = 0
+                                while (bb.height > (windowHeight*(1-latexHeight) + 9)):
+                                    self.latexAx.clear()
+                                    latexSize -=1
+                                    if (latexSize <= 0):
+                                        latexSize = 1
+                                        break
+                                    tLatex = self.latexAx.text(0.01, latexHeight, tmptext, transform=self.latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
+                                    bb = tLatex.get_window_extent(renderer=rLatex)
+                                break
+                            latexHeight -= 0.05
+                            tLatex = self.latexAx.text(0.01, latexHeight, tmptext, transform=self.latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)
+                            bb = tLatex.get_window_extent(renderer=rLatex)
                         while (bb.width > windowWidth):
                             self.latexAx.clear()
                             latexSize -= 1
-                            tLatex = self.latexAx.text(0.01, 0.5, tmptext, transform=self.latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
+                            if (latexSize <= 0):
+                                latexSize = 1
+                                break
+                            tLatex = self.latexAx.text(0.01, latexHeight, tmptext, transform=self.latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
                             bb = tLatex.get_window_extent(renderer=rLatex)
                         self.latexAx.axis("off")
                         self.latexCanvas.draw()
@@ -2126,6 +2160,7 @@ class fF(tk.Frame):
             self.formulaDescriptionWindow.deiconify()
             self.formulaDescriptionWindow.lift()
             self.formulaDescriptionLatexEntry.bind('<KeyRelease>', graphLatex)
+            self.formulaDescriptionWindow.bind('<Configure>', graphLatex)
             def on_closing_description():   #Clear the figure before closing the popup
                 self.formulaDescriptionWindow.withdraw()
             
@@ -2445,7 +2480,7 @@ class fF(tk.Frame):
                     if (r == "b"):
                         messagebox.showerror("Fitting error", "There was an error in the fitting.")
                     elif (r == "^"):
-                        messagebox.showerror("Fitting error", "The fitting failed.")
+                        messagebox.showerror("Fitting error", "The fitting did not find a solution.")
                     elif (r == "@"):
                         pass    #The fitting was cancelled
                 else:
@@ -3760,7 +3795,8 @@ class fF(tk.Frame):
                 return
             saveName.write(stringToSave)
             saveName.close()
-            #self.saveNeeded = False
+            self.loadFormulaTree.delete(*self.loadFormulaTree.get_children())
+            self.insert_node('', self.loadFormulaDirectoryEntry.get(), self.loadFormulaDirectoryEntry.get())
             self.formulaSaveButton.configure(text="Saved")
             self.after(1000, lambda : self.formulaSaveButton.configure(text="Save formula"))
         
@@ -3869,6 +3905,7 @@ class fF(tk.Frame):
             self.loadFormulaWindow.deiconify()
             self.loadFormulaWindow.lift()
             self.loadFormulaDirectoryButton.configure(command=loadFormulaDirectory)
+            self.loadFormulaWindow.bind('<Configure>', self.load_graphLatex)
             def on_closing_loadCode():
                 self.loadFormulaWindow.withdraw()
             self.loadFormulaWindow.protocol("WM_DELETE_WINDOW", on_closing_loadCode)
@@ -4201,7 +4238,14 @@ class fF(tk.Frame):
             if (xpos_round != 0.00 or ypos_round != 1.00):
                 self.pcanvas.yview_scroll(int(-1*(event.delta/120)), "units")
     
-    def keyup(self, event):
+    def keyup(self, event=None):
+        self.paramListbox.delete(0, tk.END)
+        for n in self.paramNameValues:
+            self.paramListbox.insert(tk.END, n.get())
+        try:
+            self.advancedOptionsLabel.configure(text=self.paramNameValues[self.paramListboxSelection].get())
+        except:
+            pass
         self.customFormula.tag_remove("tagZreal", "1.0", tk.END)
         self.customFormula.tag_remove("tagReservedWords2", "1.0", tk.END)
         self.customFormula.tag_remove("tagReservedWords3", "1.0", tk.END)
@@ -4213,6 +4257,7 @@ class fF(tk.Frame):
         self.customFormula.tag_remove("tagComment", "1.0", tk.END)
         self.customFormula.tag_remove("tagUserVariables", "1.0", tk.END)
         self.customFormula.tag_remove("tagBuiltIns", "1.0", tk.END)
+        self.customFormula.tag_remove("tagPrebuiltFormulas", "1.0", tk.END)
         self.customFormula.tag_remove("tagQuotations", "1.0", tk.END)
         self.customFormula.tag_remove("tagApostrophes", "1.0", tk.END)
         self.customFormula.tag_remove("tagFreq", "1.0", tk.END)
@@ -4284,6 +4329,16 @@ class fF(tk.Frame):
                 for j in range(len(tempList)):
                     builtInsEnd.append(tempList[j] + len(builtIns[i]))
         
+        prebuiltFormulas = ['1j', 'PI', 'SIN', 'COS', 'TAN', 'COSH', 'SINH', 'TANH', 'ARCSIN', 'ARCCOS', 'ARCTAN', 'ARCSINH', 'ARCCOSH', 'ARCTANH', 'SQRT', 'LN', 'LOG', 'EXP', 'ABS', 'DEG2RAD', 'RAD2DEG']
+        prebuiltFormulasBegin = []
+        prebuiltFormulasEnd = []
+        for i in range(len(prebuiltFormulas)):
+            tempList = [m.start() for m in re.finditer(r'\b' + prebuiltFormulas[i] + r'\b', textToSearch)]
+            prebuiltFormulasBegin.extend(tempList)
+            if (len(tempList) > 0):
+                for j in range(len(tempList)):
+                    prebuiltFormulasEnd.append(tempList[j] + len(prebuiltFormulas[i]))
+                    
         quotationBegin = []
         quotationEnd = []
         apostropheBegin = []
@@ -4349,6 +4404,9 @@ class fF(tk.Frame):
         for i in range(len(builtInsBegin)):
             self.customFormula.tag_add("tagBuiltIns", "1.0 + " + str(builtInsBegin[i]) + "c", "1.0 + " + str(builtInsEnd[i]) + "c")
             self.customFormula.tag_config("tagBuiltIns", foreground="violet red")
+        for i in range(len(prebuiltFormulasBegin)):
+            self.customFormula.tag_add("tagPrebuiltFormulas", "1.0 + " + str(prebuiltFormulasBegin[i]) + "c", "1.0 + " + str(prebuiltFormulasEnd[i]) + "c")
+            self.customFormula.tag_config("tagPrebuiltFormulas", foreground="DarkOrchid2")
         for i in range(len(userVariablesBegin)):
             self.customFormula.tag_add("tagUserVariables", "1.0 + " + str(userVariablesBegin[i]) + "c", "1.0 + " + str(userVariablesEnd[i]) + "c")
             self.customFormula.tag_config("tagUserVariables", foreground="red")
@@ -4363,6 +4421,7 @@ class fF(tk.Frame):
             self.customFormula.tag_remove("tagReservedWords8", "1.0 + " + str(whereComment[i]) + "c", "1.0 + " + str(whereComment[i]) + "c lineend")
             self.customFormula.tag_remove("tagUserVariables", "1.0 + " + str(whereComment[i]) + "c", "1.0 + " + str(whereComment[i]) + "c lineend")
             self.customFormula.tag_remove("tagBuiltIns", "1.0 + " + str(whereComment[i]) + "c", "1.0 + " + str(whereComment[i]) + "c lineend")
+            self.customFormula.tag_remove("tagPrebuiltFormulas", "1.0 + " + str(whereComment[i]) + "c", "1.0 + " + str(whereComment[i]) + "c lineend")
             self.customFormula.tag_remove("tagQuotations", "1.0 + " + str(whereComment[i]) + "c", "1.0 + " + str(whereComment[i]) + "c lineend")
             self.customFormula.tag_remove("tagApostrophes", "1.0 + " + str(whereComment[i]) + "c", "1.0 + " + str(whereComment[i]) + "c lineend")
             self.customFormula.tag_remove("tagFreq", "1.0 + " + str(whereComment[i]) + "c", "1.0 + " + str(whereComment[i]) + "c lineend")
@@ -4439,25 +4498,54 @@ class fF(tk.Frame):
     def graphLatex(self, e=None):
         try:
             tmptext = self.formulaDescriptionLatexVariable.get()
-            if tmptext == "":
+            tmptext2 = self.formulaDescriptionLatexVariable.get()
+            split_text = tmptext.split(r"\\")
+            tmptext = ""
+            first = True
+            for t in split_text:
+                if first:
+                    tmptext = "$"+t+"$"
+                    first = False
+                else:
+                    tmptext += "\n" + "$"+t+"$"
+            if tmptext2 == "":
                with plt.rc_context({'mathtext.fontset': "cm"}):
                     self.latexAx.clear()
                     self.latexAx.axis("off")
-                    #self.latexAx.text(0.01, 0.5, tmptext, transform=self.latexAx.transAxes, fontsize = 30)  
                     self.latexCanvas.draw()
-            elif tmptext != '\\' and tmptext[-1] != '\\':
-                tmptext = "$"+tmptext+"$"
+            elif tmptext2 != '\\' and tmptext2[-1] != '\\':
                 windowWidth = self.latexAx.get_window_extent().transformed(self.latexFig.dpi_scale_trans.inverted()).width*self.latexFig.dpi
+                windowHeight = self.latexAx.get_window_extent().transformed(self.latexFig.dpi_scale_trans.inverted()).height*self.latexFig.dpi
                 with plt.rc_context({'mathtext.fontset': "cm"}):
                     self.latexAx.clear()
                     rLatex = self.latexFig.canvas.get_renderer()
                     latexSize = 30
-                    tLatex = self.latexAx.text(0.01, 0.5, tmptext, transform=self.latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
+                    latexHeight = 0.5
+                    tLatex = self.latexAx.text(0.01, latexHeight, tmptext, transform=self.latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
                     bb = tLatex.get_window_extent(renderer=rLatex)
+                    while (bb.height > (windowHeight*(1-latexHeight) + 9)):
+                        self.latexAx.clear()
+                        if (latexHeight <= 0.05):
+                            latexHeight = 0
+                            while (bb.height > (windowHeight*(1-latexHeight) + 9)):
+                                self.latexAx.clear()
+                                latexSize -=1
+                                if (latexSize <= 0):
+                                    latexSize = 1
+                                    break
+                                tLatex = self.latexAx.text(0.01, latexHeight, tmptext, transform=self.latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
+                                bb = tLatex.get_window_extent(renderer=rLatex)
+                            break
+                        latexHeight -= 0.05
+                        tLatex = self.latexAx.text(0.01, latexHeight, tmptext, transform=self.latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)
+                        bb = tLatex.get_window_extent(renderer=rLatex)
                     while (bb.width > windowWidth):
                         self.latexAx.clear()
                         latexSize -= 1
-                        tLatex = self.latexAx.text(0.01, 0.5, tmptext, transform=self.latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
+                        if (latexSize <= 0):
+                            latexSize = 1
+                            break
+                        tLatex = self.latexAx.text(0.01, latexHeight, tmptext, transform=self.latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
                         bb = tLatex.get_window_extent(renderer=rLatex)
                     self.latexAx.axis("off")
                     self.latexCanvas.draw()
@@ -4636,6 +4724,9 @@ class fF(tk.Frame):
                     latexIn = toLoad.readline()
                     self.formulaDescriptionEntry.insert("1.0", descriptionIn.rstrip())
                     self.formulaDescriptionLatexVariable.set(latexIn.rstrip())
+                    self.latexAx.clear()
+                    self.latexAx.axis("off")
+                    self.latexCanvas.draw()
                     self.graphLatex()
                     toLoad.readline()
                 while True:
@@ -4909,29 +5000,58 @@ class fF(tk.Frame):
         self.graphLatex()
         self.load_latexFig.set_facecolor("#FFFFFF")
         try:
-            tmptext = self.latexIn.rstrip()
-            if tmptext == "":
+            tmptext = self.formulaDescriptionLatexVariable.get()
+            tmptext2 = self.formulaDescriptionLatexVariable.get()
+            split_text = tmptext.split(r"\\")
+            tmptext = ""
+            first = True
+            for t in split_text:
+                if first:
+                    tmptext = "$"+t+"$"
+                    first = False
+                else:
+                    tmptext += "\n" + "$"+t+"$"
+            if tmptext2 == "":
                with plt.rc_context({'mathtext.fontset': "cm"}):
-                    self.load_latexAx.clear()
-                    self.load_latexAx.axis("off")
-                    #self.latexAx.text(0.01, 0.5, tmptext, transform=self.latexAx.transAxes, fontsize = 30)  
-                    self.load_latexCanvas.draw()
-            elif tmptext != '\\' and tmptext[-1] != '\\':
-                tmptext = "$"+tmptext+"$"
-                windowWidth = self.load_latexAx.get_window_extent().transformed(self.load_latexFig.dpi_scale_trans.inverted()).width*self.load_latexFig.dpi
+                    self.latexAx.clear()
+                    self.latexAx.axis("off")
+                    self.latexCanvas.draw()
+            elif tmptext2 != '\\' and tmptext2[-1] != '\\':
+                windowWidth = self.latexAx.get_window_extent().transformed(self.latexFig.dpi_scale_trans.inverted()).width*self.latexFig.dpi
+                windowHeight = self.latexAx.get_window_extent().transformed(self.latexFig.dpi_scale_trans.inverted()).height*self.latexFig.dpi
                 with plt.rc_context({'mathtext.fontset': "cm"}):
-                    self.load_latexAx.clear()
-                    rLatex = self.load_latexFig.canvas.get_renderer()
+                    self.latexAx.clear()
+                    rLatex = self.latexFig.canvas.get_renderer()
                     latexSize = 30
-                    tLatex = self.load_latexAx.text(0.01, 0.5, tmptext, transform=self.load_latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
+                    latexHeight = 0.5
+                    tLatex = self.latexAx.text(0.01, latexHeight, tmptext, transform=self.latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
                     bb = tLatex.get_window_extent(renderer=rLatex)
-                    while (bb.width > windowWidth):
-                        self.load_latexAx.clear()
-                        latexSize -= 1
-                        tLatex = self.load_latexAx.text(0.01, 0.5, tmptext, transform=self.load_latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
+                    while (bb.height > (windowHeight*(1-latexHeight) + 9)):
+                        self.latexAx.clear()
+                        if (latexHeight <= 0.05):
+                            latexHeight = 0
+                            while (bb.height > (windowHeight*(1-latexHeight) + 9)):
+                                self.latexAx.clear()
+                                latexSize -=1
+                                if (latexSize <= 0):
+                                    latexSize = 1
+                                    break
+                                tLatex = self.latexAx.text(0.01, latexHeight, tmptext, transform=self.latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
+                                bb = tLatex.get_window_extent(renderer=rLatex)
+                            break
+                        latexHeight -= 0.05
+                        tLatex = self.latexAx.text(0.01, latexHeight, tmptext, transform=self.latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)
                         bb = tLatex.get_window_extent(renderer=rLatex)
-                    self.load_latexAx.axis("off")
-                    self.load_latexCanvas.draw()
+                    while (bb.width > windowWidth):
+                        self.latexAx.clear()
+                        latexSize -= 1
+                        if (latexSize <= 0):
+                            latexSize = 1
+                            break
+                        tLatex = self.latexAx.text(0.01, latexHeight, tmptext, transform=self.latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
+                        bb = tLatex.get_window_extent(renderer=rLatex)
+                    self.latexAx.axis("off")
+                    self.latexCanvas.draw()
         except:
             pass
         self.loadFormulaWindow.configure(background="#FFFFFF")
@@ -5059,29 +5179,58 @@ class fF(tk.Frame):
         self.graphLatex()
         self.load_latexFig.set_facecolor("#424242")
         try:
-            tmptext = self.latexIn.rstrip()
-            if tmptext == "":
+            tmptext = self.formulaDescriptionLatexVariable.get()
+            tmptext2 = self.formulaDescriptionLatexVariable.get()
+            split_text = tmptext.split(r"\\")
+            tmptext = ""
+            first = True
+            for t in split_text:
+                if first:
+                    tmptext = "$"+t+"$"
+                    first = False
+                else:
+                    tmptext += "\n" + "$"+t+"$"
+            if tmptext2 == "":
                with plt.rc_context({'mathtext.fontset': "cm"}):
-                    self.load_latexAx.clear()
-                    self.load_latexAx.axis("off")
-                    #self.latexAx.text(0.01, 0.5, tmptext, transform=self.latexAx.transAxes, fontsize = 30)  
-                    self.load_latexCanvas.draw()
-            elif tmptext != '\\' and tmptext[-1] != '\\':
-                tmptext = "$"+tmptext+"$"
-                windowWidth = self.load_latexAx.get_window_extent().transformed(self.load_latexFig.dpi_scale_trans.inverted()).width*self.load_latexFig.dpi
+                    self.latexAx.clear()
+                    self.latexAx.axis("off")
+                    self.latexCanvas.draw()
+            elif tmptext2 != '\\' and tmptext2[-1] != '\\':
+                windowWidth = self.latexAx.get_window_extent().transformed(self.latexFig.dpi_scale_trans.inverted()).width*self.latexFig.dpi
+                windowHeight = self.latexAx.get_window_extent().transformed(self.latexFig.dpi_scale_trans.inverted()).height*self.latexFig.dpi
                 with plt.rc_context({'mathtext.fontset': "cm"}):
-                    self.load_latexAx.clear()
-                    rLatex = self.load_latexFig.canvas.get_renderer()
+                    self.latexAx.clear()
+                    rLatex = self.latexFig.canvas.get_renderer()
                     latexSize = 30
-                    tLatex = self.load_latexAx.text(0.01, 0.5, tmptext, transform=self.load_latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
+                    latexHeight = 0.5
+                    tLatex = self.latexAx.text(0.01, latexHeight, tmptext, transform=self.latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
                     bb = tLatex.get_window_extent(renderer=rLatex)
-                    while (bb.width > windowWidth):
-                        self.load_latexAx.clear()
-                        latexSize -= 1
-                        tLatex = self.load_latexAx.text(0.01, 0.5, tmptext, transform=self.load_latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
+                    while (bb.height > (windowHeight*(1-latexHeight) + 9)):
+                        self.latexAx.clear()
+                        if (latexHeight <= 0.05):
+                            latexHeight = 0
+                            while (bb.height > (windowHeight*(1-latexHeight) + 9)):
+                                self.latexAx.clear()
+                                latexSize -=1
+                                if (latexSize <= 0):
+                                    latexSize = 1
+                                    break
+                                tLatex = self.latexAx.text(0.01, latexHeight, tmptext, transform=self.latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
+                                bb = tLatex.get_window_extent(renderer=rLatex)
+                            break
+                        latexHeight -= 0.05
+                        tLatex = self.latexAx.text(0.01, latexHeight, tmptext, transform=self.latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)
                         bb = tLatex.get_window_extent(renderer=rLatex)
-                    self.load_latexAx.axis("off")
-                    self.load_latexCanvas.draw()
+                    while (bb.width > windowWidth):
+                        self.latexAx.clear()
+                        latexSize -= 1
+                        if (latexSize <= 0):
+                            latexSize = 1
+                            break
+                        tLatex = self.latexAx.text(0.01, latexHeight, tmptext, transform=self.latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
+                        bb = tLatex.get_window_extent(renderer=rLatex)
+                    self.latexAx.axis("off")
+                    self.latexCanvas.draw()
         except:
             pass
         self.loadFormulaWindow.configure(background="#424242")
@@ -5168,6 +5317,63 @@ class fF(tk.Frame):
             for p in os.listdir(abspath):
                 self.insert_node(node, p, os.path.join(abspath, p))
     
+    def load_graphLatex(self, e=None):
+        try:
+            tmptext = self.latexIn
+            tmptext2 = self.latexIn
+            split_text = tmptext.split(r"\\")
+            tmptext = ""
+            first = True
+            for t in split_text:
+                if first:
+                    tmptext = "$"+t.rstrip()+"$"
+                    first = False
+                else:
+                    tmptext += "\n" + "$"+t.rstrip()+"$"
+            if tmptext2 == "":
+               with plt.rc_context({'mathtext.fontset': "cm"}):
+                    self.load_latexAx.clear()
+                    self.load_latexAx.axis("off")
+                    self.load_latexCanvas.draw()
+            elif tmptext2 != '\\' and tmptext2[-1] != '\\':
+                windowWidth = self.load_latexAx.get_window_extent().transformed(self.load_latexFig.dpi_scale_trans.inverted()).width*self.latexFig.dpi
+                windowHeight = self.load_latexAx.get_window_extent().transformed(self.load_latexFig.dpi_scale_trans.inverted()).height*self.latexFig.dpi
+                with plt.rc_context({'mathtext.fontset': "cm"}):
+                    self.load_latexAx.clear()
+                    rLatex = self.load_latexFig.canvas.get_renderer()
+                    latexSize = 30
+                    latexHeight = 0.5
+                    tLatex = self.load_latexAx.text(0.01, latexHeight, tmptext, transform=self.load_latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
+                    bb = tLatex.get_window_extent(renderer=rLatex)
+                    while (bb.height > (windowHeight*(1-latexHeight) + 9)):
+                        self.load_latexAx.clear()
+                        if (latexHeight <= 0.05):
+                            latexHeight = 0
+                            while (bb.height > (windowHeight*(1-latexHeight) + 9)):
+                                self.load_latexAx.clear()
+                                latexSize -=1
+                                if (latexSize <= 0):
+                                    latexSize = 1
+                                    break
+                                tLatex = self.load_latexAx.text(0.01, latexHeight, tmptext, transform=self.load_latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
+                                bb = tLatex.get_window_extent(renderer=rLatex)
+                            break
+                        latexHeight -= 0.05
+                        tLatex = self.load_latexAx.text(0.01, latexHeight, tmptext, transform=self.load_latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)
+                        bb = tLatex.get_window_extent(renderer=rLatex)
+                    while (bb.width > windowWidth):
+                        self.load_latexAx.clear()
+                        latexSize -= 1
+                        if (latexSize <= 0):
+                            latexSize = 1
+                            break
+                        tLatex = self.load_latexAx.text(0.01, latexHeight, tmptext, transform=self.load_latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
+                        bb = tLatex.get_window_extent(renderer=rLatex)
+                    self.load_latexAx.axis("off")
+                    self.load_latexCanvas.draw()
+        except:
+            pass
+    
     def clickFormula(self, event):
         try:
             item = self.loadFormulaTree.selection()[0]        
@@ -5221,32 +5427,64 @@ class fF(tk.Frame):
                     self.loadFormulaCode.configure(state="disabled")
                     self.loadFormula.configure(state="normal")
                     self.latexIn = toLoad.readline()
+                    self.load_latexAx.clear()
+                    self.load_latexAx.axis("off")
+                    self.load_latexCanvas.draw()
                     try:
-                        tmptext = self.latexIn.rstrip()
-                        if tmptext == "":
+                        tmptext = self.latexIn
+                        tmptext2 = self.latexIn
+                        split_text = tmptext.split(r"\\")
+                        tmptext = ""
+                        first = True
+                        for t in split_text:
+                            if first:
+                                tmptext = "$"+t.rstrip()+"$"
+                                first = False
+                            else:
+                                tmptext += "\n" + "$"+t.rstrip()+"$"
+                        if tmptext2 == "":
                            with plt.rc_context({'mathtext.fontset': "cm"}):
                                 self.load_latexAx.clear()
                                 self.load_latexAx.axis("off")
-                                #self.latexAx.text(0.01, 0.5, tmptext, transform=self.latexAx.transAxes, fontsize = 30)  
                                 self.load_latexCanvas.draw()
-                        elif tmptext != '\\' and tmptext[-1] != '\\':
-                            tmptext = "$"+tmptext+"$"
-                            windowWidth = self.load_latexAx.get_window_extent().transformed(self.load_latexFig.dpi_scale_trans.inverted()).width*self.load_latexFig.dpi
+                        elif tmptext2 != '\\' and tmptext2[-1] != '\\':
+                            windowWidth = self.load_latexAx.get_window_extent().transformed(self.load_latexFig.dpi_scale_trans.inverted()).width*self.latexFig.dpi
+                            windowHeight = self.load_latexAx.get_window_extent().transformed(self.load_latexFig.dpi_scale_trans.inverted()).height*self.latexFig.dpi
                             with plt.rc_context({'mathtext.fontset': "cm"}):
                                 self.load_latexAx.clear()
                                 rLatex = self.load_latexFig.canvas.get_renderer()
                                 latexSize = 30
-                                tLatex = self.load_latexAx.text(0.01, 0.5, tmptext, transform=self.load_latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
+                                latexHeight = 0.5
+                                tLatex = self.load_latexAx.text(0.01, latexHeight, tmptext, transform=self.load_latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
                                 bb = tLatex.get_window_extent(renderer=rLatex)
+                                while (bb.height > (windowHeight*(1-latexHeight) + 9)):
+                                    self.load_latexAx.clear()
+                                    if (latexHeight <= 0.05):
+                                        latexHeight = 0
+                                        while (bb.height > (windowHeight*(1-latexHeight) + 9)):
+                                            self.load_latexAx.clear()
+                                            latexSize -=1
+                                            if (latexSize <= 0):
+                                                latexSize = 1
+                                                break
+                                            tLatex = self.load_latexAx.text(0.01, latexHeight, tmptext, transform=self.load_latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
+                                            bb = tLatex.get_window_extent(renderer=rLatex)
+                                        break
+                                    latexHeight -= 0.05
+                                    tLatex = self.load_latexAx.text(0.01, latexHeight, tmptext, transform=self.load_latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)
+                                    bb = tLatex.get_window_extent(renderer=rLatex)
                                 while (bb.width > windowWidth):
                                     self.load_latexAx.clear()
                                     latexSize -= 1
-                                    tLatex = self.load_latexAx.text(0.01, 0.5, tmptext, transform=self.load_latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
+                                    if (latexSize <= 0):
+                                        latexSize = 1
+                                        break
+                                    tLatex = self.load_latexAx.text(0.01, latexHeight, tmptext, transform=self.load_latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
                                     bb = tLatex.get_window_extent(renderer=rLatex)
                                 self.load_latexAx.axis("off")
                                 self.load_latexCanvas.draw()
                     except:
-                        pass        
+                        pass
                     toLoad.close()
                 except:
                    messagebox.showerror("File error", "Error 62: \nThere was an error loading or reading the file")
@@ -5392,6 +5630,9 @@ class fF(tk.Frame):
                 latexIn = toLoad.readline()
                 self.formulaDescriptionEntry.insert("1.0", descriptionIn.rstrip())
                 self.formulaDescriptionLatexVariable.set(latexIn.rstrip())
+                self.latexAx.clear()
+                self.latexAx.axis("off")
+                self.latexCanvas.draw()
                 self.graphLatex()
                 toLoad.readline()
             if (self.loadFormulaParamsVariable.get()):
