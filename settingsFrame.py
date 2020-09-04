@@ -34,8 +34,8 @@ class FileLengthError(Exception):
 
 class CreateToolTip(object):
     """
-    create a tooltip for a given widget
-    Code from: https://stackoverflow.com/questions/3221956/how-do-i-display-tooltips-in-tkinter with answer by crxguy52
+        Create a tooltip for a given widget
+        Code from: https://stackoverflow.com/questions/3221956/how-do-i-display-tooltips-in-tkinter with answer by crxguy52
     """
     def __init__(self, widget, text='widget info'):
         self.waittime = 500     #miliseconds
@@ -105,288 +105,9 @@ class sF(tk.Frame):
         self.highlightColor = self.topGUI.getHighlightColor()
         self.themeChosen = self.topGUI.getTheme()
         self.ellipseColor = self.topGUI.getEllipseColor()
+        self.defaultImports = self.topGUI.getDefaultImports()
         
         tk.Frame.__init__(self, parent, background=self.backgroundColor)
-        
-        def lightTheme(e):
-            self.lightLabel.configure(relief="sunken")
-            self.darkLabel.configure(relief="raised")
-            self.themeChosen = 'light'
-        def darkTheme(e):
-            self.lightLabel.configure(relief="raised")
-            self.darkLabel.configure(relief="sunken")
-            self.themeChosen = 'dark'
-            
-        def pickBarColor(e):
-            color = colorchooser.askcolor(self.barColor, title="Choose bar color") 
-            if (color[1] is not None):
-                self.barColorLabel.configure(bg=color[1])
-                self.barColor = color[1]
-        def pickHighlightColor(e):
-            color = colorchooser.askcolor(self.highlightColor, title="Choose highlight color") 
-            if (color[1] is not None):
-                self.highlightColorLabel.configure(bg=color[1])
-                self.highlightColor = color[1]
-        def pickActiveColor(e):
-            color = colorchooser.askcolor(self.activeColor, title="Choose active color") 
-            if (color[1] is not None):
-                self.activeColorLabel.configure(bg=color[1])
-                self.activeColor = color[1]
-        def pickEllipseColor(e):
-            color = colorchooser.askcolor(self.ellipseColor, title="Choose error line/ellipse color") 
-            if (color[1] is not None):
-                self.defaultEllipseColorLabel.configure(bg=color[1])
-                self.ellipseColor = color[1]
-        
-        def applySettings():
-            if (self.themeChosen == "light"):
-                self.configure(bg="#FFFFFF")
-                #self.themeFrame.configure(bg="#FFFFFF")
-                self.themeLabel.configure(bg="#FFFFFF")
-                self.themeLabel.configure(fg="#000000")
-                self.themeFrame.configure(background="#FFFFFF")
-                self.lightLabel.configure(relief="sunken")
-                self.darkLabel.configure(relief="raised")
-                #self.accentsFrame.configure(bg="#FFFFFF")
-                self.accentsLabel.configure(bg="#FFFFFF")
-                self.accentsLabel.configure(fg="#000000")
-                self.barLabel.configure(bg="#FFFFFF")
-                self.barLabel.configure(fg="#000000")
-                self.highlightLabel.configure(bg="#FFFFFF")
-                self.highlightLabel.configure(fg="#000000")
-                self.activeLabel.configure(bg="#FFFFFF")
-                self.activeLabel.configure(fg="#000000")
-                self.defaultMC.configure(bg="#FFFFFF", fg="#000000")
-                #self.inputLabelFrame.configure(bg="#FFFFFF", fg="#000000")
-                self.defaultComments.configure(bg="#FFFFFF", fg="#000000")
-                self.defaultDelimiter.configure(bg="#FFFFFF", fg="#000000")
-                #self.modelLabelFrame.configure(bg="#FFFFFF", fg="#000000")
-                self.defaultMC.configure(bg="#FFFFFF", fg="#000000")
-                self.defaultFit.configure(bg="#FFFFFF", fg="#000000")
-                self.defaultWeighting.configure(bg="#FFFFFF", fg="#000000")
-                self.defaultAlpha.configure(bg="#FFFFFF", fg="#000000")
-                #self.errorLabelFrame.configure(bg="#FFFFFF", fg="#000000")
-                self.defaultParamChoices.configure(bg="#FFFFFF", fg="#000000")
-                self.defaultErrorWeighting.configure(bg="#FFFFFF", fg="#000000")
-                self.defaultMovingAverage.configure(bg="#FFFFFF", fg="#000000")
-                self.defaultEllipse.configure(bg="#FFFFFF", fg="#000000")
-                self.tabOverall.configure(background="#FFFFFF")
-                self.tabInput.configure(background="#FFFFFF")
-                self.tabModel.configure(background="#FFFFFF")
-                self.tabError.configure(background="#FFFFFF")
-                self.tabCustom.configure(background="#FFFFFF")
-                self.defaultDirectoryLabel.configure(bg="#FFFFFF", fg="#000000")
-                self.defaultDetrendLabel.configure(bg="#FFFFFF", fg="#000000")
-                self.defaultTabLabel.configure(bg="#FFFFFF", fg="#000000")
-                s = ttk.Style()
-                s.configure('TCheckbutton', background='#FFFFFF', foreground="#000000")
-                s.configure('TNotebook', background='#FFFFFF')
-                self.topGUI.setThemeLight()
-                self.defaultFormulaDirectoryLabel.configure(background="#FFFFFF", foreground="#000000")
-            elif (self.themeChosen == "dark"):
-                self.configure(bg="#424242")
-                #self.themeFrame.configure(bg="#424242")
-                self.themeLabel.configure(bg="#424242")
-                self.themeLabel.configure(fg="#FFFFFF")
-                self.themeFrame.configure(background="#424242")
-                self.lightLabel.configure(relief="raised")
-                self.darkLabel.configure(relief="sunken")
-                #self.accentsFrame.configure(bg="#424242")
-                self.accentsLabel.configure(bg="#424242")
-                self.accentsLabel.configure(fg="#FFFFFF")
-                self.barLabel.configure(bg="#424242")
-                self.barLabel.configure(fg="#FFFFFF")
-                self.highlightLabel.configure(bg="#424242")
-                self.highlightLabel.configure(fg="#FFFFFF")
-                self.activeLabel.configure(bg="#424242")
-                self.activeLabel.configure(fg="#FFFFFF")
-                self.defaultMC.configure(bg="#424242", fg="#FFFFFF")
-                #self.inputLabelFrame.configure(bg="#424242", fg="#FFFFFF")
-                self.defaultComments.configure(bg="#424242", fg="#FFFFFF")
-                self.defaultDelimiter.configure(bg="#424242", fg="#FFFFFF")
-                #self.modelLabelFrame.configure(bg="#424242", fg="#FFFFFF")
-                self.defaultMC.configure(bg="#424242", fg="#FFFFFF")
-                self.defaultFit.configure(bg="#424242", fg="#FFFFFF")
-                self.defaultWeighting.configure(bg="#424242", fg="#FFFFFF")
-                self.defaultAlpha.configure(bg="#424242", fg="#FFFFFF")
-                #self.errorLabelFrame.configure(bg="#424242", fg="#FFFFFF")
-                self.defaultParamChoices.configure(bg="#424242", fg="#FFFFFF")
-                self.defaultErrorWeighting.configure(bg="#424242", fg="#FFFFFF")
-                self.defaultMovingAverage.configure(bg="#424242", fg="#FFFFFF")
-                self.defaultEllipse.configure(bg="#424242", fg="#FFFFFF")
-                self.tabOverall.configure(background="#424242")
-                self.tabInput.configure(background="#424242")
-                self.tabModel.configure(background="#424242")
-                self.tabError.configure(background="#424242")
-                self.tabCustom.configure(background="#424242")
-                self.defaultDirectoryLabel.configure(bg="#424242", fg="#FFFFFF")
-                self.defaultDetrendLabel.configure(bg="#424242", fg="#FFFFFF")
-                self.defaultTabLabel.configure(bg="#424242", fg="#FFFFFF")
-                s = ttk.Style()
-                s.configure('TCheckbutton', background='#424242', foreground="#FFFFFF")
-                s.configure('TNotebook', background='#424242')
-                self.topGUI.setThemeDark()
-                self.defaultFormulaDirectoryLabel.configure(background="#424242", foreground="#FFFFFF")
-            
-            self.topGUI.setBarColor(self.barColor)
-            self.barColorLabel.configure(bg=self.barColor)
-            self.topGUI.setHighlightColor(self.highlightColor)
-            self.highlightColorLabel.configure(bg=self.highlightColor)
-            self.topGUI.setActiveColor(self.activeColor)
-            self.activeColorLabel.configure(bg=self.activeColor)
-            self.topGUI.setEllipseColor(self.ellipseColor)
-            self.defaultEllipseColorLabel.configure(bg=self.ellipseColor)
-            self.topGUI.setCurrentDirectory(self.defaultDirectoryEntry.get())
-            self.topGUI.setDefaultDirectory(self.defaultDirectoryEntry.get())
-            self.topGUI.setInputExitAlert(self.inputExitAlertVariable.get())
-            self.topGUI.setCustomFormulaExitAlert(self.customFormulaExitAlertVariable.get())
-            self.topGUI.setFreqLoad(self.defaultFreqLoadVariable.get())
-            self.topGUI.setFreqUndo(self.defaultFreqUndoVariable.get())
-            self.topGUI.setFreqLoadCustom(self.customFreqLoadVariable.get())
-            self.topGUI.setScroll(self.defaultScrollVariable.get())
-        
-        def resetDefaults():
-            a = messagebox.askokcancel("Reset all settings?", "Are you sure you want to reset all settings to the defaults?")
-            if (a):
-                self.themeChosen = "light"
-                self.barColor = "#333333"
-                self.activeColor = "#737373"
-                self.highlightColor = "#999999"
-                self.defaultDetectCommentsCheckboxVariable.set(1)
-                self.defaultCommentsVariable.set("0")
-                self.defaultDetectDelimiterCheckboxVariable.set(1)
-                self.defaultDelimiterVariable.set("Tab")
-                self.defaultMCVariable.set("1000")
-                self.defaultFitVariable.set("Complex")
-                self.defaultWeightingVariable.set("Modulus")
-                self.defaultAlphaVariable.set("1")
-                self.defaultAlphaCheckboxVariable.set(0)
-                self.defaultBetaCheckboxVariable.set(0)
-                self.defaultReCheckboxVariable.set(0)
-                self.defaultGammaCheckboxVariable.set(1)
-                self.defaultDeltaCheckboxVariable.set(1)
-                self.defaultErrorWeightingVariable.set("Variance")
-                self.defaultMovingAverageVariable.set("5 point")
-                self.defaultDetrendVariable.set("Off")
-                self.ellipseColor = "#FF0000"
-                self.defaultDirectoryEntry.configure(state="normal")
-                self.defaultDirectoryEntry.delete(0,tk.END)
-                self.defaultDirectoryEntry.insert(0, "C:\\")
-                self.defaultDirectoryEntry.configure(state="readonly")
-                self.inputExitAlertVariable.set(0)
-                self.customFormulaExitAlertVariable.set(0)
-                self.defaultTabVariable.set("Input file")
-                self.defaultFreqUndoVariable.set(0)
-                self.defaultFreqLoadVariable.set(0)
-                self.customFreqLoadVariable.set(0)
-                self.defaultScrollVariable.set(1)
-                self.defaultFormulaDirectoryEntry.configure(state="normal")
-                self.defaultFormulaDirectoryEntry.delete(0,tk.END)
-                self.defaultFormulaDirectoryEntry.insert(0, "C:\\")
-                self.defaultFormulaDirectoryEntry.configure(state="readonly")
-                config = configparser.ConfigParser()
-                config['settings'] = {'theme': self.themeChosen, 'bar': self.barColor, 'highlight': self.highlightColor, 'accent': self.activeColor, 'dir': "C:\\", 'tab': self.defaultTabVariable.get(), 'scroll': self.defaultScrollVariable.get(), 'formulaDir': "C:\\"}
-                config['input'] = {'detect': self.defaultDetectCommentsCheckboxVariable.get(),'comments': self.defaultCommentsVariable.get(), 'delimiter': self.defaultDelimiterVariable.get(), 'detectDelimiter': self.defaultDetectDelimiterCheckboxVariable.get()}
-                config['model'] = {'mc': self.defaultMCVariable.get(), 'fit': self.defaultFitVariable.get(), 'weight': self.defaultWeightingVariable.get(), 'alpha': self.defaultAlphaVariable.get(), 'ellipse': self.ellipseColor, 'freqLoad': self.defaultFreqLoadVariable.get(), 'freqUndo': self.defaultFreqUndoVariable.get()}
-                config['error'] = {'detrend': self.defaultDetrendVariable.get(), 'alphaError': self.defaultAlphaCheckboxVariable.get(), 'betaError': self.defaultBetaCheckboxVariable.get(), 'reError': self.defaultReCheckboxVariable.get(), 'gammaError': self.defaultGammaCheckboxVariable.get(), 'deltaError': self.defaultDeltaCheckboxVariable.get(), 'errorWeighting': self.defaultErrorWeightingVariable.get(), 'errorMA': self.defaultMovingAverageVariable.get()}
-                config['custom'] = {'askCustomExit': self.customFormulaExitAlertVariable.get(), 'freqLoadCustom': self.customFreqLoadVariable.get()}
-                if (os.path.exists(os.getenv('LOCALAPPDATA')+r"\MeasurementModel")):
-                    with open(os.getenv('LOCALAPPDATA')+r"\MeasurementModel\settings.ini", 'w+') as configfile:
-                        config.write(configfile)
-                        configfile.close()
-                else:
-                    os.makedirs(os.getenv('LOCALAPPDATA')+r"\MeasurementModel")
-                    with open(os.getenv('LOCALAPPDATA')+r"\MeasurementModel\settings.ini", 'w') as configfile:
-                        config.write(configfile)
-                        configfile.close()
-                applySettings()
-
-        def saveSettings():
-            try:
-                numMCDefault = int(self.defaultMCVariable.get())
-                if (numMCDefault <= 0):
-                    raise Exception
-            except:
-                messagebox.showerror("Value error", "Error 49:\nPlease enter a positive integer for number of simulations")
-                return
-            try:
-                numAlphaDefault = float(self.defaultAlphaVariable.get())
-                if (numAlphaDefault <= 0):
-                    raise Exception
-            except:
-                messagebox.showerror("Value error", "Error 50:\nPlease enter a positive number for the assumed noise (α)")
-                return
-            try:
-                numCommentDefault = int(self.defaultCommentsVariable.get())
-                if (numCommentDefault < 0):
-                    raise Exception
-            except:
-                messagebox.showerror("Value error", "Error 51:\nPlease enter a positive integer for number of comment lines")
-                return
-            try:
-                config = configparser.ConfigParser()
-                config['settings'] = {'theme': self.themeChosen, 'bar': self.barColor, 'highlight': self.highlightColor, 'accent': self.activeColor, 'dir': self.defaultDirectoryEntry.get(), 'tab': self.defaultTabVariable.get(), 'scroll': self.defaultScrollVariable.get(), 'formulaDir': self.defaultFormulaDirectoryEntry.get()}
-                config['input'] = {'detect': self.defaultDetectCommentsCheckboxVariable.get(), 'comments': numCommentDefault, 'delimiter': self.defaultDelimiterVariable.get(), 'detectDelimiter': self.defaultDetectDelimiterCheckboxVariable.get(), 'askInputExit': self.inputExitAlertVariable.get()}
-                config['model'] = {'mc': numMCDefault, 'fit': self.defaultFitVariable.get(), 'weight': self.defaultWeightingVariable.get(), 'alpha': numAlphaDefault, 'ellipse': self.ellipseColor, 'freqLoad': self.defaultFreqLoadVariable.get(), 'freqUndo': self.defaultFreqUndoVariable.get()}
-                config['error'] = {'detrend': self.defaultDetrendVariable.get(), 'alphaError': self.defaultAlphaCheckboxVariable.get(), 'betaError': self.defaultBetaCheckboxVariable.get(), 'reError': self.defaultReCheckboxVariable.get(), 'gammaError': self.defaultGammaCheckboxVariable.get(), 'deltaError': self.defaultDeltaCheckboxVariable.get(), 'errorWeighting': self.defaultErrorWeightingVariable.get(), 'errorMA': self.defaultMovingAverageVariable.get()}
-                config['custom'] = {'askCustomExit': self.customFormulaExitAlertVariable.get(), 'freqLoadCustom': self.customFreqLoadVariable.get()}
-                if (os.path.exists(os.getenv('LOCALAPPDATA')+r"\MeasurementModel")):
-                    with open(os.getenv('LOCALAPPDATA')+r"\MeasurementModel\settings.ini", 'w+') as configfile:
-                        config.write(configfile)
-                        configfile.close()
-                else:
-                    os.makedirs(os.getenv('LOCALAPPDATA')+r"\MeasurementModel")
-                    with open(os.getenv('LOCALAPPDATA')+r"\MeasurementModel\settings.ini", 'w') as configfile:
-                        config.write(configfile)
-                        configfile.close()
-                applySettings()
-                self.saveButton.configure(text="Saved")
-                self.after(500, lambda: self.saveButton.configure(text="Save and Apply"))
-            except:
-                messagebox.showerror("File error", "Error 52:\nError in applying or saving settings")
-        
-        def defaultCommentsCommand():
-            if (self.defaultDetectCommentsCheckboxVariable.get() == 1):
-                self.defaultDetectDelimiterCheckbox.grid(column=0, row=2, pady=2)
-            else:
-                self.defaultDetectDelimiterCheckbox.grid_remove()            
-#        styleNotebook = ttk.Style()
-#        styleNotebook.theme_create( "yummy", parent="alt", settings={
-#        "TNotebook": {"configure": {"tabmargins": [2, 5, 2, 0] } },
-#        "TNotebook.Tab": {
-#            "configure": {"padding": [5, 1], "background": "#d2ffd2" },
-#            "map":       {"background": [("selected", "#dd0202")],
-#                          "expand": [("selected", [1, 1, 1, 0])] } } } )
-        
-        def checkRe():
-            if (self.defaultReCheckboxVariable.get() == 1):
-                self.defaultBetaCheckboxVariable.set(1)
-        
-        def checkBeta():
-            if (self.defaultBetaCheckboxVariable.get() == 0):
-                self.defaultReCheckboxVariable.set(0)
-        
-        def findNewDirectory():
-            folder = askdirectory(initialdir=self.topGUI.getCurrentDirectory())
-            folder_str = str(folder)
-            if len(folder_str) == 0:
-                pass
-            else:
-                self.defaultDirectoryEntry.configure(state="normal")
-                self.defaultDirectoryEntry.delete(0,tk.END)
-                self.defaultDirectoryEntry.insert(0, folder_str)
-                self.defaultDirectoryEntry.configure(state="readonly")
-        
-        def findNewFormulaDirectory():
-            folder = askdirectory(initialdir=self.topGUI.getCurrentDirectory())
-            folder_str = str(folder)
-            if len(folder_str) == 0:
-                pass
-            else:
-                self.defaultFormulaDirectoryEntry.configure(state="normal")
-                self.defaultFormulaDirectoryEntry.delete(0,tk.END)
-                self.defaultFormulaDirectoryEntry.insert(0, folder_str)
-                self.defaultFormulaDirectoryEntry.configure(state="readonly")
         
         self.notebook = ttk.Notebook(self)
         self.tabOverall = tk.Frame(self.notebook, background=self.backgroundColor)
@@ -394,14 +115,15 @@ class sF(tk.Frame):
         self.tabModel = tk.Frame(self.notebook, background=self.backgroundColor)
         self.tabError = tk.Frame(self.notebook, background=self.backgroundColor)
         self.tabCustom = tk.Frame(self.notebook, background=self.backgroundColor)
+        self.tabPaths = tk.Frame(self.notebook, background=self.backgroundColor)
         self.notebook.add(self.tabOverall, text="Overall")
+        self.notebook.add(self.tabPaths, text="Paths")
         self.notebook.add(self.tabInput, text="Input")
         self.notebook.add(self.tabModel, text="Model")
         self.notebook.add(self.tabError, text="Errors")
         self.notebook.add(self.tabCustom, text="Custom")
         self.notebook.grid(column=0, row=0, columnspan=2, sticky="W")
         
-        #self.themeFrame = tk.Frame(self, bg=self.backgroundColor)
         self.themeLabel = tk.Label(self.tabOverall, text="Theme: ", fg=self.foregroundColor, bg=self.backgroundColor)
         self.themeFrame = tk.Frame(self.tabOverall, background=self.backgroundColor)
         if (self.topGUI.getTheme() == "dark"):
@@ -411,34 +133,28 @@ class sF(tk.Frame):
             self.lightLabel = tk.Label(self.themeFrame, text=" Light ", fg="black", bg="white", cursor="hand2", borderwidth=3, relief="sunken")
             self.darkLabel = tk.Label(self.themeFrame, text=" Dark ", fg="white", bg="#424242", cursor="hand2", borderwidth=3, relief="raised")
 
-        self.lightLabel.bind("<Button-1>", lightTheme)
-        self.darkLabel.bind("<Button-1>", darkTheme)
+        self.lightLabel.bind("<Button-1>", self.lightTheme)
+        self.darkLabel.bind("<Button-1>", self.darkTheme)
         self.themeLabel.grid(column=0, row=0, sticky="W", padx=2)
         self.lightLabel.grid(column=0, row=0)
         self.darkLabel.grid(column=1, row=0)
         self.themeFrame.grid(column=1, row=0)
-        #self.themeFrame.grid(column=0, row=0, sticky="W")
         light_ttp = CreateToolTip(self.lightLabel, 'Light theme (white background, black text)')
         dark_ttp = CreateToolTip(self.darkLabel, 'Dark theme (dark grey background, white text)')
         
-        #self.accentsFrame = tk.Frame(self, bg=self.backgroundColor)
         self.accentsLabel = tk.Label(self.tabOverall, text="Accent theme colors: ", fg=self.foregroundColor, bg=self.backgroundColor)
         self.barThemeLabel = tk.Label(self.tabOverall, text="Bar color: ", fg=self.foregroundColor, bg=self.backgroundColor)
-#        self.themeVariable = tk.StringVar(self, "Gray")
-#        self.themeCombobox = ttk.Combobox(self.accentsFrame, textvariable=self.themeVariable, value=("Gray", "Spring green", "Light blue", "Sienna", "Slate blue", "Peach", "Orchid", "Custom"), exportselection=0, state="readonly", width=15)
-#        self.barVariable = tk.StringVar(self, "Dark gray")
-#        self.barCombobox = ttk.Combobox(self.accentsFrame, textvariable=self.barVariable, value=("White", "Pearl", "Lightest gray", "Lighter gray", "Light gray", "Gray", "Dark gray", "Darker gray", "Black"), exportselection=0, state="readonly", width=15)
         
         self.barLabel = tk.Label(self.tabOverall, text="Side bar color: ", fg=self.foregroundColor, bg=self.backgroundColor)
         self.barColorLabel = tk.Label(self.tabOverall, bg=self.barColor, borderwidth=2, relief="solid", cursor="hand2", width=5)
-        self.barColorLabel.bind("<Button-1>", pickBarColor)
+        self.barColorLabel.bind("<Button-1>", self.pickBarColor)
         self.highlightLabel = tk.Label(self.tabOverall, text="Highlight: ", fg=self.foregroundColor, bg=self.backgroundColor)
         self.highlightColorLabel = tk.Label(self.tabOverall, bg=self.highlightColor, borderwidth=2, relief="solid", cursor="hand2", width=5)
-        self.highlightColorLabel.bind("<Button-1>", pickHighlightColor)
+        self.highlightColorLabel.bind("<Button-1>", self.pickHighlightColor)
         self.activeLabel = tk.Label(self.tabOverall, text="Active: ", fg=self.foregroundColor, bg=self.backgroundColor)
         self.activeColorLabel = tk.Label(self.tabOverall, bg=self.activeColor, borderwidth=2, relief="solid", cursor="hand2", width=5)
-        self.activeColorLabel.bind("<Button-1>", pickActiveColor)
-        self.defaultTabLabel = tk.Label(self.tabOverall, text="Tab: ", fg=self.foregroundColor, bg=self.backgroundColor)
+        self.activeColorLabel.bind("<Button-1>", self.pickActiveColor)
+        self.defaultTabLabel = tk.Label(self.tabOverall, text="Starting tab: ", fg=self.foregroundColor, bg=self.backgroundColor)
         self.defaultTabVariable = tk.StringVar(self, "Input file")
         if (self.topGUI.getDefaultTab() == 1):
             self.defaultTabVariable.set("Measurement model")
@@ -453,28 +169,19 @@ class sF(tk.Frame):
         elif (self.topGUI.getDefaultTab() == 6):
             self.defaultTabVariable.set("Help and about")
         self.defaultTab = ttk.Combobox(self.tabOverall, textvariable=self.defaultTabVariable, width=20, value=("Input file", "Measurement model", "Error file preparation", "Error analysis", "Custom fitting", "Settings", "Help and about"), exportselection=0, state="readonly")
-        self.defaultDirectoryLabel = tk.Label(self.tabOverall, text="Directory: ", fg=self.foregroundColor, bg=self.backgroundColor)
-        self.defaultDirectoryEntry = ttk.Entry(self.tabOverall, state="readonly", width=22)
-        self.defaultDirectoryButton = ttk.Button(self.tabOverall, text="Browse...", command=findNewDirectory)
+        self.defaultDirectoryLabel = tk.Label(self.tabPaths, text="File directory: ", fg=self.foregroundColor, bg=self.backgroundColor)
+        self.defaultDirectoryEntry = ttk.Entry(self.tabPaths, state="readonly", width=40)
+        self.defaultDirectoryButton = ttk.Button(self.tabPaths, text="Browse...", command=self.findNewDirectory)
         self.defaultScrollVariable = tk.IntVar(self, self.topGUI.getScroll())
         self.defaultScroll = ttk.Checkbutton(self.tabOverall, variable=self.defaultScrollVariable, text="Change tab on scroll")
-#        self.accentsLabel.grid(column=0, row=1, sticky="W")
-#        self.themeCombobox.grid(column=1, row=0)
-#        self.barThemeLabel.grid(column=0, row=1, sticky="W")
-#        self.barCombobox.grid(column=1, row=1)
         self.barLabel.grid(column=0, row=2, sticky="W", pady=5)
         self.barColorLabel.grid(column=1, row=2)
-        #self.highlightLabel.grid(column=1, row=3, sticky="W", pady=2)
-        #self.highlightColorLabel.grid(column=2, row=3)
-        #self.activeLabel.grid(column=1, row=4, sticky="W", pady=2)
-        #self.activeColorLabel.grid(column=2, row=4)
         self.defaultTabLabel.grid(column=0, row=3, sticky="W")
         self.defaultTab.grid(column=1, row=3)
         self.defaultDirectoryLabel.grid(column=0, row=5, pady=5, sticky="W")
         self.defaultDirectoryEntry.grid(column=1, row=5, columnspan=2, sticky="W")
-        self.defaultDirectoryButton.grid(column=3, row=5, padx=2, sticky="W")
+        self.defaultDirectoryButton.grid(column=2, row=5, padx=2, sticky="W")
         self.defaultScroll.grid(column=0, row=6, pady=2, sticky="W")
-        #self.accentsFrame.grid(column=0, row=1, sticky="W", columnspan=2, pady=5)
         barColor_ttp = CreateToolTip(self.barColorLabel, 'Choose color of side and top bars')
         hightlightColor_ttp = CreateToolTip(self.highlightColorLabel, 'Choose color of tabs when hovered over')
         activeColor_ttp = CreateToolTip(self.activeColorLabel, 'Choose color of tabs when active')
@@ -488,9 +195,8 @@ class sF(tk.Frame):
         self.defaultDirectoryEntry.insert(0, self.topGUI.getDefaultDirectory())
         self.defaultDirectoryEntry.configure(state="readonly")
         
-        #self.inputLabelFrame = tk.LabelFrame(self, text="Defaults for File Tools", bg=self.backgroundColor, fg=self.foregroundColor, padx=2, pady=2)
         self.defaultDetectCommentsCheckboxVariable = tk.IntVar(self, self.topGUI.getDetectComments())
-        self.defaultDetectCommentsCheckbox = ttk.Checkbutton(self.tabInput, variable=self.defaultDetectCommentsCheckboxVariable, text="Detect number of comment lines", command=defaultCommentsCommand)
+        self.defaultDetectCommentsCheckbox = ttk.Checkbutton(self.tabInput, variable=self.defaultDetectCommentsCheckboxVariable, text="Detect number of comment lines", command=self.defaultCommentsCommand)
         self.defaultComments = tk.Label(self.tabInput, text="Number of comment lines: ", bg=self.backgroundColor, fg=self.foregroundColor)
         self.defaultCommentsVariable = tk.StringVar(self, self.topGUI.getComments())
         self.defaultCommentsEntry = ttk.Entry(self.tabInput, textvariable=self.defaultCommentsVariable, width=6, exportselection=0)
@@ -501,6 +207,7 @@ class sF(tk.Frame):
         self.defaultDetectDelimiterCheckbox = ttk.Checkbutton(self.tabInput, variable=self.defaultDetectDelimiterCheckboxVariable, text="Detect delimiter")
         self.inputExitAlertVariable = tk.IntVar(self, self.topGUI.getInputExitAlert())
         self.inputExitAlertCheckbox = ttk.Checkbutton(self.tabInput, variable=self.inputExitAlertVariable, text="Alert on close if unsaved")
+        
         #Columns and scaling, line frequency deletion
         self.defaultDetectCommentsCheckbox.grid(column=0, row=0, columnspan=2, sticky="W")
         self.defaultComments.grid(column=0, row=1, pady=2, sticky="W")
@@ -509,14 +216,12 @@ class sF(tk.Frame):
         self.defaultDelimiter.grid(column=0, row=3, pady=2, sticky="W")
         self.defaultDelimiterCombobox.grid(column=1, row=3, sticky="W")
         self.inputExitAlertCheckbox.grid(column=0, row=4, sticky="W")
-        #self.inputLabelFrame.grid(column=0, row=2, sticky="W", pady=5)
         comments_ttp = CreateToolTip(self.defaultDetectCommentsCheckbox, 'Whether or not the number of comment lines should be automatically detected by default')
         commentsEntry_ttp = CreateToolTip(self.defaultCommentsEntry, 'The default number of comment lines to ignore')
         delimiter_ttp = CreateToolTip(self.defaultDetectDelimiterCheckbox, 'Whether or not the delimiter should be automatically detected')
         delimiterEntry_ttp = CreateToolTip(self.defaultDelimiterCombobox, 'The default delimiter')
         inputExit_ttp = CreateToolTip(self.inputExitAlertCheckbox, 'Whether or not the program should alert before closing if a file has been loaded but not saved')
         
-        #self.modelLabelFrame = tk.LabelFrame(self, text="Defaults for Measurement Model", bg=self.backgroundColor, fg=self.foregroundColor, padx=2, pady=2)
         self.defaultMC = tk.Label(self.tabModel, text="Number of simulations: ", fg=self.foregroundColor, bg=self.backgroundColor)
         self.defaultMCVariable = tk.StringVar(self, self.topGUI.getMC())
         self.defaultMCEntry = ttk.Entry(self.tabModel, textvariable=self.defaultMCVariable, width=6, exportselection=0)
@@ -531,7 +236,7 @@ class sF(tk.Frame):
         self.defaultAlphaEntry = ttk.Entry(self.tabModel, textvariable=self.defaultAlphaVariable, width=6, exportselection=0)
         self.defaultEllipse = tk.Label(self.tabModel, text="Error lines/ellipse color: ", fg=self.foregroundColor, bg=self.backgroundColor)
         self.defaultEllipseColorLabel = tk.Label(self.tabModel, bg=self.ellipseColor, borderwidth=2, relief="solid", cursor="hand2", width=5)
-        self.defaultEllipseColorLabel.bind("<Button-1>", pickEllipseColor)
+        self.defaultEllipseColorLabel.bind("<Button-1>", self.pickEllipseColor)
         self.defaultFreqLoadVariable = tk.IntVar(self, self.topGUI.getFreqLoad())
         self.defaultFreqUndoVariable = tk.IntVar(self, self.topGUI.getFreqUndo())
         self.defaultFreqLoad = ttk.Checkbutton(self.tabModel, variable=self.defaultFreqLoadVariable, text="Keep frequency range on loading new file")
@@ -548,7 +253,6 @@ class sF(tk.Frame):
         self.defaultEllipseColorLabel.grid(column=1, row=4, sticky="W")
         self.defaultFreqLoad.grid(column=0, row=5, pady=(2,0), sticky="W")
         self.defaultFreqUndo.grid(column=0, row=6, pady=(2,0), sticky="W")
-        #self.modelLabelFrame.grid(column=0, row=3, sticky="W", pady=5)
         mc_ttp = CreateToolTip(self.defaultMCEntry, 'The default number of Monte Carlo simulations')
         fit_ttp = CreateToolTip(self.defaultFitCombobox, 'The default fit type')
         weighting_ttp = CreateToolTip(self.defaultWeightingCombobox, 'The default fitting weighting')
@@ -557,14 +261,13 @@ class sF(tk.Frame):
         freqLoad_ttp = CreateToolTip(self.defaultFreqLoad, 'Whether or not the adjusted frequency range should be kept when a new file is loaded')
         freqUndo_ttp = CreateToolTip(self.defaultFreqUndo, 'Whether or not the adjusted frequency range should be changed to what it was previously when the Undo feature is used')
         
-        #self.errorLabelFrame = tk.LabelFrame(self, text="Defaults for Error Fitting", bg=self.backgroundColor, fg=self.foregroundColor, padx=2, pady=2)
         self.defaultParamChoices = tk.Label(self.tabError, text="Error Model Parameters: ", fg=self.foregroundColor, bg=self.backgroundColor)
         self.defaultAlphaCheckboxVariable = tk.IntVar(self, self.topGUI.getErrorAlpha())
         self.defaultAlphaCheckbox = ttk.Checkbutton(self.tabError, variable=self.defaultAlphaCheckboxVariable, text="\u03B1")
         self.defaultBetaCheckboxVariable = tk.IntVar(self, self.topGUI.getErrorBeta())
-        self.defaultBetaCheckbox = ttk.Checkbutton(self.tabError, variable=self.defaultBetaCheckboxVariable, command=checkBeta, text="\u03B2")
+        self.defaultBetaCheckbox = ttk.Checkbutton(self.tabError, variable=self.defaultBetaCheckboxVariable, command=self.checkBeta, text="\u03B2")
         self.defaultReCheckboxVariable = tk.IntVar(self, self.topGUI.getErrorRe())
-        self.defaultReCheckbox = ttk.Checkbutton(self.tabError, variable=self.defaultReCheckboxVariable, command=checkRe, text="Re")
+        self.defaultReCheckbox = ttk.Checkbutton(self.tabError, variable=self.defaultReCheckboxVariable, command=self.checkRe, text="Re")
         self.defaultGammaCheckboxVariable = tk.IntVar(self, self.topGUI.getErrorGamma())
         self.defaultGammaCheckbox = ttk.Checkbutton(self.tabError, variable=self.defaultGammaCheckboxVariable, text="\u03B3")
         self.defaultDeltaCheckboxVariable = tk.IntVar(self, self.topGUI.getErrorDelta())
@@ -590,7 +293,6 @@ class sF(tk.Frame):
         self.defaultMovingAverageCombobox.grid(column=1, row=5, columnspan=2, sticky="W")
         self.defaultDetrendLabel.grid(column=0, row=6, sticky="W")
         self.defaultDetrendCombobox.grid(column=1, row=6, sticky="W")
-        #self.errorLabelFrame.grid(column=0, row=4, sticky="W", pady=5)
         errA_ttp = CreateToolTip(self.defaultAlphaCheckbox, 'Whether \u03B1 should be used in the error structure by default (Zj)')
         errB_ttp = CreateToolTip(self.defaultBetaCheckbox, 'Whether \u03B2 should be used in the error structure by default (Zr)')
         errB_ttp = CreateToolTip(self.defaultReCheckbox, 'Whether the ohmic resistance should be subtracted from Zr by default')
@@ -600,17 +302,16 @@ class sF(tk.Frame):
         ma_ttp = CreateToolTip(self.defaultMovingAverageCombobox, 'Default moving average choice for error structure regression (only if Variance weighting is chosen)')
         detrend_ttp = CreateToolTip(self.defaultDetrendCombobox, 'Whether or not detrending should be done by default')
         
-        #self.defaultFormulaDirectoryVariable = tk.StringVar(self, self.topGUI.getDefaultFormulaDirectory())
-        self.defaultFormulaDirectoryLabel = tk.Label(self.tabCustom, text="Directory: ", bg=self.backgroundColor, fg=self.foregroundColor)
-        self.defaultFormulaDirectoryEntry = ttk.Entry(self.tabCustom, width=22, state="readonly")
-        self.defaultFormulaDirectoryButton = ttk.Button(self.tabCustom, text="Browse...", command=findNewFormulaDirectory)
+        self.defaultFormulaDirectoryLabel = tk.Label(self.tabPaths, text="Formula directory: ", bg=self.backgroundColor, fg=self.foregroundColor)
+        self.defaultFormulaDirectoryEntry = ttk.Entry(self.tabPaths, width=40, state="readonly")
+        self.defaultFormulaDirectoryButton = ttk.Button(self.tabPaths, text="Browse...", command=self.findNewFormulaDirectory)
         self.customFormulaExitAlertVariable = tk.IntVar(self, self.topGUI.getCustomFormulaExitAlert())
         self.customFormulaExitAlertCheckbox = ttk.Checkbutton(self.tabCustom, variable=self.customFormulaExitAlertVariable, text="Alert on close if unsaved")
         self.customFreqLoadVariable = tk.IntVar(self, self.topGUI.getFreqLoadCustom())
         self.customFreqLoad = ttk.Checkbutton(self.tabCustom, variable=self.customFreqLoadVariable, text="Keep frequency range on loading new file")
-        self.defaultFormulaDirectoryLabel.grid(column=0, row=0, sticky="W")
-        self.defaultFormulaDirectoryEntry.grid(column=1, row=0, sticky="W")
-        self.defaultFormulaDirectoryButton.grid(column=2, row=0, sticky="W", padx=2)
+        self.defaultFormulaDirectoryLabel.grid(column=0, row=6, sticky="W")
+        self.defaultFormulaDirectoryEntry.grid(column=1, row=6, sticky="W")
+        self.defaultFormulaDirectoryButton.grid(column=2, row=6, sticky="W", padx=2)
         self.customFormulaExitAlertCheckbox.grid(column=0, row=1, pady=2, sticky="W", columnspan=3)
         self.customFreqLoad.grid(column=0, row=2, sticky="W", columnspan=3)
         customAlert_ttp = CreateToolTip(self.customFormulaExitAlertCheckbox, 'Whether or not the program should alert prior to closing if an unsaved formula is present')
@@ -623,11 +324,40 @@ class sF(tk.Frame):
         self.defaultFormulaDirectoryEntry.insert(0, self.topGUI.getDefaultFormulaDirectory())
         self.defaultFormulaDirectoryEntry.configure(state="readonly")
         
-        self.saveButton = ttk.Button(self, text="Save and Apply", width=20, command=saveSettings)
+        self.importPathLabel = tk.Label(self.tabPaths, text="Import paths: ", fg=self.foregroundColor, bg=self.backgroundColor)
+        self.importPathListboxFrame = tk.Frame(self.tabPaths, bg=self.backgroundColor)
+        self.importPathListboxScrollbar = ttk.Scrollbar(self.importPathListboxFrame, orient=tk.VERTICAL)
+        self.importPathListboxScrollbarHorizontal = ttk.Scrollbar(self.importPathListboxFrame, orient=tk.HORIZONTAL)
+        self.importPathListbox = tk.Listbox(self.importPathListboxFrame, height=3, width=40, selectmode=tk.BROWSE, activestyle='none', yscrollcommand=self.importPathListboxScrollbar.set, xscrollcommand=self.importPathListboxScrollbarHorizontal.set)
+        self.importPathListboxScrollbar['command'] = self.importPathListbox.yview
+        self.importPathListboxScrollbarHorizontal['command'] = self.importPathListbox.xview
+        self.importPathButtonFrame = tk.Frame(self.tabPaths, bg=self.backgroundColor)
+        self.importPathButton = ttk.Button(self.importPathButtonFrame, text="Browse...", command=self.importDirectoryBrowse)
+        self.importPathRemoveButton = ttk.Button(self.importPathButtonFrame, text="Remove", command=self.importDirectoryRemove)
+        self.importPathButton.pack(side=tk.TOP, fill=tk.NONE, expand=False)
+        self.importPathRemoveButton.pack(side=tk.TOP, fill=tk.NONE, expand=False, pady=5)
+        self.importPathListboxScrollbar.pack(side=tk.RIGHT, fill=tk.Y, expand=False)
+        self.importPathListboxScrollbarHorizontal.pack(side=tk.BOTTOM, fill=tk.X, expand=False)
+        self.importPathListbox.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        self.importPathLabel.grid(column=0, row=7, pady=5, sticky="NW")
+        self.importPathListboxFrame.grid(column=1, row=7, pady=5, sticky="W")
+        self.importPathButtonFrame.grid(column=2, row=7, padx=3, sticky="W")
+        importPathButton_ttp = CreateToolTip(self.importPathButton, 'Add default import path')
+        importPathRemoveButton_ttp = CreateToolTip(self.importPathRemoveButton, 'Remove selected path')
+        
+        self.popup_menu_importPath = tk.Menu(self.importPathListbox, tearoff=0)
+        self.popup_menu_importPath.add_command(label="Remove directory", command=self.importDirectoryRemove)
+
+        self.importPathListbox.bind("<Button-3>", self.popup_inputFiles)
+        for val in self.topGUI.getDefaultImports():
+            if (len(val) > 0):
+                self.importPathListbox.insert(tk.END, val)
+        
+        self.saveButton = ttk.Button(self, text="Save and Apply", width=20, command=self.saveSettings)
         self.saveButton.grid(column=0, row=5, sticky="W", pady=2)
         save_ttp = CreateToolTip(self.saveButton, 'Save and apply all settings')
         
-        self.resetButton = ttk.Button(self, text="Reset Defaults", width=20, command=resetDefaults)
+        self.resetButton = ttk.Button(self, text="Reset Defaults", width=20, command=self.resetDefaults)
         self.resetButton.grid(column=1, row=5, sticky="W", pady=5, padx=2)
         reset_ttp = CreateToolTip(self.resetButton, 'Reset all settings to their default values')
         
@@ -639,13 +369,11 @@ class sF(tk.Frame):
     def applySettings(self):
         if (self.themeChosen == "light"):
             self.configure(bg="#FFFFFF")
-            #self.themeFrame.configure(bg="#FFFFFF")
             self.themeLabel.configure(bg="#FFFFFF")
             self.themeLabel.configure(fg="#000000")
             self.themeFrame.configure(background="#FFFFFF")
             self.lightLabel.configure(relief="sunken")
             self.darkLabel.configure(relief="raised")
-            #self.accentsFrame.configure(bg="#FFFFFF")
             self.accentsLabel.configure(bg="#FFFFFF")
             self.accentsLabel.configure(fg="#000000")
             self.barLabel.configure(bg="#FFFFFF")
@@ -655,15 +383,12 @@ class sF(tk.Frame):
             self.activeLabel.configure(bg="#FFFFFF")
             self.activeLabel.configure(fg="#000000")
             self.defaultMC.configure(bg="#FFFFFF", fg="#000000")
-            #self.inputLabelFrame.configure(bg="#FFFFFF", fg="#000000")
             self.defaultComments.configure(bg="#FFFFFF", fg="#000000")
             self.defaultDelimiter.configure(bg="#FFFFFF", fg="#000000")
-            #self.modelLabelFrame.configure(bg="#FFFFFF", fg="#000000")
             self.defaultMC.configure(bg="#FFFFFF", fg="#000000")
             self.defaultFit.configure(bg="#FFFFFF", fg="#000000")
             self.defaultWeighting.configure(bg="#FFFFFF", fg="#000000")
             self.defaultAlpha.configure(bg="#FFFFFF", fg="#000000")
-            #self.errorLabelFrame.configure(bg="#FFFFFF", fg="#000000")
             self.defaultParamChoices.configure(bg="#FFFFFF", fg="#000000")
             self.defaultErrorWeighting.configure(bg="#FFFFFF", fg="#000000")
             self.defaultMovingAverage.configure(bg="#FFFFFF", fg="#000000")
@@ -673,6 +398,7 @@ class sF(tk.Frame):
             self.tabModel.configure(background="#FFFFFF")
             self.tabError.configure(background="#FFFFFF")
             self.tabCustom.configure(background="#FFFFFF")
+            self.tabPaths.configure(background="#FFFFFF")
             self.defaultDirectoryLabel.configure(bg="#FFFFFF", fg="#000000")
             self.defaultDetrendLabel.configure(bg="#FFFFFF", fg="#000000")
             self.defaultTabLabel.configure(bg="#FFFFFF", fg="#000000")
@@ -681,15 +407,16 @@ class sF(tk.Frame):
             s.configure('TNotebook', background='#FFFFFF')
             self.topGUI.setThemeLight()
             self.defaultFormulaDirectoryLabel.configure(background="#FFFFFF", foreground="#000000")
+            self.importPathButtonFrame.configure(background="#FFFFFF")
+            self.importPathLabel.configure(background="#FFFFFF", foreground="#000000")
+            self.importPathListboxFrame.configure(background="#FFFFFF")
         elif (self.themeChosen == "dark"):
             self.configure(bg="#424242")
-            #self.themeFrame.configure(bg="#424242")
             self.themeLabel.configure(bg="#424242")
             self.themeLabel.configure(fg="#FFFFFF")
             self.themeFrame.configure(background="#424242")
             self.lightLabel.configure(relief="raised")
             self.darkLabel.configure(relief="sunken")
-            #self.accentsFrame.configure(bg="#424242")
             self.accentsLabel.configure(bg="#424242")
             self.accentsLabel.configure(fg="#FFFFFF")
             self.barLabel.configure(bg="#424242")
@@ -699,15 +426,12 @@ class sF(tk.Frame):
             self.activeLabel.configure(bg="#424242")
             self.activeLabel.configure(fg="#FFFFFF")
             self.defaultMC.configure(bg="#424242", fg="#FFFFFF")
-            #self.inputLabelFrame.configure(bg="#424242", fg="#FFFFFF")
             self.defaultComments.configure(bg="#424242", fg="#FFFFFF")
             self.defaultDelimiter.configure(bg="#424242", fg="#FFFFFF")
-            #self.modelLabelFrame.configure(bg="#424242", fg="#FFFFFF")
             self.defaultMC.configure(bg="#424242", fg="#FFFFFF")
             self.defaultFit.configure(bg="#424242", fg="#FFFFFF")
             self.defaultWeighting.configure(bg="#424242", fg="#FFFFFF")
             self.defaultAlpha.configure(bg="#424242", fg="#FFFFFF")
-            #self.errorLabelFrame.configure(bg="#424242", fg="#FFFFFF")
             self.defaultParamChoices.configure(bg="#424242", fg="#FFFFFF")
             self.defaultErrorWeighting.configure(bg="#424242", fg="#FFFFFF")
             self.defaultMovingAverage.configure(bg="#424242", fg="#FFFFFF")
@@ -717,6 +441,7 @@ class sF(tk.Frame):
             self.tabModel.configure(background="#424242")
             self.tabError.configure(background="#424242")
             self.tabCustom.configure(background="#424242")
+            self.tabPaths.configure(background="#424242")
             self.defaultDirectoryLabel.configure(bg="#424242", fg="#FFFFFF")
             self.defaultDetrendLabel.configure(bg="#424242", fg="#FFFFFF")
             self.defaultTabLabel.configure(bg="#424242", fg="#FFFFFF")
@@ -725,6 +450,9 @@ class sF(tk.Frame):
             s.configure('TNotebook', background='#424242')
             self.topGUI.setThemeDark()
             self.defaultFormulaDirectoryLabel.configure(background="#424242", foreground="#FFFFFF")
+            self.importPathButtonFrame.configure(background="#424242")
+            self.importPathLabel.configure(background="#424242", foreground="#FFFFFF")
+            self.importPathListboxFrame.configure(background="#424242")
         
         self.topGUI.setBarColor(self.barColor)
         self.barColorLabel.configure(bg=self.barColor)
@@ -743,6 +471,149 @@ class sF(tk.Frame):
         self.topGUI.setFreqUndo(self.defaultFreqUndoVariable.get())
         self.topGUI.setFreqLoadCustom(self.customFreqLoadVariable.get())
         self.topGUI.setScroll(self.defaultScrollVariable.get())
+        self.topGUI.setDefaultImports(self.importPathListbox.get(0, tk.END))
+    
+    def resetDefaults(self):
+        a = messagebox.askokcancel("Reset all settings?", "Are you sure you want to reset all settings to the defaults?")
+        if (a):
+            self.themeChosen = "light"
+            self.barColor = "#333333"
+            self.activeColor = "#737373"
+            self.highlightColor = "#999999"
+            self.defaultDetectCommentsCheckboxVariable.set(1)
+            self.defaultCommentsVariable.set("0")
+            self.defaultDetectDelimiterCheckboxVariable.set(1)
+            self.defaultDelimiterVariable.set("Tab")
+            self.defaultMCVariable.set("1000")
+            self.defaultFitVariable.set("Complex")
+            self.defaultWeightingVariable.set("Modulus")
+            self.defaultAlphaVariable.set("1")
+            self.defaultAlphaCheckboxVariable.set(0)
+            self.defaultBetaCheckboxVariable.set(0)
+            self.defaultReCheckboxVariable.set(0)
+            self.defaultGammaCheckboxVariable.set(1)
+            self.defaultDeltaCheckboxVariable.set(1)
+            self.defaultErrorWeightingVariable.set("Variance")
+            self.defaultMovingAverageVariable.set("5 point")
+            self.defaultDetrendVariable.set("Off")
+            self.ellipseColor = "#FF0000"
+            self.defaultDirectoryEntry.configure(state="normal")
+            self.defaultDirectoryEntry.delete(0,tk.END)
+            self.defaultDirectoryEntry.insert(0, "C:\\")
+            self.defaultDirectoryEntry.configure(state="readonly")
+            self.inputExitAlertVariable.set(0)
+            self.customFormulaExitAlertVariable.set(0)
+            self.defaultTabVariable.set("Input file")
+            self.defaultFreqUndoVariable.set(0)
+            self.defaultFreqLoadVariable.set(0)
+            self.customFreqLoadVariable.set(0)
+            self.defaultScrollVariable.set(1)
+            self.defaultFormulaDirectoryEntry.configure(state="normal")
+            self.defaultFormulaDirectoryEntry.delete(0,tk.END)
+            self.defaultFormulaDirectoryEntry.insert(0, "C:\\")
+            self.defaultFormulaDirectoryEntry.configure(state="readonly")
+            self.importPathListbox.delete(0, tk.END)
+            config = configparser.ConfigParser()
+            config['settings'] = {'theme': self.themeChosen, 'bar': self.barColor, 'highlight': self.highlightColor, 'accent': self.activeColor, 'dir': "C:\\", 'tab': self.defaultTabVariable.get(), 'scroll': self.defaultScrollVariable.get(), 'formulaDir': "C:\\"}
+            config['input'] = {'detect': self.defaultDetectCommentsCheckboxVariable.get(),'comments': self.defaultCommentsVariable.get(), 'delimiter': self.defaultDelimiterVariable.get(), 'detectDelimiter': self.defaultDetectDelimiterCheckboxVariable.get()}
+            config['model'] = {'mc': self.defaultMCVariable.get(), 'fit': self.defaultFitVariable.get(), 'weight': self.defaultWeightingVariable.get(), 'alpha': self.defaultAlphaVariable.get(), 'ellipse': self.ellipseColor, 'freqLoad': self.defaultFreqLoadVariable.get(), 'freqUndo': self.defaultFreqUndoVariable.get()}
+            config['error'] = {'detrend': self.defaultDetrendVariable.get(), 'alphaError': self.defaultAlphaCheckboxVariable.get(), 'betaError': self.defaultBetaCheckboxVariable.get(), 'reError': self.defaultReCheckboxVariable.get(), 'gammaError': self.defaultGammaCheckboxVariable.get(), 'deltaError': self.defaultDeltaCheckboxVariable.get(), 'errorWeighting': self.defaultErrorWeightingVariable.get(), 'errorMA': self.defaultMovingAverageVariable.get()}
+            config['custom'] = {'askCustomExit': self.customFormulaExitAlertVariable.get(), 'freqLoadCustom': self.customFreqLoadVariable.get(), 'imports': ""}
+            if (os.path.exists(os.getenv('LOCALAPPDATA')+r"\MeasurementModel")):
+                with open(os.getenv('LOCALAPPDATA')+r"\MeasurementModel\settings.ini", 'w+') as configfile:
+                    config.write(configfile)
+                    configfile.close()
+            else:
+                os.makedirs(os.getenv('LOCALAPPDATA')+r"\MeasurementModel")
+                with open(os.getenv('LOCALAPPDATA')+r"\MeasurementModel\settings.ini", 'w') as configfile:
+                    config.write(configfile)
+                    configfile.close()
+            self.applySettings()
+    
+    def popup_inputFiles(self, event):
+        try:
+            self.popup_menu_importPath.tk_popup(event.x_root, event.y_root, 0)
+        finally:
+            self.popup_menu_importPath.grab_release()
+    
+    def lightTheme(self, e):
+        self.lightLabel.configure(relief="sunken")
+        self.darkLabel.configure(relief="raised")
+        self.themeChosen = 'light'
+
+    def darkTheme(self, e):
+        self.lightLabel.configure(relief="raised")
+        self.darkLabel.configure(relief="sunken")
+        self.themeChosen = 'dark'
+    
+    def checkRe(self):
+        if (self.defaultReCheckboxVariable.get() == 1):
+            self.defaultBetaCheckboxVariable.set(1)
+    
+    def checkBeta(self):
+        if (self.defaultBetaCheckboxVariable.get() == 0):
+            self.defaultReCheckboxVariable.set(0)
+    
+    def pickBarColor(self, e):
+        color = colorchooser.askcolor(self.barColor, title="Choose bar color") 
+        if (color[1] is not None):
+            self.barColorLabel.configure(bg=color[1])
+            self.barColor = color[1]
+    def pickHighlightColor(self, e):
+        color = colorchooser.askcolor(self.highlightColor, title="Choose highlight color") 
+        if (color[1] is not None):
+            self.highlightColorLabel.configure(bg=color[1])
+            self.highlightColor = color[1]
+    def pickActiveColor(self, e):
+        color = colorchooser.askcolor(self.activeColor, title="Choose active color") 
+        if (color[1] is not None):
+            self.activeColorLabel.configure(bg=color[1])
+            self.activeColor = color[1]
+    def pickEllipseColor(self, e):
+        color = colorchooser.askcolor(self.ellipseColor, title="Choose error line/ellipse color") 
+        if (color[1] is not None):
+            self.defaultEllipseColorLabel.configure(bg=color[1])
+            self.ellipseColor = color[1]
+    
+    def defaultCommentsCommand(self):
+        if (self.defaultDetectCommentsCheckboxVariable.get() == 1):
+            self.defaultDetectDelimiterCheckbox.grid(column=0, row=2, pady=2)
+        else:
+            self.defaultDetectDelimiterCheckbox.grid_remove()   
+    
+    def findNewDirectory(self):
+        folder = askdirectory(initialdir=self.topGUI.getCurrentDirectory())
+        folder_str = str(folder)
+        if len(folder_str) == 0:
+            pass
+        else:
+            self.defaultDirectoryEntry.configure(state="normal")
+            self.defaultDirectoryEntry.delete(0,tk.END)
+            self.defaultDirectoryEntry.insert(0, folder_str)
+            self.defaultDirectoryEntry.configure(state="readonly")
+    
+    def findNewFormulaDirectory(self):
+        folder = askdirectory(initialdir=self.topGUI.getCurrentDirectory())
+        folder_str = str(folder)
+        if len(folder_str) == 0:
+            pass
+        else:
+            self.defaultFormulaDirectoryEntry.configure(state="normal")
+            self.defaultFormulaDirectoryEntry.delete(0,tk.END)
+            self.defaultFormulaDirectoryEntry.insert(0, folder_str)
+            self.defaultFormulaDirectoryEntry.configure(state="readonly")
+    
+    def importDirectoryBrowse(self, e=None):
+        folder = askdirectory(initialdir=self.topGUI.getCurrentDirectory())
+        folder_str = str(folder)
+        if (len(folder_str) > 1):
+            self.importPathListbox.insert(tk.END, folder_str)
+
+    def importDirectoryRemove(self, e=None):
+        if (self.importPathListbox.size() > 0):
+             items = list(map(int, self.importPathListbox.curselection()))
+             if (len(items) != 0):
+                 self.importPathListbox.delete(tk.ANCHOR)
     
     def saveSettings(self, e=None):
         try:
@@ -768,11 +639,17 @@ class sF(tk.Frame):
             return
         try:
             config = configparser.ConfigParser()
+            imports_tuple = self.importPathListbox.get(0, tk.END)
+            imports = ""
+            for val in imports_tuple:
+                imports += val + "*"
+            
+            imports = imports[:-1]
             config['settings'] = {'theme': self.themeChosen, 'bar': self.barColor, 'highlight': self.highlightColor, 'accent': self.activeColor, 'dir': self.defaultDirectoryEntry.get(), 'tab': self.defaultTabVariable.get(), 'scroll': self.defaultScrollVariable.get(), 'formulaDir': self.defaultFormulaDirectoryEntry.get()}
             config['input'] = {'detect': self.defaultDetectCommentsCheckboxVariable.get(), 'comments': numCommentDefault, 'delimiter': self.defaultDelimiterVariable.get(), 'detectDelimiter': self.defaultDetectDelimiterCheckboxVariable.get(), 'askInputExit': self.inputExitAlertVariable.get()}
             config['model'] = {'mc': numMCDefault, 'fit': self.defaultFitVariable.get(), 'weight': self.defaultWeightingVariable.get(), 'alpha': numAlphaDefault, 'ellipse': self.ellipseColor, 'freqLoad': self.defaultFreqLoadVariable.get(), 'freqUndo': self.defaultFreqUndoVariable.get()}
             config['error'] = {'detrend': self.defaultDetrendVariable.get(), 'alphaError': self.defaultAlphaCheckboxVariable.get(), 'betaError': self.defaultBetaCheckboxVariable.get(), 'reError': self.defaultReCheckboxVariable.get(), 'gammaError': self.defaultGammaCheckboxVariable.get(), 'deltaError': self.defaultDeltaCheckboxVariable.get(), 'errorWeighting': self.defaultErrorWeightingVariable.get(), 'errorMA': self.defaultMovingAverageVariable.get()}
-            config['custom'] = {'askCustomExit': self.customFormulaExitAlertVariable.get(), 'freqLoadCustom': self.customFreqLoadVariable.get()}
+            config['custom'] = {'askCustomExit': self.customFormulaExitAlertVariable.get(), 'freqLoadCustom': self.customFreqLoadVariable.get(), 'imports': imports}
             if (os.path.exists(os.getenv('LOCALAPPDATA')+r"\MeasurementModel")):
                 with open(os.getenv('LOCALAPPDATA')+r"\MeasurementModel\settings.ini", 'w+') as configfile:
                     config.write(configfile)

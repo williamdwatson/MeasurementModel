@@ -28,9 +28,26 @@ import numpy as np
 #import threading
 import scipy.optimize as opt
 
-def findFit(fitType, weight, assumedNoise, formula, w, ZrIn, ZjIn, paramNames, paramGuesses, errorParams):
+def findFit(fitType, weight, assumedNoise, formula, w, ZrIn, ZjIn, paramNames, paramGuesses, paramBounds, errorParams):
     Z_append = np.append(ZrIn, ZjIn)
     numParams = len(paramNames)
+    
+    paramUpperBounds = []
+    paramLowerBounds = []
+    for bound in paramBounds:
+        if (bound != "-" and bound != "+" and bound != "n" and bound != "f"):
+            upper, lower = bound.split(";")
+            if (upper != "inf"):
+                paramUpperBounds.append(upper)
+            else:
+                paramUpperBounds.append("")
+            if (lower != "-inf"):
+                paramLowerBounds.append(lower)
+            else:
+               paramLowerBounds.append("") 
+        else:
+            paramUpperBounds.append("")
+            paramLowerBounds.append("")
     
     def diffComplex(params):
         return np.sum(((Z_append - model(params))**2)/(weightCode(params)**2))
@@ -67,7 +84,14 @@ def findFit(fitType, weight, assumedNoise, formula, w, ZrIn, ZjIn, paramNames, p
             weighting = []
             freq = w.copy()
             for i in range(numParams):
-                exec(paramNames[i] + " = " + str(float(p[i])))
+                if (paramBounds[i] == 'f'):
+                    exec(paramNames[i] + " = " + str(float(paramGuesses[i])))
+                elif (paramUpperBounds[i] != "" and float(p[i]) > float(paramUpperBounds[i])):
+                    exec(paramNames[i] + " = " + str(float(paramUpperBounds[i])))
+                elif (paramLowerBounds[i] != "" and float(p[i]) < float(paramLowerBounds[i])):
+                    exec(paramNames[i] + " = " + str(float(paramLowerBounds[i])))
+                else:
+                    exec(paramNames[i] + " = " + str(float(p[i])))
             ldict = locals()
             exec(formula, globals(), ldict)
             V = ldict['weighting']
@@ -98,7 +122,14 @@ def findFit(fitType, weight, assumedNoise, formula, w, ZrIn, ZjIn, paramNames, p
             weighting = []
             freq = w.copy()
             for i in range(numParams):
-                exec(paramNames[i] + " = " + str(float(p[i])))
+                if (paramBounds[i] == 'f'):
+                    exec(paramNames[i] + " = " + str(float(paramGuesses[i])))
+                elif (paramUpperBounds[i] != "" and float(p[i]) > float(paramUpperBounds[i])):
+                    exec(paramNames[i] + " = " + str(float(paramUpperBounds[i])))
+                elif (paramLowerBounds[i] != "" and float(p[i]) < float(paramLowerBounds[i])):
+                    exec(paramNames[i] + " = " + str(float(paramLowerBounds[i])))
+                else:
+                    exec(paramNames[i] + " = " + str(float(p[i])))
             ldict = locals()
             exec(formula, globals(), ldict)
             V = ldict['weighting']
@@ -113,8 +144,14 @@ def findFit(fitType, weight, assumedNoise, formula, w, ZrIn, ZjIn, paramNames, p
         Zimag = [] #np.zeros(len(w))
         freq = w.copy()
         for i in range(numParams):
-            #print(paramNames[i] + " = " + str(float(paramGuesses[i])))
-            exec(paramNames[i] + " = " + str(float(p[i])))
+            if (paramBounds[i] == 'f'):
+                exec(paramNames[i] + " = " + str(float(paramGuesses[i])))
+            elif (paramUpperBounds[i] != "" and float(p[i]) > float(paramUpperBounds[i])):
+                exec(paramNames[i] + " = " + str(float(paramUpperBounds[i])))
+            elif (paramLowerBounds[i] != "" and float(p[i]) < float(paramLowerBounds[i])):
+                exec(paramNames[i] + " = " + str(float(paramLowerBounds[i])))
+            else:
+                exec(paramNames[i] + " = " + str(float(p[i])))
         ldict = locals()
         exec(formula, globals(), ldict)
         Zreal = ldict['Zreal']
@@ -130,8 +167,14 @@ def findFit(fitType, weight, assumedNoise, formula, w, ZrIn, ZjIn, paramNames, p
         Zimag = [] #np.zeros(len(w))
         freq = w.copy()
         for i in range(numParams):
-            #print(paramNames[i] + " = " + str(float(p[paramNames[i]])))
-            exec(paramNames[i] + " = " + str(float(p[i])))
+            if (paramBounds[i] == 'f'):
+                exec(paramNames[i] + " = " + str(float(paramGuesses[i])))
+            elif (paramUpperBounds[i] != "" and float(p[i]) > float(paramUpperBounds[i])):
+                exec(paramNames[i] + " = " + str(float(paramUpperBounds[i])))
+            elif (paramLowerBounds[i] != "" and float(p[i]) < float(paramLowerBounds[i])):
+                exec(paramNames[i] + " = " + str(float(paramLowerBounds[i])))
+            else:
+                exec(paramNames[i] + " = " + str(float(p[i])))
         ldict = locals()
         exec(formula, globals(), ldict)
         Zreal = ldict['Zreal']
@@ -148,8 +191,14 @@ def findFit(fitType, weight, assumedNoise, formula, w, ZrIn, ZjIn, paramNames, p
         Zimag = [] #np.zeros(len(w))
         freq = w.copy()
         for i in range(numParams):
-            #print(paramNames[i] + " = " + str(float(p[paramNames[i]])))
-            exec(paramNames[i] + " = " + str(float(p[i])))
+            if (paramBounds[i] == 'f'):
+                exec(paramNames[i] + " = " + str(float(paramGuesses[i])))
+            elif (paramUpperBounds[i] != "" and float(p[i]) > float(paramUpperBounds[i])):
+                exec(paramNames[i] + " = " + str(float(paramUpperBounds[i])))
+            elif (paramLowerBounds[i] != "" and float(p[i]) < float(paramLowerBounds[i])):
+                exec(paramNames[i] + " = " + str(float(paramLowerBounds[i])))
+            else:
+                exec(paramNames[i] + " = " + str(float(p[i])))
         ldict = locals()
         exec(formula, globals(), ldict)
         Zreal = ldict['Zreal']
@@ -158,4 +207,13 @@ def findFit(fitType, weight, assumedNoise, formula, w, ZrIn, ZjIn, paramNames, p
         return Zreal
     
     if (fitType == 3):
-        return opt.minimize(diffComplex, paramGuesses, method='Nelder-Mead', options={'maxiter': numParams})
+        result = opt.minimize(diffComplex, paramGuesses, method='Nelder-Mead', options={'maxiter': numParams})
+        toReturn = result.x
+        for i in range(numParams):
+            if (paramBounds[i] == 'f'):
+                toReturn[i] = paramGuesses[i]
+            elif (paramUpperBounds[i] != "" and float(toReturn[i]) > float(paramUpperBounds[i])):
+                toReturn[i] = paramUpperBounds[i]
+            elif (paramLowerBounds[i] != "" and float(toReturn[i]) < float(paramLowerBounds[i])):
+                toReturn = paramLowerBounds[i]
+        return toReturn

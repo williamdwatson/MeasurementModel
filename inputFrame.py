@@ -54,6 +54,20 @@ import detect_delimiter
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #----------------------------------------------------------------------------
+import galvani
+#----------------------------------galvani-----------------------------------
+#   galvani by Chris Kerr
+#   License: GNU General Public License v3 or later (GPLv3+) (GPLv3+)
+#   GitHub: https://github.com/echemdata/galvani/blob/master/galvani/BioLogic.py
+#   PyPi: https://pypi.org/project/galvani/
+#---------------------------------------------------------------------------
+
+"""
+Code for automatic file detection (such as AutoLab, VersaStudio, etc.) from https://github.com/ECSHackWeek/impedance.py/blob/cf6e755acf5075539d68462f6555dff685f0ecbf/impedance/preprocessing.py
+by Lok-kun Tsui, Brian Gerwe, and Matt Murbach
+License: MIT
+Copyright (c) 2020 impedance.py developers.
+"""
 
 #---Different exceptions to allow more precise error messages---
 class BadMultiplierError(Exception):
@@ -263,6 +277,39 @@ class iF(tk.Frame):
             self.foregroundColor = "black"
         tk.Frame.__init__(self, parent, background=self.backgroundColor)
         
+        self.addFreqNyquistPlot = tk.Toplevel(background=self.backgroundColor)
+        self.addFreqNyquistPlot.withdraw()
+        self.addFreqNyquistPlot.title("Add Frequency to Delete")
+        self.addFreqNyquistPlot.iconbitmap(resource_path('img/elephant3.ico'))
+        self.addFreqNyquistElementFrame = tk.Frame(self.addFreqNyquistPlot, background=self.backgroundColor)
+        self.addFreqNyquistRVariable = tk.StringVar(self, '0')
+        self.addFreqNyquistJVariable = tk.StringVar(self, '0')
+        self.addFreqNyquistWVariable = tk.StringVar(self, '0')
+        self.addFreqNyquistREntry = ttk.Entry(self.addFreqNyquistElementFrame, textvariable=self.addFreqNyquistRVariable, state="readonly", width=8)
+        self.addFreqNyquistRLabel = tk.Label(self.addFreqNyquistElementFrame, background=self.backgroundColor, foreground=self.foregroundColor, text="Real: ")
+        self.addFreqNyquistJEntry = ttk.Entry(self.addFreqNyquistElementFrame, textvariable=self.addFreqNyquistJVariable, state="readonly", width=8)
+        self.addFreqNyquistJLabel = tk.Label(self.addFreqNyquistElementFrame, background=self.backgroundColor, foreground=self.foregroundColor, text="Imag: ")
+        self.addFreqNyquistWEntry = ttk.Entry(self.addFreqNyquistElementFrame, textvariable=self.addFreqNyquistWVariable, state="readonly", width=8)
+        self.addFreqNyquistWLabel = tk.Label(self.addFreqNyquistElementFrame, background=self.backgroundColor, foreground=self.foregroundColor, text="Freq: ")
+        self.addFreqNyquistEnterButton = ttk.Button(self.addFreqNyquistElementFrame, text="Add")
+        self.addFreqNyquistRLabel.grid(row=0, column=2, padx=(5, 0))
+        self.addFreqNyquistREntry.grid(row=0, column=3)
+        self.addFreqNyquistJLabel.grid(row=0, column=4)
+        self.addFreqNyquistJEntry.grid(row=0, column=5)
+        self.addFreqNyquistWLabel.grid(row=0, column=6)
+        self.addFreqNyquistWEntry.grid(row=0, column=7, padx=(0, 5))
+        self.addFreqNyquistEnterButton.grid(row=0, column=8, padx=5)
+        self.addFreqNyquistElementFrame.pack(side=tk.BOTTOM, fill=tk.X, pady=10, expand=True)
+        self.addFreqNyquistInput = Figure(figsize=(5,4), dpi=100)
+        toolbarFrame = tk.Frame(master=self.addFreqNyquistPlot)
+        toolbarFrame.pack(side=tk.BOTTOM, fill=tk.X, expand=False)
+        self.addFreqNyquistCanvasInput = FigureCanvasTkAgg(self.addFreqNyquistInput, self.addFreqNyquistPlot)
+        self.addFreqNyquistCanvasInput.get_tk_widget().pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
+        toolbar = NavigationToolbar2Tk(self.addFreqNyquistCanvasInput, toolbarFrame)    #Enables the zoom and move toolbar for the plot
+        toolbar.update()
+        self.addFreqNyquistCanvasInput._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        addFreqNyquistEnterButton_ttp = CreateToolTip(self.addFreqNyquistEnterButton, 'Add point to delete list')
+        
         #---Popup menu for input file---
         def popup_inputFileText(event):
             try:
@@ -288,13 +335,27 @@ class iF(tk.Frame):
             self.inputFileText.selection_range(0, tk.END)
             
         def OpenFile():
-            name = askopenfilename(initialdir=self.topGUI.currentDirectory, filetypes =(("All files", "*.*"),("DTA files (*.dta)", "*.dta"),("DAT files (*.dat)", "*.dat"),("Text files (*.txt)","*.txt"),("CSV files (*.csv)", "*.csv")),title = "Choose a file")
+            name = askopenfilename(initialdir=self.topGUI.currentDirectory, filetypes =(("All files", "*.*"),("Gamry files (*.dta)", "*.dta"),("BioLogic files (*.mpt)", "*.mpt"),("VersaStudio files (*.par)", "*.par"), ("Text files (*.txt)","*.txt"),("CSV files (*.csv)", "*.csv"), ("Z files (*.z)", "*.z")),title = "Choose a file")
             if (name == ""):
                 return "+", "+"
             else:
                 try:
-                    with open(name,'r') as UseFile:
-                        return name, UseFile.read()
+                    a, b = os.path.splitext(name)
+                    if (b.lower().endswith("par")):
+                        with open(name,'r', encoding="utf8") as UseFile:
+                            return name, UseFile.read()
+                    if (b.lower().endswith("mpr")):
+                        mpr_file = galvani.MPRfile(name)
+                        datum = mpr_file.data
+                        data_to_return = ""
+                        for i in range(len(datum)):
+                            for j in range(len(datum[i])):
+                                data_to_return += str(datum[i][j]) + "\t"
+                            data_to_return += "\n"
+                        return name, data_to_return #temp
+                    else:
+                        with open(name,'r') as UseFile:
+                            return name, UseFile.read()
                 except:     #If there's a problem with the file
                     messagebox.showerror("File error", "Error 5:\nThere was an error opening the file.")
                     return "+", "+"   
@@ -310,7 +371,132 @@ class iF(tk.Frame):
                 self.inputFileText.configure(state="readonly")
                 self.browseTextBtn.configure(state="normal")
                 self.fileText = filetext
-                if (self.topGUI.getDetectComments() == 1):
+                if (self.topGUI.getDetectComments() == 1 and n.lower().endswith(".dta")):   #For Gamry's .DTA files
+                    numLinesOfComments = 0
+                    for i, line in enumerate(filetext.splitlines()):
+                        if 'ZCURVE' in line:
+                            numLinesOfComments = i+3
+                            break
+                    self.commentVariable.set(numLinesOfComments)
+                    self.delimiterVariable.set("Tab")
+                    self.freqColVariable.set("3")
+                    self.realColVariable.set("4")
+                    self.imagColVariable.set("5")
+                elif (self.topGUI.getDetectComments() == 1 and n.lower().endswith(".mpt")):     #For BioLogic .mpt files
+                    lines = filetext.splitlines()
+                    self.commentVariable.set(lines[1].split(":")[1])
+                    self.delimiterVariable.set("Tab")
+                    self.freqColVariable.set("1")
+                    self.realColVariable.set("2")
+                    self.imagColVariable.set("3")
+                    self.imagUnitVariable.set("-1")
+                elif (self.topGUI.getDetectComments() == 1 and n.lower().endswith(".mpr")):     #For BioLogic .mpr files
+                    lines = filetext.splitlines()
+                    self.commentVariable.set("0")
+                    self.delimiterVariable.set("Tab")
+                    self.freqColVariable.set("1")
+                    self.realColVariable.set("2")
+                    self.imagColVariable.set("3")
+                    self.imagUnitVariable.set("-1")
+                elif (self.topGUI.getDetectComments() == 1 and n.lower().endswith(".z")):         #For Solatron? .z files
+                    numLinesOfComments = 0
+                    lines = filetext.splitlines()
+                    if ("zplot" in lines[0].lower()):
+                        for i, line in enumerate(lines):
+                            if "End Comments" in line:
+                                start_line = i
+                                break
+                            if "Freq(Hz)" in line:
+                                head_line = i
+                        try:
+                            numLinesOfComments = start_line + 1
+                        except UnboundLocalError:
+                            numLinesOfComments = head_line + 1
+                        self.commentVariable.set(numLinesOfComments)
+                        self.freqColVariable.set("1")
+                        self.realColVariable.set("5")
+                        self.imagColVariable.set("6")
+                        whatDelimiter = detect_delimiter.detect(lines[numLinesOfComments])
+                        if (whatDelimiter == ","):
+                            self.delimiterVariable.set(",")
+                        elif (whatDelimiter == "\t"):
+                            self.delimiterVariable.set("Tab")
+                elif (self.topGUI.getDetectComments() == 1 and n.lower().endswith(".txt")):         #For CH Instruments files
+                    lines = filetext.splitlines()
+                    if ("chi" in lines[4].lower()):
+                        for i, line in enumerate(lines):
+                            if 'Freq/Hz' in line:
+                                # CH instruments has an empty space b/w header
+                                # and start of data line
+                                self.commentVariable.set(i+2)
+                                self.delimiterVariable.set(",")
+                                self.freqColVariable.set("1")
+                                self.realColVariable.set("2")
+                                self.imagColVariable.set("3")
+                                break
+                    elif ("data file" in lines[0].lower()):                                         #For AutoLab files
+                        for i, line in enumerate(lines):
+                            if 'Freq' in line:
+                                self.commentVariable.set(i+1)
+                                self.delimiterVariable.set(",")
+                                self.freqColVariable.set("1")
+                                self.realColVariable.set("5")
+                                self.imagColVariable.set("6")
+                    elif ("elapsed time" in lines[0].lower()):                                      #For Parstat files 
+                        for i, line in enumerate(lines):
+                            if (i >= 1 and line.split("\t")[3].strip() != "0"):
+                                self.commentVariable.set(i)
+                                break
+                        self.delimiterVariable.set("Tab")
+                        self.freqColVariable.set("4")
+                        self.realColVariable.set("5")
+                        self.imagColVariable.set("6")
+                    elif ("zimg" in lines[0].lower()):                                              #For PowerSuite files
+                        self.commentVariable.set(1)
+                        self.delimiterVariable.set("Tab")
+                        self.freqColVariable.set("1")
+                        self.realColVariable.set("2")
+                        self.imagColVariable.set("3")
+                    else:
+                        numLinesOfComments = 0
+                        whatDelimiter = "no"
+                        for line in filetext.splitlines():
+                            lineNew = ''.join(line.split())
+                            #print(line)
+                            if (len(lineNew)<5):
+                                numLinesOfComments += 1
+                                continue
+                            elif (sum(c.isdigit() for c in lineNew) < sum(c.isalpha() for c in lineNew)):
+                                numLinesOfComments += 1
+                                continue
+                            else:
+                                if (self.topGUI.getDetectDelimiter() == 1):
+                                    whatDelimiter = detect_delimiter.detect(line)
+                                    if (whatDelimiter == ","):
+                                        self.delimiterVariable.set(",")
+                                    elif (whatDelimiter == "\t"):
+                                        self.delimiterVariable.set("Tab")
+                                    elif (whatDelimiter == " "):
+                                        self.delimiterVariable.set("Space")
+                                    elif (whatDelimiter == ";"):
+                                        self.delimiterVariable.set(";")
+                                    elif (whatDelimiter == "|"):
+                                        self.delimiterVariable.set("|")
+                                    elif (whatDelimiter == ":"):
+                                        self.delimiterVariable.set(":")
+                                break #reached the end of comment lines
+                        self.commentVariable.set(numLinesOfComments)
+                elif (self.topGUI.getDetectComments() == 1 and n.lower().endswith(".par")):               #For VersaStudio .par files    
+                    lines = filetext.splitlines()
+                    for i, line in enumerate(lines):
+                        if ("<Segment" in line):
+                            self.commentVariable.set(i+4)
+                            break
+                    self.delimiterVariable.set(",")
+                    self.freqColVariable.set("10")
+                    self.realColVariable.set("15")
+                    self.imagColVariable.set("16")
+                elif (self.topGUI.getDetectComments() == 1):
                     numLinesOfComments = 0
                     whatDelimiter = "no"
                     for line in filetext.splitlines():
@@ -443,9 +629,135 @@ class iF(tk.Frame):
             self.otherFrequencyNumVariable.set("")
             self.otherFrequencyErrorVariable.set("")
         
+        def graphOutFreqNyquist(event):
+            self.addFreqNyquistInput.canvas._tkcanvas.config(cursor="arrow")
+        
+        def graphOverFreqNyquist(event):
+            self.addFreqNyquistInput.canvas._tkcanvas.config(cursor="hand2")
+        
+        def addFreqNyquist_click(event):
+            if (event.inaxes is not None):
+                min_dist = np.inf
+                min_index = 0
+                for i in range(len(self.real_data)):
+                    if np.sqrt((self.real_data[i] - event.xdata)**2 + (self.imag_data[i] + event.ydata)**2) < min_dist:
+                        min_dist = np.sqrt((self.real_data[i] - event.xdata)**2 + (self.imag_data[i] + event.ydata)**2)
+                        min_index = i
+                self.addFreqNyquistRVariable.set(round(self.real_data[min_index], -int(np.floor(np.log10(abs(self.real_data[min_index])))) + (5 - 1)))
+                self.addFreqNyquistJVariable.set(round(self.imag_data[min_index], -int(np.floor(np.log10(abs(self.imag_data[min_index])))) + (5 - 1)))
+                self.addFreqNyquistWVariable.set(round(self.freq_data[min_index], -int(np.floor(np.log10(abs(self.freq_data[min_index])))) + (5 - 1)))
+                self.freqFromNyquist = self.freq_data[min_index]
+            else:
+                pass    #clicked outside of plot
+        
+        def addFreqFromNyquist():
+            try:
+                if (self.freqFromNyquist != ""):
+                    self.otherFrequencyListbox.insert(tk.END, str(self.freqFromNyquist) + " ± 0")
+                    self.freqFromNyquist = ""
+                    self.addFreqNyquistInput.clf()
+                    self.addFreqNyquistPlot.withdraw()
+            except Exception:
+                pass    #No point has been clicked yet
+        
+        #---Add frequency to delete from Nyquist plot---
+        def addFreqNyquist():
+            if (self.topGUI.getTheme() == "dark"):
+                dataColor = "cyan"
+            else:
+                dataColor = "tab:blue"
+            if (self.inputFileText.get() != ""):
+                if (len(self.real_data) == 0):
+                    messagebox.showwarning("No data loaded", "Data must be loaded before further deleting can be done through the Nyquist plot")
+                elif (self.addFreqNyquistPlot.state() == "withdrawn"):
+                    self.addFreqNyquistPlot.deiconify()
+                    x = np.array(self.real_data)    #Convert to numpy array for plotting
+                    y = np.array(self.imag_data)
+                    self.addFreqNyquistEnterButton.configure(command=addFreqFromNyquist)
+                    with plt.rc_context({'axes.edgecolor':self.foregroundColor, 'xtick.color':self.foregroundColor, 'ytick.color':self.foregroundColor, 'figure.facecolor':self.backgroundColor}):
+                        self.addFreqNyquistSubplot = self.addFreqNyquistInput.add_subplot(111)
+                        self.addFreqNyquistSubplot.set_facecolor(self.backgroundColor)
+                        self.addFreqNyquistSubplot.yaxis.set_ticks_position("both")
+                        self.addFreqNyquistSubplot.yaxis.set_tick_params(direction="in", color=self.foregroundColor)     #Make the ticks point inwards
+                        self.addFreqNyquistSubplot.xaxis.set_ticks_position("both")
+                        self.addFreqNyquistSubplot.xaxis.set_tick_params(direction="in", color=self.foregroundColor)     #Make the ticks point inwards
+                        pointsPlot, = self.addFreqNyquistSubplot.plot(x, -1*y, "o", color=dataColor)
+                        self.addFreqNyquistSubplot.axis("equal")
+                        self.addFreqNyquistSubplot.set_title("Nyquist Plot", color=self.foregroundColor)
+                        self.addFreqNyquistSubplot.set_xlabel("Zr / Ω", color=self.foregroundColor)
+                        self.addFreqNyquistSubplot.set_ylabel("-Zj / Ω", color=self.foregroundColor)
+                        self.addFreqNyquistInput.subplots_adjust(left=0.18)   #Allows the y axis label to be more easily seen
+                        self.addFreqNyquistCanvasInput.draw()
+                    self.addFreqNyquistCanvasInput.callbacks.connect('button_press_event', addFreqNyquist_click)
+                    self.addFreqNyquistCanvasInput.mpl_connect('axes_enter_event', graphOverFreqNyquist)
+                    self.addFreqNyquistCanvasInput.mpl_connect('axes_leave_event', graphOutFreqNyquist)
+                    annot = self.addFreqNyquistSubplot.annotate("", xy=(0,0), xytext=(10,10),textcoords="offset points", bbox=dict(boxstyle="round", fc="w", alpha=1), arrowprops=dict(arrowstyle="-"))
+                    annot.set_visible(False)
+                    rightPoint = max(x)
+                    topPoint = max(-1*y)
+                    def update_annot(ind):
+                        x,y = pointsPlot.get_data()
+                        xval = x[ind["ind"][0]]
+                        yval = y[ind["ind"][0]]
+                        annot.xy = (xval, yval)
+                        text = "Zr=%.3g"%xval + "\nZj=-%.3g"%yval + "\nf=%.5g"%self.freq_data[np.where(x == xval)[0][0]]
+                        annot.set_text(text)
+                        #---Check if we're within 5% of the right or top edges, and adjust label positions accordingly
+                        if (rightPoint != 0):
+                            if (abs(xval - rightPoint)/rightPoint <= 0.2):
+                                annot.set_position((-90, -10))
+                        if (topPoint != 0):
+                            if (abs(yval - topPoint)/topPoint <= 0.05):
+                                annot.set_position((10, -20))
+                        else:
+                            annot.set_position((10, -20))
+                    def hover(event):
+                        vis = annot.get_visible()
+                        if (event.inaxes == self.addFreqNyquistSubplot):
+                            cont, ind = pointsPlot.contains(event)
+                            if cont:
+                                update_annot(ind)
+                                annot.set_visible(True)
+                                self.addFreqNyquistInput.canvas.draw_idle()
+                            else:
+                                if vis:
+                                    annot.set_position((10,10))
+                                    annot.set_visible(False)
+                                    self.addFreqNyquistInput.canvas.draw_idle()
+                    self.addFreqNyquistInput.canvas.mpl_connect("motion_notify_event", hover)
+                    
+                    def on_closing():   #Clear the figure before closing the popup
+                        self.addFreqNyquistInput.clf()
+                        self.addFreqNyquistPlot.withdraw()
+                    
+                    self.addFreqNyquistPlot.protocol("WM_DELETE_WINDOW", on_closing)
+                else:
+                    self.addFreqNyquistPlot.lift()
+        
         def loadData():
             if (self.inputFileText.get() != ""):    #If there is a file in the text field
                 try:
+                    if (not self.inputFileText.get().lower().endswith("mpr")):
+                        try:
+                            if (self.inputFileText.get().lower().endswith("par")):
+                                with open(self.inputFileText.get(),'r', encoding="utf8") as UseFile:
+                                    filetext = UseFile.read()
+                                    endHere = len(filetext.splitlines())
+                                    for i, line in enumerate(filetext.splitlines()):
+                                        if '</Segment' in line:
+                                            endHere = i
+                                            break
+                            else:
+                                with open(self.inputFileText.get(),'r') as UseFile:
+                                    filetext = UseFile.read()
+                                    endHere = len(filetext.splitlines())
+                                    for i, line in enumerate(filetext.splitlines()):
+                                        if 'EXPERIMENTABORTED' in line:
+                                            endHere = i
+                                            break
+                        except:     #If there's a problem with the file
+                            messagebox.showerror("File error", "Error 5:\nThere was an error opening the file.")
+                            return
                     if (self.realUnitVariable.get() == "." or self.imagUnitVariable.get() == "." or self.freqUnitVariable.get() == "."):
                         raise BadMultiplierError
                     if (self.realColVariable.get() == "" or self.imagColVariable.get() == "" or self.freqColVariable.get() == ""):
@@ -454,30 +766,61 @@ class iF(tk.Frame):
                         numComments = 0
                     else:
                         numComments = int(self.commentNum.get())
-                    if (self.delimiterVariable.get() == "Tab"):
-                        data = np.loadtxt(self.inputFileText.get(), skiprows=numComments)
-                    elif (self.delimiterVariable.get() == "Space"):
-                        data = np.loadtxt(self.inputFileText.get(), skiprows=numComments, delimiter=" ")
+                    if (self.inputFileText.get().lower().endswith("mpr")):
+                        mpr_file = galvani.MPRfile(self.inputFileText.get())
+                        data = mpr_file.data
                     else:
-                        data = np.loadtxt(self.inputFileText.get(), skiprows=numComments, delimiter = self.delimiterVariable.get())
-                    freq_read = data[:, int(self.freqCol.get())-1]
+                        if (self.delimiterVariable.get() == "Tab"):
+                            if (self.inputFileText.get().lower().endswith("par")):
+                                data = np.loadtxt(self.inputFileText.get(), skiprows=numComments, max_rows=endHere-numComments, encoding="utf8")
+                            else:
+                                data = np.loadtxt(self.inputFileText.get(), skiprows=numComments, max_rows=endHere-numComments)
+                        elif (self.delimiterVariable.get() == "Space"):
+                            if (self.inputFileText.get().lower().endswith("par")):
+                                data = np.loadtxt(self.inputFileText.get(), skiprows=numComments, delimiter=" ", max_rows=endHere-numComments, encoding="utf8")
+                            else:
+                                data = np.loadtxt(self.inputFileText.get(), skiprows=numComments, delimiter=" ", max_rows=endHere-numComments)
+                        else:
+                            if (self.inputFileText.get().lower().endswith("par")):
+                                data = np.loadtxt(self.inputFileText.get(), skiprows=numComments, delimiter = self.delimiterVariable.get(), max_rows=endHere-numComments, encoding="utf8")
+                            else:    
+                                data = np.loadtxt(self.inputFileText.get(), skiprows=numComments, delimiter = self.delimiterVariable.get(), max_rows=endHere-numComments)
+                    #if (self.inputFileText.get().lower().endswith("mpr")):
+                    #    freq_read = data[:][int(self.freqCol.get())-1]
+                    #else:
+                    #    freq_read = data[:, int(self.freqCol.get())-1]
+                    freq_read = []
+                    for i in range(len(data)):
+                        freq_read.append(data[i][int(self.freqCol.get())-1])
                     if (self.freqUnitVariable.get() != "" and self.freqUnitVariable.get() != "-"):
-                        freq_read *= float(self.freqUnitVariable.get())
+                        freq_read = [x * float(self.freqUnitVariable.get()) for x in freq_read] #freq_read *= float(self.freqUnitVariable.get())
                     elif (self.freqUnitVariable.get() == "-"):
-                        freq_read *= -1
-                    real_read = data[:, int(self.realCol.get())-1]
+                        freq_read = [x * -1 for x in freq_read] #freq_read *= -1
+                    #if (self.inputFileText.get().lower().endswith("mpr")):
+                    #    real_read = data[:][int(self.realCol.get())-1]
+                    #else:
+                    #    real_read = data[:, int(self.realCol.get())-1]
+                    real_read = []
+                    for i in range(len(data)):
+                        real_read.append(data[i][int(self.realCol.get())-1])
                     if (self.realUnitVariable.get() != "" and self.realUnitVariable.get() != "-"):
-                        real_read *= float(self.realUnitVariable.get())
+                        real_read = [x * float(self.realUnitVariable.get()) for x in real_read] #real_read *= float(self.realUnitVariable.get())
                     elif (self.realUnitVariable.get() == "-"):
-                        real_read *= -1
-                    imag_read = data[:, int(self.imagCol.get())-1]
+                        real_read = [x * -1 for x in real_read] #real_read *= -1
+                    #if (self.inputFileText.get().lower().endswith("mpr")):
+                    #    imag_read = data[:][int(self.imagCol.get())-1]
+                    #else:
+                    #    imag_read = data[:, int(self.imagCol.get())-1]
+                    imag_read = []
+                    for i in range(len(data)):
+                        imag_read.append(data[i][int(self.imagCol.get())-1])
                     if (self.imagUnitVariable.get() != "" and self.imagUnitVariable.get() != "-"):
-                        imag_read *= float(self.imagUnitVariable.get())
+                        imag_read = [x * float(self.imagUnitVariable.get()) for x in imag_read] #imag_read *= float(self.imagUnitVariable.get())
                     elif (self.imagUnitVariable.get() == "-"):
-                        imag_read *= -1
-                    freq_in = freq_read.tolist()
-                    real_in = real_read.tolist()
-                    imag_in = imag_read.tolist()
+                        imag_read = [x * -1 for x in imag_read] #imag_read *= -1)
+                    freq_in = freq_read #.tolist()
+                    real_in = real_read #.tolist()
+                    imag_in = imag_read #.tolist()
                     if (not (len(freq_in) == len(real_in) and len(real_in) == len(imag_in))):
                         raise IndexError
                     if (self.lineFrequencyCheckboxVariable.get() != 0):
@@ -488,20 +831,25 @@ class iF(tk.Frame):
                         if (self.whichLineFrequenciesVariable.get() == "50"):
                             for i in range(len(freq_read)):
                                 if (freq_read[i] >= 50-pM and freq_read[i] <= 50+pM):
-                                    freqsToDelete.append(i)
+                                    if i not in freqsToDelete:
+                                        freqsToDelete.append(i)
                         elif (self.whichLineFrequenciesVariable.get() == "60"):
                             for i in range(len(freq_read)):
                                 if (freq_read[i] >= 60-pM and freq_read[i] <= 60+pM):
-                                    freqsToDelete.append(i)
+                                    if i not in freqsToDelete:
+                                        freqsToDelete.append(i)
                         elif (self.whichLineFrequenciesVariable.get() == "50&100"):
                             for i in range(len(freq_read)):
                                 if ((freq_read[i] >= 50-pM and freq_read[i] <= 50+pM) or (freq_read[i] >= 100-pM and freq_read[i] <= 100+pM)):
-                                    freqsToDelete.append(i)
+                                    if i not in freqsToDelete:
+                                        freqsToDelete.append(i)
                         elif (self.whichLineFrequenciesVariable.get() == "60&120"):
                             for i in range(len(freq_read)):
                                 if ((freq_read[i] >= 60-pM and freq_read[i] <= 60+pM) or (freq_read[i] >= 120-pM and freq_read[i] <= 120+pM)):
-                                    freqsToDelete.append(i)
+                                    if i not in freqsToDelete:
+                                        freqsToDelete.append(i)
                         corrector = 0
+                        numDeleted = len(freqsToDelete)
                         for i in range(len(freqsToDelete)):
                             freq_in.pop(freqsToDelete[i]-corrector)
                             real_in.pop(freqsToDelete[i]-corrector)
@@ -517,8 +865,10 @@ class iF(tk.Frame):
                         for i in range(len(freq_in)):
                             for j in range (len(freqsOther)):
                                 if (freq_in[i] >= freqsOther[j]-pMOther[j] and freq_in[i] <= freqsOther[j]+pMOther[j]):
-                                    freqsOtherDelete.append(i)
+                                    if i not in freqsOtherDelete:
+                                        freqsOtherDelete.append(i)
                         correctorOther = 0
+                        numDeleted += len(freqsOtherDelete)
                         for i in range(len(freqsOtherDelete)):
                             freq_in.pop(freqsOtherDelete[i]-correctorOther)
                             real_in.pop(freqsOtherDelete[i]-correctorOther)
@@ -533,20 +883,23 @@ class iF(tk.Frame):
                         self.freq_data.append(freq_in[i])
                         self.real_data.append(real_in[i])
                         self.imag_data.append(imag_in[i])
-                    self.numData.grid(column=0, row=6, sticky="W")
+                    self.numFrame.grid(column=0, row=6, sticky="W")
                     self.dataViewFrame.grid(column=0, row=7)
                     self.saveFrame.grid(column=0, row=8, sticky="W", pady=5)
                     self.numData.configure(text="Number of data: " + str(len(freq_in)))
+                    self.numDataDeleted.configure(text="Number of data deleted: " + str(numDeleted))
                     self.loadData.configure(text="Reload Data")
                     self.currentFile = self.inputFileText.get()
                     self.savedNeeded = True
+                    self.addFreqNyquistInput.clf()
+                    self.addFreqNyquistPlot.withdraw()
                 except IndexError:
                     messagebox.showerror("Different lengths", "Error 6:\nThe number of frequencies, real parts, and imaginary parts are not equal")
                 except BadMultiplierError:
-                    messagebox.showerror("Missing multiplier", "Error 7:\nOne of the multipliers has an invalid value of \".\"")
+                   messagebox.showerror("Missing multiplier", "Error 7:\nOne of the multipliers has an invalid value of \".\"")
                 except BadColumnError:
                     messagebox.showerror("Missing column", "Error 8:\nOne of the column numbers is missing")
-                except:
+                except Exception:
                     messagebox.showerror("File error", "Error 5:\nThere was an error loading or reading the file")
 
         def saveAs():
@@ -555,11 +908,12 @@ class iF(tk.Frame):
                 continueThoughDiff = messagebox.askokcancel("Different files", "The current file under \"Browse\" has not been loaded, and so will not be saved. If you continue, only the currently loaded data will be saved.")
             if (continueThoughDiff):
                 defaultSaveName, ext = os.path.splitext(os.path.basename(self.inputFileText.get()))
-                saveName = asksaveasfile(mode='w', defaultextension=".mmfile", initialfile=defaultSaveName, initialdir=self.topGUI.getCurrentDirectory, filetypes=[("Measurement model file", ".mmfile")])
+                saveName = asksaveasfile(mode='w', defaultextension=".mmfile", initialfile=defaultSaveName, initialdir=self.topGUI.getCurrentDirectory(), filetypes=[("Measurement model file", ".mmfile")])
                 directory = os.path.dirname(str(saveName))
                 self.topGUI.setCurrentDirectory(directory)
                 if saveName is None:     #If save is cancelled
                     return
+                saveName.write("Frequency\tReal\tImaginary\n")
                 for i in range(len(self.freq_data)):
                     saveName.write(str(self.freq_data[i]) + "\t" + str(self.real_data[i]) + "\t" + str(self.imag_data[i]) + "\n")
                 saveName.close()
@@ -574,11 +928,12 @@ class iF(tk.Frame):
                 continueThoughDiff = messagebox.askokcancel("Different files", "The current file under \"Browse\" has not been loaded, and so will not be saved. If you continue, only the currently loaded data will be saved.")
             if (continueThoughDiff):
                 defaultSaveName, ext = os.path.splitext(os.path.basename(self.inputFileText.get()))
-                saveName = asksaveasfile(mode='w', defaultextension=".mmfile", initialfile=defaultSaveName, initialdir=self.topGUI.getCurrentDirectory, filetypes=[("Measurement model file", ".mmfile")])
+                saveName = asksaveasfile(mode='w', defaultextension=".mmfile", initialfile=defaultSaveName, initialdir=self.topGUI.getCurrentDirectory(), filetypes=[("Measurement model file", ".mmfile")])
                 directory = os.path.dirname(str(saveName))
                 self.topGUI.setCurrentDirectory(directory)
                 if saveName is None:     #If save is cancelled
                     return
+                saveName.write("Frequency\tReal\tImaginary\n")
                 for i in range(len(self.freq_data)):
                     saveName.write(str(self.freq_data[i]) + "\t" + str(self.real_data[i]) + "\t" + str(self.imag_data[i]) + "\n")
                 self.savedNeeded = False
@@ -590,8 +945,8 @@ class iF(tk.Frame):
             nyPlot = tk.Toplevel(background=self.backgroundColor)
             self.nyPlots.append(nyPlot)
             nyPlot.title("Current Loaded Data")     #Plot window title
-            nyPlot.iconbitmap(resource_path('img/elephant3.ico'))
-            x = np.array(self.real_data)    #Doesn't plot without this
+            nyPlot.iconbitmap(resource_path('img/elephant3.ico'))   #Plot window icon
+            x = np.array(self.real_data)    #Convert to numpy array for plotting
             y = np.array(self.imag_data)
             with plt.rc_context({'axes.edgecolor':self.foregroundColor, 'xtick.color':self.foregroundColor, 'ytick.color':self.foregroundColor, 'figure.facecolor':self.backgroundColor}):
                 fInput = Figure(figsize=(5,4), dpi=100)
@@ -797,6 +1152,7 @@ class iF(tk.Frame):
         self.otherFrequencyErrorVariable = tk.StringVar(self, "")
         self.otherFrequencyError = ttk.Entry(self.otherFrequencyAddFrame, textvariable=self.otherFrequencyErrorVariable, width=4, validate="all", validatecommand=vcmd)
         self.otherFrequencyListboxAdd = ttk.Button(self.otherFrequencyAddFrame, text="Add", command=addFreq)
+        self.otherFrequencyListboxNyquist = ttk.Button(self.otherFrequencyAddFrame, text="Add via Nyquist", command=addFreqNyquist)
         self.otherFrequencyListboxDelete = ttk.Button(self.otherFrequencyFrame, text="Remove", command=lambda lb=self.otherFrequencyListbox: lb.delete(tk.ANCHOR))
         self.otherFrequencyListbox.grid(column=0,row=0,rowspan=2)
         self.otherFrequencyListboxScrollbar.grid(column=1,row=0,rowspan=2)
@@ -804,6 +1160,7 @@ class iF(tk.Frame):
         self.otherFrequencyLabel.grid(column=1, row=0)
         self.otherFrequencyError.grid(column=2, row=0)
         self.otherFrequencyListboxAdd.grid(column=3, row=0, padx=2)
+        self.otherFrequencyListboxNyquist.grid(column=4, row=0)
         self.otherFrequencyAddFrame.grid(column=2, row=0, padx=2)
         self.otherFrequencyListboxDelete.grid(column=2, row=1, padx=2, sticky="W")
         self.otherFrequencyCheckbox.grid(column = 0, row=0, sticky="W")
@@ -811,6 +1168,7 @@ class iF(tk.Frame):
         otherFrequency_ttp = CreateToolTip(self.otherFrequencyNum, 'Which frequency to be deleted')
         otherFrequencyPlusMins_ttp = CreateToolTip(self.otherFrequencyError, 'What range of frequencies above and below should be deleted')
         otherFrequencyAdd_ttp = CreateToolTip(self.otherFrequencyListboxAdd, 'Add frequency to list')
+        otherFrequencyListboxNyquist_ttp = CreateToolTip(self.otherFrequencyListboxNyquist, 'Open Nyquist plot to chose frequencies to delete')
         otherFrequencyDelete_ttp = CreateToolTip(self.otherFrequencyListboxDelete, 'Remove selected frequency from list')
         otherFrequencyCheckbox_ttp = CreateToolTip(self.otherFrequencyCheckbox, 'Delete data at any number of arbitrary frequency ranges')
         
@@ -824,8 +1182,12 @@ class iF(tk.Frame):
         loadData_ttp = CreateToolTip(self.loadData, 'Load data from file using given options')
         
         #---Number of data label---
-        self.numData = tk.Label(self, text="Number of data: ", bg=self.backgroundColor, fg=self.foregroundColor)
-                
+        self.numFrame = tk.Frame(self, bg=self.backgroundColor)
+        self.numData = tk.Label(self.numFrame, text="Number of data: ", bg=self.backgroundColor, fg=self.foregroundColor)
+        self.numDataDeleted = tk.Label(self.numFrame, text="Number of data deleted: ", bg=self.backgroundColor, fg=self.foregroundColor)
+        self.numData.grid(column=0, row=0, sticky="W")
+        self.numDataDeleted.grid(column=1, row=0, padx=(60, 0))        
+        
         #---View current data---
         self.dataViewFrame = tk.Frame(self, bg=self.backgroundColor)
         self.dataViewScrollbar = ttk.Scrollbar(self.dataViewFrame, orient=tk.VERTICAL)
@@ -889,6 +1251,8 @@ class iF(tk.Frame):
         self.plusMinusUnits.configure(background="#FFFFFF", foreground="#000000")
         self.clearBtn.configure(background="#FFFFFF", foreground="#000000")
         self.numData.configure(background="#FFFFFF", foreground="#000000")
+        self.numDataDeleted.configure(background="#FFFFFF", foreground="#000000")
+        self.numFrame.configure(background="#FFFFFF")
         try:
             self.text.configure(background="#FFFFFF", foreground="#000000")
             self.linenumbers.configure(background="#FFFFFF")
@@ -924,6 +1288,8 @@ class iF(tk.Frame):
         self.plusMinusUnits.configure(background="#424242", foreground="#FFFFFF")
         self.clearBtn.configure(background="#424242", foreground="#FFFFFF")
         self.numData.configure(background="#424242", foreground="#FFFFFF")
+        self.numDataDeleted.configure(background="#424242", foreground="#FFFFFF")
+        self.numFrame.configure(background="#424242")
         try:
             self.text.configure(background="#424242", foreground="#FFFFFF")
             self.linenumbers.configure(background="#424242")
@@ -949,7 +1315,7 @@ class iF(tk.Frame):
             continueThoughDiff = messagebox.askokcancel("Different files", "The current file under \"Browse\" has not been loaded, and so will not be saved. If you continue, only the currently loaded data will be saved.")
         if (continueThoughDiff):
             defaultSaveName, ext = os.path.splitext(os.path.basename(self.inputFileText.get()))
-            saveName = asksaveasfile(mode='w', defaultextension=".mmfile", initialfile=defaultSaveName, initialdir=self.topGUI.getCurrentDirectory, filetypes=[("Measurement model file", ".mmfile")])
+            saveName = asksaveasfile(mode='w', defaultextension=".mmfile", initialfile=defaultSaveName, initialdir=self.topGUI.getCurrentDirectory(), filetypes=[("Measurement model file", ".mmfile")])
             directory = os.path.dirname(str(saveName))
             self.topGUI.setCurrentDirectory(directory)
             if saveName is None:     #If save is cancelled

@@ -129,7 +129,7 @@ class eFF(tk.Frame):
         self.standardDevsR = []
         
         def addFile():
-            n = askopenfilenames(initialdir=self.topGUI.getCurrentDirectory, filetypes =[("Residuals File (*.mmresiduals)", "*.mmresiduals")],title = "Choose a file")
+            n = askopenfilenames(initialdir=self.topGUI.getCurrentDirectory(), filetypes =[("Residuals File (*.mmresiduals)", "*.mmresiduals")],title = "Choose a file")
             if (len(n) != 0):
                 try:
                     alreadyWarned = False
@@ -139,7 +139,13 @@ class eFF(tk.Frame):
                         fname, fext = os.path.splitext(name)
                         if (fext != ".mmresiduals"):
                             raise FileExtensionError
-                        data = np.loadtxt(name)
+                        with open(name,'r') as UseFile:
+                            filetext = UseFile.read()
+                            lines = filetext.splitlines()
+                        if ("frequency" in lines[1].lower()):
+                            data = np.loadtxt(name, skiprows=2)
+                        else:
+                            data = np.loadtxt(name)
                         re_in = data[0,0]
                         cap_in = data[0,1]
                         w_in = data[1:,0]
@@ -373,13 +379,15 @@ class eFF(tk.Frame):
             for i in range(self.wdataLength):
                 avgSigma = (self.standardDevsI[i] + self.standardDevsR[i])/2
                 sigmasigma[i] = np.sqrt((self.standardDevsI[i]-avgSigma)**2 + (self.standardDevsR[i]-avgSigma)**2)
-
-            stringToSave = str(self.numFiles) + "\t" + "0" + "\t" + "0" + "\t" + "0" + "\t" + "0" + "\t" + "0" + "\t" + "0" + "\n"
+            stringToSave = "Number of files\t-\t-\t-\t-\t-\t-\n"
+            stringToSave += "Avg. Re\t-\t-\t-\t-\t-\t-\n"
+            stringToSave += "Frequency\tReal std devs\tImag std devs\tAvg Real\tAvg Imag\tAvg |Z|\tStd devs of std devs\n"
+            stringToSave += str(self.numFiles) + "\t" + "0" + "\t" + "0" + "\t" + "0" + "\t" + "0" + "\t" + "0" + "\t" + "0" + "\n"
             stringToSave += str(avgRe) + "\t" + "0" + "\t" + "0" + "\t" + "0" + "\t" + "0" + "\t" + "0" + "\t" + "0" + "\n" 
             for i in range(self.wdataLength):
                 stringToSave += str(self.wdata[0][i]) + "\t" + str(self.standardDevsR[i]) + "\t" + str(self.standardDevsI[i]) + "\t" + str(avgR[i]) + "\t" + str(avgJ[i]) + "\t" + str(avgZ[i]) + "\t" + str(sigmasigma[i]) + "\n"
             defaultSaveName = os.path.splitext(os.path.basename(self.fileListbox.get(0)))[0]
-            saveName = asksaveasfile(mode='w', defaultextension=".mmerrors", initialfile=defaultSaveName, initialdir=self.topGUI.getCurrentDirectory, filetypes=[("Measurement model errors", ".mmerrors")])
+            saveName = asksaveasfile(mode='w', defaultextension=".mmerrors", initialfile=defaultSaveName, initialdir=self.topGUI.getCurrentDirectory(), filetypes=[("Measurement model errors", ".mmerrors")])
             directory = os.path.dirname(str(saveName))
             self.topGUI.setCurrentDirectory(directory)
             if saveName is None:     #If save is cancelled
@@ -552,13 +560,15 @@ class eFF(tk.Frame):
         for i in range(self.wdataLength):
             avgSigma = (self.standardDevsI[i] + self.standardDevsR[i])/2
             sigmasigma[i] = np.sqrt((self.standardDevsI[i]-avgSigma)**2 + (self.standardDevsR[i]-avgSigma)**2)
-
+        stringToSave = "Number of files\t-\t-\t-\t-\t-\t-\n"
+        stringToSave += "Avg. Re\t-\t-\t-\t-\t-\t-\n"
+        stringToSave += "Frequency\tReal std devs\tImag std devs\tAvg Real\tAvg Imag\tAvg |Z|\tStd devs of std devs\n"
         stringToSave = str(self.numFiles) + "\t" + "0" + "\t" + "0" + "\t" + "0" + "\t" + "0" + "\t" + "0" + "\t" + "0" + "\n"
         stringToSave += str(avgRe) + "\t" + "0" + "\t" + "0" + "\t" + "0" + "\t" + "0" + "\t" + "0" + "\t" + "0" + "\n" 
         for i in range(self.wdataLength):
             stringToSave += str(self.wdata[0][i]) + "\t" + str(self.standardDevsR[i]) + "\t" + str(self.standardDevsI[i]) + "\t" + str(avgR[i]) + "\t" + str(avgJ[i]) + "\t" + str(avgZ[i]) + "\t" + str(sigmasigma[i]) + "\n"
         defaultSaveName = os.path.splitext(os.path.basename(self.fileListbox.get(0)))[0]
-        saveName = asksaveasfile(mode='w', defaultextension=".mmerrors", initialfile=defaultSaveName, initialdir=self.topGUI.getCurrentDirectory, filetypes=[("Measurement model errors", ".mmerrors")])
+        saveName = asksaveasfile(mode='w', defaultextension=".mmerrors", initialfile=defaultSaveName, initialdir=self.topGUI.getCurrentDirectory(), filetypes=[("Measurement model errors", ".mmerrors")])
         directory = os.path.dirname(str(saveName))
         self.topGUI.setCurrentDirectory(directory)
         if saveName is None:     #If save is cancelled
@@ -583,7 +593,13 @@ class eFF(tk.Frame):
                          
     def residualEnter(self, n):
         try:
-            data = np.loadtxt(n)
+            with open(n,'r') as UseFile:
+                filetext = UseFile.read()
+                lines = filetext.splitlines()
+            if ("frequency" in lines[1].lower()):
+                data = np.loadtxt(n, skiprows=2)
+            else:
+                data = np.loadtxt(n)
             re_in = data[0,0]
             cap_in = data[0, 1]
             w_in = data[1:,0]
@@ -642,7 +658,13 @@ class eFF(tk.Frame):
                 fname, fext = os.path.splitext(name)
                 if (fext != ".mmresiduals"):
                     raise FileExtensionError
-                data = np.loadtxt(name)
+                with open(name,'r') as UseFile:
+                    filetext = UseFile.read()
+                    lines = filetext.splitlines()
+                if ("frequency" in lines[1].lower()):
+                    data = np.loadtxt(name, skiprows=2)
+                else:
+                    data = np.loadtxt(name)
                 re_in = data[0,0]
                 cap_in = data[0, 1]
                 w_in = data[1:,0]

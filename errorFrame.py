@@ -163,7 +163,7 @@ class eF(tk.Frame):
 #        self.standardDevsR = []
         
         def addFile():
-            n = askopenfilenames(initialdir=self.topGUI.currentDirectory, filetypes =[("Residual Error File (*.mmerrors)", "*.mmerrors")],title = "Choose a file")
+            n = askopenfilenames(initialdir=self.topGUI.getCurrentDirectory(), filetypes =[("Residual Error File (*.mmerrors)", "*.mmerrors")],title = "Choose a file")
             if (len(n) != 0):
                 try:
                     alreadyWarned = False
@@ -173,7 +173,13 @@ class eF(tk.Frame):
                         fname, fext = os.path.splitext(name)
                         if (fext != ".mmerrors"):
                             raise FileExtensionError
-                        data = np.loadtxt(name)
+                        with open(name,'r') as UseFile:
+                            filetext = UseFile.read()
+                            lines = filetext.splitlines()
+                        if ("frequency" in lines[2].lower()):
+                            data = np.loadtxt(name, skiprows=3)
+                        else:
+                            data = np.loadtxt(name)
                         #fileWeightIn = data[0,0]
                         re_in = data[1,0]
                         w_in = data[2:,0]
@@ -999,7 +1005,13 @@ class eF(tk.Frame):
     
     def errorEnter(self, n):
         try:
-            data = np.loadtxt(n)
+            with open(n,'r') as UseFile:
+                filetext = UseFile.read()
+                lines = filetext.splitlines()
+            if ("frequency" in lines[2].lower()):
+                data = np.loadtxt(n, skiprows=3)
+            else:
+                data = np.loadtxt(n)
             #fileWeightIn = data[0,0]
             re_in = data[1,0]
             w_in = data[2:,0]
@@ -1064,7 +1076,13 @@ class eF(tk.Frame):
                 fname, fext = os.path.splitext(name)
                 if (fext != ".mmerrors"):
                     raise FileExtensionError
-                data = np.loadtxt(name)
+                with open(name,'r') as UseFile:
+                    filetext = UseFile.read()
+                    lines = filetext.splitlines()
+                if ("frequency" in lines[2].lower()):
+                    data = np.loadtxt(name, skiprows=3)
+                else:
+                    data = np.loadtxt(name)
                 #fileWeightIn = data[0,0]
                 re_in = data[1,0]
                 w_in = data[2:,0]

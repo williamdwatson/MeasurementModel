@@ -27,6 +27,7 @@ import lmfit
 #import time
 import multiprocessing as mp
 import threading
+import sys
 
 def mp_complex(sharedList, numBootstrap, perVal, numParams, paramNames, r_in, Z_append, paramGuesses, paramBounds, w, weight, assumedNoise, ZrIn, ZjIn, fitType, formula, errorParams):
     parameters = lmfit.Parameters()
@@ -264,11 +265,12 @@ class bootstrapFitter:
         for process in self.processes:
             process.terminate()
     
-    def findFit(self, listPercent, numBootstrap, r_in, s_in, sdR_in, sdI_in, chi_in, aic_in, realF_in, imagF_in, fitType, numMonteCarlo, weight, assumedNoise, formula, w, ZrIn, ZjIn, paramNames, paramGuesses, paramBounds, errorParams):
+    def findFit(self, extra_imports, listPercent, numBootstrap, r_in, s_in, sdR_in, sdI_in, chi_in, aic_in, realF_in, imagF_in, fitType, numMonteCarlo, weight, assumedNoise, formula, w, ZrIn, ZjIn, paramNames, paramGuesses, paramBounds, errorParams):
         np.random.seed(1234)        #Use constant seed to ensure reproducibility of Monte Carlo simulations
         Z_append = np.append(ZrIn, ZjIn)
         numParams = len(paramNames)
-        
+        for extra in extra_imports:
+            sys.path.append(extra)
         def diffComplex(params, yVals):
             if (not self.keepGoing):
                 return
@@ -574,14 +576,21 @@ class bootstrapFitter:
         Zreal = []
         Zimag = []
         freq = w.copy()
+        weightingToReturn = 1
+        if (weight == 4):
+            weighting = []
         for i in range(numParams):
             exec(paramNames[i] + " = " + str(float(r_in[i])))
         ldict = locals()
         exec(formula, globals(), ldict)
         Zreal = ldict['Zreal']
         Zimag = ldict['Zimag']
+        if (weight == 4):
+            V = ldict['weighting']
         ToReturnReal = Zreal
         ToReturnImag = Zimag
+        if (weight == 4):
+            weightingToReturn = V
         
         #---Calculate numMonteCarlo number of parameters, using a Gaussian distribution---
         randomParams = np.zeros((numParams, numMonteCarlo))
@@ -617,7 +626,7 @@ class bootstrapFitter:
             standardDevsReal[i] = np.std(randomlyCalculatedReal[i])
             standardDevsImag[i] = np.std(randomlyCalculatedImag[i])
         
-        return r_in, sigma, standardDevsReal, standardDevsImag, chi_in, aic_in, ToReturnReal, ToReturnImag
+        return r_in, sigma, standardDevsReal, standardDevsImag, chi_in, aic_in, ToReturnReal, ToReturnImag, weightingToReturn
         """
         if (not minimized.success):     #If the fitting fails
             return "^", "^", "^", "^", "^", "^", "^", "^"

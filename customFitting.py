@@ -26,6 +26,8 @@ from numpy import nan    #This can be a necessary import if errors occur
 import itertools
 import multiprocessing as mp
 import threading
+import sys
+#sys.path.append(r"C:\Users\willd\Documents\Research\Python\32820\extra")
 
 def mp_complex(guesses, sharedList, index, parameters, numParams, weight, assumedNoise, formula, w, ZrIn, ZjIn, Z_append, percentVal, paramNames, fitType, errorParams):
     def diffComplex(params):
@@ -219,11 +221,12 @@ class customFitter:
         for process in self.processes:
             process.terminate()
     
-    def findFit(self, listPercent, fitType, numMonteCarlo, weight, assumedNoise, formula, w, ZrIn, ZjIn, paramNames, paramGuesses, paramBounds, errorParams):
+    def findFit(self, extra_imports, listPercent, fitType, numMonteCarlo, weight, assumedNoise, formula, w, ZrIn, ZjIn, paramNames, paramGuesses, paramBounds, errorParams):
         np.random.seed(1234)        #Use constant seed to ensure reproducibility of Monte Carlo simulations
         Z_append = np.append(ZrIn, ZjIn)
         numParams = len(paramNames)
-        
+        for extra in extra_imports:
+            sys.path.append(extra)
         def diffComplex(params):
             if (not self.keepGoing):
                 return
@@ -475,16 +478,15 @@ class customFitter:
                 current_best_params = vals[lowestIndex][2]
                 current_best_result = vals[lowestIndex][1]
                 current_best_val = vals[lowestIndex][0]
-        except SystemExit:
-            return "@", "@", "@", "@", "@", "@", "@", "@", "@"
+        except SystemExit as inst:
+            return "@", "@", "@", "@", "@", "@", "@", "@", "@", "@"
         except Exception as inst:
-            print(inst)
-            return "b", "b", "b", "b", "b", "b", "b", "b", "b"
+            return "b", "b", "b", "b", "b", "b", "b", "b", "b", "b"
 
         if (current_best_result != 0):
             minimized = current_best_result
         if (not minimized.success):     #If the fitting fails
-            return "^", "^", "^", "^", "^", "^", "^", "^", "^"
+            return "^", "^", "^", "^", "^", "^", "^", "^", "^", "^"
     
         fitted = minimized.params.valuesdict()
         result = []
@@ -502,25 +504,32 @@ class customFitter:
         Zreal = []
         Zimag = []
         freq = w.copy()
+        weightingToReturn = 1
+        if (weight == 4):
+            weighting = []
         for i in range(numParams):
             exec(paramNames[i] + " = " + str(float(result[i])))
         ldict = locals()
         exec(formula, globals(), ldict)
         Zreal = ldict['Zreal']
         Zimag = ldict['Zimag']
+        if (weight == 4):
+            V = ldict['weighting']
         ToReturnReal = Zreal
         ToReturnImag = Zimag
+        if (weight == 4):
+            weightingToReturn = V
 
         if None in sigma:
             if (ToReturnReal[0] == 1E300):
-                return "b", "b", "b", "b", "b", "b", "b", "b", "b"
-            return result, "-", "-", "-", minimized.chisqr, minimized.aic, ToReturnReal, ToReturnImag, current_best_params
+                return "b", "b", "b", "b", "b", "b", "b", "b", "b", "b"
+            return result, "-", "-", "-", minimized.chisqr, minimized.aic, ToReturnReal, ToReturnImag, current_best_params, weightingToReturn
         
         for s in sigma:
             if (np.isnan(s)):
                 if (ToReturnReal[0] == 1E300):
-                    return "b", "b", "b", "b", "b", "b", "b", "b", "b"
-                return result, "-", "-", "-", minimized.chisqr, minimized.aic, ToReturnReal, ToReturnImag, current_best_params
+                    return "b", "b", "b", "b", "b", "b", "b", "b", "b", "b"
+                return result, "-", "-", "-", minimized.chisqr, minimized.aic, ToReturnReal, ToReturnImag, current_best_params, weightingToReturn
         
         if (not self.keepGoing):
             return
@@ -559,7 +568,7 @@ class customFitter:
             standardDevsReal[i] = np.std(randomlyCalculatedReal[i])
             standardDevsImag[i] = np.std(randomlyCalculatedImag[i])
         
-        return result, sigma, standardDevsReal, standardDevsImag, minimized.chisqr, minimized.aic, ToReturnReal, ToReturnImag, current_best_params
+        return result, sigma, standardDevsReal, standardDevsImag, minimized.chisqr, minimized.aic, ToReturnReal, ToReturnImag, current_best_params, weightingToReturn
         """    
         cor = np.zeros((numParams, numParams))
         if (minimized.params['Re'].correl == None):

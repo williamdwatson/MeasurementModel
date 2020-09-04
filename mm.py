@@ -41,8 +41,8 @@ import webbrowser
 
 class CreateToolTip(object):
     """
-    create a tooltip for a given widget
-    Code from: https://stackoverflow.com/questions/3221956/how-do-i-display-tooltips-in-tkinter with answer by crxguy52
+        Create a tooltip for a given widget
+        Code from: https://stackoverflow.com/questions/3221956/how-do-i-display-tooltips-in-tkinter with answer by crxguy52
     """
     def __init__(self, widget, text='widget info', color=None, resetColor=None):
         self.waittime = 500     #miliseconds
@@ -130,6 +130,7 @@ class myGUI:
         self.highlightColor = '#999999'     #Default color on mouseover (lighter gray)
         self.activeColor = '#737373'        #Default color when tab is active (light gray)
                                             #6B6B6B - gray for text entries with dark theme
+
         #---Application defaults for other classes; used in getters/setters at the end of this file---
         self.detectCommentsDefault = 1      #Whether or not to detect comments
         self.detectDelimiterDefault = 1     #Whether or not to detect delimiters
@@ -158,8 +159,287 @@ class myGUI:
         self.freqUndo = 0                           #Whether or not frequency range is undone with undo button
         self.freqLoadCustom = 0                     #Whether or not frequency rnge stays the same when a new file is loaded (custom tab)
         self.defaultScroll = 1                      #Whether or not to use the mousewheel to scroll through tabs when mouse is over the navigation pane
+        self.defaultImports = []                    #Default import paths for custom formula        
         
-        #---Initialize settings---
+        self.initializeSettings()
+        
+        self.residualsFileList = [] #In case residuals files are being opened
+        self.errorsFileList = []    #In case error files are being opened
+        self.argFile = ""
+        
+        self.interpretArgs(args)
+        
+        master.title("Measurement Model")                       #The program title
+        master.geometry('{}x{}'.format(840, 830))               #GUI size
+        master.iconbitmap(resource_path('img/elephant3.ico'))   #GUI icon
+        
+        #---Change the background color depeding on the theme---
+        if (self.theme == "dark"):
+            master.configure(background='#424242')
+        elif (self.theme == "light"):
+            master.configure(background='white')
+        master.grid_rowconfigure(1, weight=1)       #The second row will expand to fill the space
+        master.grid_columnconfigure(2, weight=1)    #The second column will expand to fill the space
+        master.bind_all("<F1>", self.helpDown)      #If <F1> is pressed anywhere, it goes to the help tab
+        self.currentTab = self.defaultTab           #Keep track of where the program is
+        
+        #SpringGreen2 - #00ee76
+        #SpringGreen3 - #00cd66
+        #gray20 - #333333
+        
+        barColorNoHash = self.backgroundColor.lstrip('#')   #Remove the '#' from the hex value
+        barColorRGB = tuple(int(barColorNoHash[i:i+2], 16) for i in (0, 2 ,4))  #Contrast checking formula from https://stackoverflow.com/questions/3942878/how-to-decide-font-color-in-white-or-black-depending-on-background-color
+        self.frameLabelColor = "#000000" if (barColorRGB[0]*0.299 + barColorRGB[1]*0.587 + barColorRGB[2]*0.114) > 186 else "#FFFFFF"    #If the background is too light, the title text is black; otherwise it's white
+        
+        topLabel = "File Tools and Conversion"              #If the default tab is 0; can be changed in the settings tab
+        if (self.defaultTab == 1):
+            topLabel = "Measurement Model"
+        elif (self.defaultTab == 2):
+            topLabel = "Error File Preparation"
+        elif (self.defaultTab == 3):
+            topLabel = "Error Analysis"
+        elif (self.defaultTab == 4):
+            topLabel = "Custom Formula Fitting"
+        elif (self.defaultTab == 5):
+            topLabel = "Settings"
+        elif (self.defaultTab == 6):
+            topLabel = "Help and About"
+        self.top_frame = tk.Frame(root, bg=self.backgroundColor, height=50)     #The frame for the tab title
+        self.top_frame.grid_columnconfigure(0, weight=1)
+        self.frame_label = tk.Label(self.top_frame, text=topLabel, font=("Arial", 15), bg=self.backgroundColor, fg=self.frameLabelColor) #The title that tells the user which tab they are in
+        self.frame_label.grid(column=0, row=0, pady=2)
+        self.top_frame.grid(row=0, column=0, columnspan=3, sticky="EW")
+        
+        self.left_frame = tk.Frame(root, bg=self.backgroundColor, width=140, height=190)    #The frame for the navigation icons
+        self.left_frame.columnconfigure(1, weight=1)
+        self.left_frame.rowconfigure(4, weight=1)        #Makes the help label go to the bottom of the window
+        self.left_frame.grid(row=1, column = 1, sticky="nsew")
+        
+        #---The icons used in the navigation pane---
+        self.imgFile = ImageTk.PhotoImage(Image.open(resource_path("img/filedarkgray.png")))
+        self.imgFile2 = ImageTk.PhotoImage(Image.open(resource_path("img/filelightgray.png")))
+        self.imgFile3 = ImageTk.PhotoImage(Image.open(resource_path("img/file2blue.png")))
+        self.imgFile4 = ImageTk.PhotoImage(Image.open(resource_path("img/file1blue.png")))
+        
+        self.imgModel = ImageTk.PhotoImage(Image.open(resource_path("img/fittingdarkgray.png")))
+        self.imgModel2 = ImageTk.PhotoImage(Image.open(resource_path("img/fittinglightgray.png")))
+        self.imgModel3 = ImageTk.PhotoImage(Image.open(resource_path("img/fitting2blue.png")))
+        self.imgModel4 = ImageTk.PhotoImage(Image.open(resource_path("img/fitting1blue.png")))
+        
+        self.imgErrorFile = ImageTk.PhotoImage(Image.open(resource_path("img/errorFiledarkgray.png")))
+        self.imgErrorFile2 = ImageTk.PhotoImage(Image.open(resource_path("img/errorFilelightgray.png")))
+        self.imgErrorFile3 = ImageTk.PhotoImage(Image.open(resource_path("img/errorFile2blue.png")))
+        self.imgErrorFile4 = ImageTk.PhotoImage(Image.open(resource_path("img/errorFile1blue.png")))
+
+        self.imgError = ImageTk.PhotoImage(Image.open(resource_path("img/errordarkgray.png")))
+        self.imgError2 = ImageTk.PhotoImage(Image.open(resource_path("img/errorlightgray.png")))
+        self.imgError3 = ImageTk.PhotoImage(Image.open(resource_path("img/error2blue.png")))
+        self.imgError4 = ImageTk.PhotoImage(Image.open(resource_path("img/error1blue.png")))
+        
+        self.imgSettings = ImageTk.PhotoImage(Image.open(resource_path("img/settingsdarkgray.png")))
+        self.imgSettings2 = ImageTk.PhotoImage(Image.open(resource_path("img/settingslightgray.png")))
+        self.imgSettings3 = ImageTk.PhotoImage(Image.open(resource_path("img/settings2blue.png")))
+        self.imgSettings4 = ImageTk.PhotoImage(Image.open(resource_path("img/settings1blue.png")))
+
+        self.imgHelp = ImageTk.PhotoImage(Image.open(resource_path("img/helpdarkgray.png")))
+        self.imgHelp2 = ImageTk.PhotoImage(Image.open(resource_path("img/helplightgray.png")))
+        self.imgHelp3 = ImageTk.PhotoImage(Image.open(resource_path("img/help2blue.png")))
+        self.imgHelp4 = ImageTk.PhotoImage(Image.open(resource_path("img/help1blue.png")))
+        
+        self.imgFormula = ImageTk.PhotoImage(Image.open(resource_path("img/customdarkgray.png")))
+        self.imgFormula2 = ImageTk.PhotoImage(Image.open(resource_path("img/customlightgray.png")))
+        self.imgFormula3 = ImageTk.PhotoImage(Image.open(resource_path("img/custom2blue.png")))
+        self.imgFormula4 = ImageTk.PhotoImage(Image.open(resource_path("img/custom1blue.png")))
+
+        #---Depending on the default tab, set the current highlighted icon and setup what should happen on mouseover/click---
+        if (self.defaultTab == 0):
+            self.fileOpen = tk.Label(self.left_frame, image = self.imgFile3, cursor="hand2", width=100, height=75)
+        else:
+            self.fileOpen = tk.Label(self.left_frame, image = self.imgFile, cursor="hand2", width=100, height=75)
+        self.fileOpen.configure(background=self.backgroundColor)
+        self.fileOpen.bind('<Button-1>', self.inputFileDown)
+        self.fileOpen.bind('<ButtonRelease-1>', self.inputFileUp)
+        self.fileOpen.bind('<Enter>', lambda e: self.fileOpen.configure(image=self.imgFile2 if self.currentTab != 0 else self.imgFile4))
+        self.fileOpen.bind('<Leave>', self.leaveInputFile)
+        
+        if (self.defaultTab == 1):
+            self.runModel = tk.Label(self.left_frame, image = self.imgModel3, cursor="hand2", width=100, height=75)
+        else:
+            self.runModel = tk.Label(self.left_frame, image = self.imgModel, cursor="hand2", width=100, height=75)
+        self.runModel.configure(background=self.backgroundColor)
+        self.runModel.bind('<Button-1>', self.measureModelDown)
+        self.runModel.bind('<ButtonRelease-1>', self.measureModelUp)
+        self.runModel.bind('<Enter>', lambda e: self.runModel.configure(image=self.imgModel2 if self.currentTab != 1 else self.imgModel4))
+        self.runModel.bind('<Leave>', self.leaveMeasureModel)
+        
+        if (self.defaultTab == 2):
+            self.errorFileLabel = tk.Label(self.left_frame, image=self.imgErrorFile3, cursor="hand2", width=100, height=75)
+        else:
+            self.errorFileLabel = tk.Label(self.left_frame, image=self.imgErrorFile, cursor="hand2", width=100, height=75)
+        self.errorFileLabel.configure(background=self.backgroundColor)
+        self.errorFileLabel.bind('<Button-1>', self.errorFileDown)
+        self.errorFileLabel.bind('<ButtonRelease-1>', self.errorFileUp)
+        self.errorFileLabel.bind('<Enter>', lambda e: self.errorFileLabel.configure(image=self.imgErrorFile2 if self.currentTab != 2 else self.imgErrorFile4))
+        self.errorFileLabel.bind('<Leave>', self.leaveErrorFile)
+        
+        if (self.defaultTab == 3):
+            self.errorLabel = tk.Label(self.left_frame, image=self.imgError3, cursor="hand2", width=100, height=75)
+        else:
+            self.errorLabel = tk.Label(self.left_frame, image=self.imgError, cursor="hand2", width=100, height=75)
+        self.errorLabel.configure(background=self.backgroundColor)
+        self.errorLabel.bind('<Button-1>', self.errorDown)
+        self.errorLabel.bind('<ButtonRelease-1>', self.errorUp)
+        self.errorLabel.bind('<Enter>', lambda e: self.errorLabel.configure(image=self.imgError2 if self.currentTab != 3 else self.imgError4))
+        self.errorLabel.bind('<Leave>', self.leaveError)
+        
+        if (self.defaultTab == 4):
+            self.formulaLabel = tk.Label(self.left_frame, image = self.imgFormula3, cursor="hand2", width=100, height=75)
+        else:
+            self.formulaLabel = tk.Label(self.left_frame, image = self.imgFormula, cursor="hand2", width=100, height=75)
+        self.formulaLabel.configure(background=self.backgroundColor)
+        self.formulaLabel.bind('<Button-1>', self.formulaDown)
+        self.formulaLabel.bind('<ButtonRelease-1>', self.formulaUp)
+        self.formulaLabel.bind('<Enter>', lambda e: self.formulaLabel.configure(image=self.imgFormula2 if self.currentTab != 6 else self.imgFormula4))
+        self.formulaLabel.bind('<Leave>', self.leaveFormula)
+        
+        if (self.defaultTab == 5):
+            self.settingsLabel = tk.Label(self.left_frame, image=self.imgSettings3, cursor="hand2", width=100, height=75)
+        else:
+            self.settingsLabel = tk.Label(self.left_frame, image=self.imgSettings, cursor="hand2", width=100, height=75)
+        self.settingsLabel.configure(back=self.backgroundColor)
+        self.settingsLabel.bind('<Button-1>', self.settingsDown)
+        self.settingsLabel.bind('<ButtonRelease-1>', self.settingsUp)
+        self.settingsLabel.bind('<Enter>', lambda e: self.settingsLabel.configure(image=self.imgSettings2 if self.currentTab != 4 else self.imgSettings4))
+        self.settingsLabel.bind('<Leave>', self.leaveSettings)#lambda e: self.settingsLabel.configure(image=self.imgSettingsWhite))
+        
+        if (self.defaultTab == 6):
+            self.helpLabel = tk.Label(self.left_frame, image=self.imgHelp3, cursor="hand2", width=100, height=75)
+        else:
+            self.helpLabel = tk.Label(self.left_frame, image=self.imgHelp, cursor="hand2", width=100, height=75)
+        self.helpLabel.configure(background=self.backgroundColor)
+        self.helpLabel.bind('<Button-1>', self.helpDown)
+        self.helpLabel.bind('<ButtonRelease-1>', self.helpUp)
+        self.helpLabel.bind('<Enter>', lambda e: self.helpLabel.configure(image=self.imgHelp2 if self.currentTab != 5 else self.imgHelp4))
+        self.helpLabel.bind('<Leave>', self.leaveHelp)#lambda e: self.helpLabel.configure(image=self.imgHelpWhite))
+        
+        #---Display the icons---
+        self.fileOpen.grid(column=0, row=0)
+        self.runModel.grid(column=0, row=1)
+        self.errorFileLabel.grid(column=0, row=2)
+        self.errorLabel.grid(column=0, row=3)
+        self.formulaLabel.grid(column=0, row=4, sticky="N")
+        self.settingsLabel.grid(column=0, row=5, sticky="S")
+        self.helpLabel.grid(column=0, row=6, sticky="S")
+        
+        if (self.defaultScroll == 1):
+            self.left_frame.bind("<MouseWheel>", lambda e: self.on_mouse_wheel(e, -1))
+            self.fileOpen.bind("<MouseWheel>", lambda e: self.on_mouse_wheel(e, 0))
+            self.runModel.bind("<MouseWheel>", lambda e: self.on_mouse_wheel(e, 1))
+            self.errorFileLabel.bind("<MouseWheel>", lambda e: self.on_mouse_wheel(e, 2))
+            self.errorLabel.bind("<MouseWheel>", lambda e: self.on_mouse_wheel(e, 3))
+            self.formulaLabel.bind("<MouseWheel>", lambda e: self.on_mouse_wheel(e, 6))
+            self.settingsLabel.bind("<MouseWheel>", lambda e: self.on_mouse_wheel(e, 4))
+            self.helpLabel.bind("<MouseWheel>", lambda e: self.on_mouse_wheel(e, 5))
+        
+        self.input_frame = inputFrame.iF(root, self)
+        #input_frame.grid(row = 0, column=1, sticky="N", padx=20, pady=20)
+        self.help_frame = helpFrame.hF(root, self)
+        self.model_frame = modelFrame.mmF(root, self)
+        self.error_file_frame = errorFileFrame.eFF(root, self)
+        self.error_frame = errorFrame.eF(root, self)
+        self.settings_frame = settingsFrame.sF(root, self)
+        self.formula_frame = formulaFrame.fF(root, self)
+        
+        if (self.defaultTab == 0):
+            self.input_frame.grid(row=1, column=2, sticky="NW", padx=20, pady=20)
+            self.input_frame.bindIt()
+        elif (self.defaultTab == 1):
+            self.model_frame.grid(row=1, column=2, sticky="NW", padx=20, pady=20)
+        elif (self.defaultTab == 2):
+            self.error_file_frame.grid(row=1, column=2, sticky="NW", padx=20, pady=20)
+            self.error_file_frame.bindIt()
+        elif (self.defaultTab == 3):
+            self.error_frame.grid(row=1, column=2, sticky="NW", padx=20, pady=20)
+        elif (self.defaultTab == 4):
+            self.formula_frame.grid(row=1, column=2, sticky="NW", padx=20, pady=20)
+        elif (self.defaultTab == 5):
+            self.settings_frame.grid(row=1, column=2, sticky="NW", padx=20, pady=20)
+            self.settings_frame.bindIt()
+        elif (self.defaultTab == 6):
+            self.help_frame.grid(row=1, column=2, sticky="NW", padx=20, pady=20)
+        
+        #---Set up the canvases needed to display the small colored bar next to the current tab's icon---
+        self.master.update()
+        self.master.update_idletasks()
+        self.canvasFrame = tk.Frame(root, bg=self.backgroundColor)
+        self.canvasFrame.columnconfigure(0, weight=1)
+        self.canvasFrame.rowconfigure(4, weight=1)
+        self.canvasWidth = 5
+        self.inputCanvas = tk.Canvas(self.canvasFrame, background=self.backgroundColor, bd=0, highlightthickness=0, relief='ridge', width=self.canvasWidth, height=self.fileOpen.winfo_height())
+        self.runCanvas = tk.Canvas(self.canvasFrame, background=self.backgroundColor, bd=0, highlightthickness=0, relief='ridge', width=self.canvasWidth, height=self.runModel.winfo_height())
+        self.errorFileCanvas = tk.Canvas(self.canvasFrame, background=self.backgroundColor, bd=0, highlightthickness=0, relief='ridge', width=self.canvasWidth, height=self.errorFileLabel.winfo_height())
+        self.errorCanvas = tk.Canvas(self.canvasFrame, background=self.backgroundColor, bd=0, highlightthickness=0, relief='ridge', width=self.canvasWidth, height=self.errorLabel.winfo_height())
+        self.formulaCanvas= tk.Canvas(self.canvasFrame, background=self.backgroundColor, bd=0, highlightthickness=0, relief='ridge', width=self.canvasWidth, height=self.errorFileLabel.winfo_height())
+        self.settingsCanvas = tk.Canvas(self.canvasFrame, background=self.backgroundColor, bd=0, highlightthickness=0, relief='ridge', width=self.canvasWidth, height=self.settingsLabel.winfo_height())
+        self.helpCanvas = tk.Canvas(self.canvasFrame, background=self.backgroundColor, bd=0, highlightthickness=0, relief='ridge', width=self.canvasWidth, height=self.helpLabel.winfo_height())
+        
+        if (self.defaultTab == 0):
+            #self.fileOpen.configure(background="SlateGray3")
+            self.inputCanvas.configure(background="#0066FF")
+            #self.inputCanvas.create_polygon([self.canvasWidth, self.fileOpen.winfo_height()*0.6, self.canvasWidth, self.fileOpen.winfo_height()*0.4, 0, self.fileOpen.winfo_height()/2], fill="white")
+        elif (self.defaultTab == 1):
+            self.runCanvas.configure(background="#0066FF")
+            #self.runCanvas.create_polygon([self.canvasWidth, self.runModel.winfo_height()*0.6, self.canvasWidth, self.runModel.winfo_height()*0.4, 0, self.runModel.winfo_height()/2], fill="white")
+        elif (self.defaultTab == 2):
+            self.errorFileCanvas.configure(background="#0066FF")
+            #self.errorFileCanvas.create_polygon([self.canvasWidth, self.errorFileLabel.winfo_height()*0.6, self.canvasWidth, self.errorFileLabel.winfo_height()*0.4, 0, self.errorFileLabel.winfo_height()/2], fill="white")
+        elif (self.defaultTab == 3):
+            self.errorCanvas.configure(background="#0066FF")
+            #self.errorCanvas.create_polygon([self.canvasWidth, self.errorLabel.winfo_height()*0.6, self.canvasWidth, self.errorLabel.winfo_height()*0.4, 0, self.errorLabel.winfo_height()/2], fill="white")
+        elif (self.defaultTab == 4):
+            self.formulaCanvas.configure(background="#0066FF")
+            #self.formulaCanvas.create_polygon([self.canvasWidth, self.formulaLabel.winfo_height()*0.6, self.canvasWidth, self.formulaLabel.winfo_height()*0.4, 0, self.formulaLabel.winfo_height()/2], fill="white")
+        elif (self.defaultTab == 5):
+            self.settingsCanvas.configure(background="#0066FF")
+            #self.settingsCanvas.create_polygon([self.canvasWidth, self.settingsLabel.winfo_height()*0.6, self.canvasWidth, self.settingsLabel.winfo_height()*0.4, 0, self.settingsLabel.winfo_height()/2], fill="white")
+        elif (self.defaultTab == 6):
+            self.helpCanvas.configure(background="#0066FF")
+            #self.helpCanvas.create_polygon([self.canvasWidth, self.helpLabel.winfo_height()*0.6, self.canvasWidth, self.helpLabel.winfo_height()*0.4, 0, self.helpLabel.winfo_height()/2], fill="white")
+        
+        self.canvasFrame.grid(column=0, row=1, sticky="NS")
+        self.inputCanvas.grid(column=0, row=0)
+        self.runCanvas.grid(column=0, row=1)
+        self.errorFileCanvas.grid(column=0, row=2)
+        self.errorCanvas.grid(column=0, row=3)
+        self.formulaCanvas.grid(column=0, row=4, sticky="N")
+        self.settingsCanvas.grid(column=0, row=5, sticky="S")
+        self.helpCanvas.grid(column=0, row=6, sticky="S")
+        
+        #---Check the input file arguments and pass it to the appropriate tab---
+        if (self.argFile != ""):
+            fname, fext = os.path.splitext(self.argFile)
+            if (fext == ".mmfile"):
+                self.enterMeasureModel(self.argFile)
+            elif (fext == ".mmfitting"):
+                self.enterMeasureModelFitting(self.argFile)
+            elif (fext == ".mmresiduals"):
+                self.enterResidual(self.argFile)
+            elif (fext == ".mmerrors"):
+                self.enterError(self.argFile)
+            elif (fext == ".mmcustom"):
+                self.enterCustom(self.argFile)
+            elif (fext == ".mmformula"):
+                self.enterFormula(self.argFile)
+            else:
+                self.enterInput(self.argFile)
+                #messagebox.showerror("File error", "Error: 4\nThe file has an unknown extension. Opened files must be either .mmfile, .mmfitting, .mmresiduals, or .mmerrors")
+        elif (len(self.residualsFileList) > 0):
+            self.enterResiduals(self.residualsFileList)
+        elif (len(self.errorsFileList) > 0):
+            self.enterErrors(self.errorsFileList)
+    
+    #---Initialize settings---
+    def initializeSettings(self):
         if (os.path.exists(os.getenv('LOCALAPPDATA')+r"\MeasurementModel\settings.ini")):   #Check if the settings file exists under LOCALAPPDATA
             try:
                 config = configparser.ConfigParser()                                        #Begin the config parser to read settings.ini
@@ -319,13 +599,13 @@ class myGUI:
                     self.freqLoadCustom = 0
                     raise Exception
                 
+                self.defaultImports = config['custom']['imports'].split("*")
+                
             except:     #If there's an error loading settings
                 pass    #Ignore the error  
                 #messagebox.showwarning("Settings error", "Error: 1\nError loading settings")
-        
-        self.residualsFileList = [] #In case residuals files are being opened
-        self.errorsFileList = []    #In case error files are being opened
-        self.argFile = ""
+    
+    def interpretArgs(self, args):
         if (len(args) > 1):         #If there's an argument coming in (the first argument is always the file name)
             if (len(args) > 2):     #If there's multiple arguments
                 try:
@@ -353,333 +633,67 @@ class myGUI:
                 except:
                     messagebox.showerror("File error", "Error: 3\nError opening files")
             else:   #If there's only one input file
-                try:
+                try:    #Check if the file exists
                     if (not os.path.exists(args[1])):
                         raise Exception
-                    #fname, fext = os.path.splitext(args[1])
-                    #if (fext != ".mmfitting" and fext != ".mmfile" and fext != ".mmresiduals" and fext != ".mmerrors" and fext != ".mmcustom"): #Check the input file extension
-                    #    messagebox.showerror("File error", "Error: 4\nThe file has an unknown extension. Opened files must be either .mmfile, .mmfitting, .mmresiduals, .mmerrors, or .mmcustom")
-                    #else:
                     self.argFile = args[1]
                 except:
                     messagebox.showerror("File error", "Error: 3\nError opening file")
-        
-        master.title("Measurement Model")                       #The program title
-        master.geometry('{}x{}'.format(840, 830))               #GUI size
-        master.iconbitmap(resource_path('img/elephant3.ico'))           #GUI icon
-        #---Change the background color depeding on the theme---
-        if (self.theme == "dark"):
-            master.configure(background='#424242')
-        elif (self.theme == "light"):
-            master.configure(background='white')
-        master.grid_rowconfigure(1, weight=1)       #The second row will expand to fill the space
-        master.grid_columnconfigure(2, weight=1)    #The second column will expand to fill the space
-        master.bind_all("<F1>", self.helpDown)      #If <F1> is pressed anywhere, it goes to the help tab
-        self.currentTab = self.defaultTab           #Keep track of where the program is
-        
-        #SpringGreen2 - #00ee76
-        #SpringGreen3 - #00cd66
-        #gray20 - #333333
-        
-        barColorNoHash = self.backgroundColor.lstrip('#')   #Remove the '#' from the hex value
-        barColorRGB = tuple(int(barColorNoHash[i:i+2], 16) for i in (0, 2 ,4))  #Contrast checking formula from https://stackoverflow.com/questions/3942878/how-to-decide-font-color-in-white-or-black-depending-on-background-color
-        self.frameLabelColor = "#000000" if (barColorRGB[0]*0.299 + barColorRGB[1]*0.587 + barColorRGB[2]*0.114) > 186 else "#FFFFFF"    #If the background is too light, the title text is black; otherwise it's white
-        
-        topLabel = "File Tools and Conversion"              #If the default tab is 0
-        if (self.defaultTab == 1):
-            topLabel = "Measurement Model"
-        elif (self.defaultTab == 2):
-            topLabel = "Error File Preparation"
-        elif (self.defaultTab == 3):
-            topLabel = "Error Analysis"
-        elif (self.defaultTab == 4):
-            topLabel = "Custom Formula Fitting"
-        elif (self.defaultTab == 5):
-            topLabel = "Settings"
-        elif (self.defaultTab == 6):
-            topLabel = "Help and About"
-        self.top_frame = tk.Frame(root, bg=self.backgroundColor, height=50)     #The frame for the tab title
-        self.top_frame.grid_columnconfigure(0, weight=1)
-        self.frame_label = tk.Label(self.top_frame, text=topLabel, font=("Arial", 15), bg=self.backgroundColor, fg=self.frameLabelColor) #The title that tells the user which tab they are in
-        self.frame_label.grid(column=0, row=0, pady=2)
-        self.top_frame.grid(row=0, column=0, columnspan=3, sticky="EW")
-        
-        self.left_frame = tk.Frame(root, bg=self.backgroundColor, width=140, height=190)    #The frame for the navigation icons
-        self.left_frame.columnconfigure(1, weight=1)
-        self.left_frame.rowconfigure(4, weight=1)        #Makes the help label go to the bottom of the window
-        self.left_frame.grid(row=1, column = 1, sticky="nsew")
-        
-        def on_mouse_wheel(event, overTab):
-            if (self.currentTab == 0):
-                if (event.delta < 0):
-                    self.measureModelDown(None)
-            elif (self.currentTab == 1):
-                if (event.delta > 0):
-                    self.inputFileDown(None)
-                else:
-                    self.errorFileDown(None)
-            elif (self.currentTab == 2):
-                if (event.delta > 0):
-                    self.measureModelDown(None)
-                else:
-                    self.errorDown(None)
-            elif (self.currentTab == 3):
-                if (event.delta > 0):
-                    self.errorFileDown(None)
-                else:
-                    self.formulaDown(None)
-            elif (self.currentTab == 6):
-                if (event.delta > 0):
-                    self.errorDown(None)
-                else:
-                    self.settingsDown(None)
-            elif (self.currentTab == 4):
-                if (event.delta > 0):
-                    self.formulaDown(None)
-                else:
-                    self.helpDown(None)
-            elif (self.currentTab == 5):
-                if (event.delta > 0):
-                    self.settingsDown(None)
-            
-            if (overTab == 0):
-                self.fileOpen.configure(image=self.imgFile2 if self.currentTab != 0 else self.imgFile4)
-            elif (overTab == 1):
-                self.runModel.configure(image=self.imgModel2 if self.currentTab != 1 else self.imgModel4)
-            elif (overTab == 2):
-                self.errorFileLabel.configure(image=self.imgErrorFile2 if self.currentTab != 2 else self.imgErrorFile4)
-            elif (overTab == 3):
-                self.errorLabel.configure(image=self.imgError2 if self.currentTab != 3 else self.imgError4)
-            elif (overTab == 4):
-                self.settingsLabel.configure(image=self.imgSettings2 if self.currentTab != 4 else self.imgSettings4)
-            elif (overTab == 5):
-                self.helpLabel.configure(image=self.imgHelp2 if self.currentTab != 5 else self.imgHelp4)
-            elif (overTab == 6):
-                self.formulaLabel.configure(image=self.imgFormula2 if self.currentTab != 6 else self.imgFormula4)
-        
-        #---The icons used in the navigation pane---
-        self.imgFile = ImageTk.PhotoImage(Image.open(resource_path("img/filedarkgray.png")))
-        self.imgFile2 = ImageTk.PhotoImage(Image.open(resource_path("img/filelightgray.png")))
-        self.imgFile3 = ImageTk.PhotoImage(Image.open(resource_path("img/file2blue.png")))
-        self.imgFile4 = ImageTk.PhotoImage(Image.open(resource_path("img/file1blue.png")))
-        
-        self.imgModel = ImageTk.PhotoImage(Image.open(resource_path("img/fittingdarkgray.png")))
-        self.imgModel2 = ImageTk.PhotoImage(Image.open(resource_path("img/fittinglightgray.png")))
-        self.imgModel3 = ImageTk.PhotoImage(Image.open(resource_path("img/fitting2blue.png")))
-        self.imgModel4 = ImageTk.PhotoImage(Image.open(resource_path("img/fitting1blue.png")))
-        
-        self.imgErrorFile = ImageTk.PhotoImage(Image.open(resource_path("img/errorFiledarkgray.png")))
-        self.imgErrorFile2 = ImageTk.PhotoImage(Image.open(resource_path("img/errorFilelightgray.png")))
-        self.imgErrorFile3 = ImageTk.PhotoImage(Image.open(resource_path("img/errorFile2blue.png")))
-        self.imgErrorFile4 = ImageTk.PhotoImage(Image.open(resource_path("img/errorFile1blue.png")))
-
-        self.imgError = ImageTk.PhotoImage(Image.open(resource_path("img/errordarkgray.png")))
-        self.imgError2 = ImageTk.PhotoImage(Image.open(resource_path("img/errorlightgray.png")))
-        self.imgError3 = ImageTk.PhotoImage(Image.open(resource_path("img/error2blue.png")))
-        self.imgError4 = ImageTk.PhotoImage(Image.open(resource_path("img/error1blue.png")))
-        
-        self.imgSettings = ImageTk.PhotoImage(Image.open(resource_path("img/settingsdarkgray.png")))
-        self.imgSettings2 = ImageTk.PhotoImage(Image.open(resource_path("img/settingslightgray.png")))
-        self.imgSettings3 = ImageTk.PhotoImage(Image.open(resource_path("img/settings2blue.png")))
-        self.imgSettings4 = ImageTk.PhotoImage(Image.open(resource_path("img/settings1blue.png")))
-
-        self.imgHelp = ImageTk.PhotoImage(Image.open(resource_path("img/helpdarkgray.png")))
-        self.imgHelp2 = ImageTk.PhotoImage(Image.open(resource_path("img/helplightgray.png")))
-        self.imgHelp3 = ImageTk.PhotoImage(Image.open(resource_path("img/help2blue.png")))
-        self.imgHelp4 = ImageTk.PhotoImage(Image.open(resource_path("img/help1blue.png")))
-        
-        self.imgFormula = ImageTk.PhotoImage(Image.open(resource_path("img/customdarkgray.png")))
-        self.imgFormula2 = ImageTk.PhotoImage(Image.open(resource_path("img/customlightgray.png")))
-        self.imgFormula3 = ImageTk.PhotoImage(Image.open(resource_path("img/custom2blue.png")))
-        self.imgFormula4 = ImageTk.PhotoImage(Image.open(resource_path("img/custom1blue.png")))
-
-        if (self.defaultTab == 0):
-            self.fileOpen = tk.Label(self.left_frame, image = self.imgFile3, cursor="hand2", width=100, height=75)
-        else:
-            self.fileOpen = tk.Label(self.left_frame, image = self.imgFile, cursor="hand2", width=100, height=75)
-        self.fileOpen.configure(background=self.backgroundColor)
-        self.fileOpen.bind('<Button-1>', self.inputFileDown)
-        self.fileOpen.bind('<ButtonRelease-1>', self.inputFileUp)
-        self.fileOpen.bind('<Enter>', lambda e: self.fileOpen.configure(image=self.imgFile2 if self.currentTab != 0 else self.imgFile4))
-        self.fileOpen.bind('<Leave>', self.leaveInputFile)
-        
-        if (self.defaultTab == 1):
-            self.runModel = tk.Label(self.left_frame, image = self.imgModel3, cursor="hand2", width=100, height=75)
-        else:
-            self.runModel = tk.Label(self.left_frame, image = self.imgModel, cursor="hand2", width=100, height=75)
-        self.runModel.configure(background=self.backgroundColor)
-        self.runModel.bind('<Button-1>', self.measureModelDown)
-        self.runModel.bind('<ButtonRelease-1>', self.measureModelUp)
-        self.runModel.bind('<Enter>', lambda e: self.runModel.configure(image=self.imgModel2 if self.currentTab != 1 else self.imgModel4))
-        self.runModel.bind('<Leave>', self.leaveMeasureModel)
-        
-        if (self.defaultTab == 2):
-            self.errorFileLabel = tk.Label(self.left_frame, image=self.imgErrorFile3, cursor="hand2", width=100, height=75)
-        else:
-            self.errorFileLabel = tk.Label(self.left_frame, image=self.imgErrorFile, cursor="hand2", width=100, height=75)
-        self.errorFileLabel.configure(background=self.backgroundColor)
-        self.errorFileLabel.bind('<Button-1>', self.errorFileDown)
-        self.errorFileLabel.bind('<ButtonRelease-1>', self.errorFileUp)
-        self.errorFileLabel.bind('<Enter>', lambda e: self.errorFileLabel.configure(image=self.imgErrorFile2 if self.currentTab != 2 else self.imgErrorFile4))
-        self.errorFileLabel.bind('<Leave>', self.leaveErrorFile)
-        
-        if (self.defaultTab == 3):
-            self.errorLabel = tk.Label(self.left_frame, image=self.imgError3, cursor="hand2", width=100, height=75)
-        else:
-            self.errorLabel = tk.Label(self.left_frame, image=self.imgError, cursor="hand2", width=100, height=75)
-        self.errorLabel.configure(background=self.backgroundColor)
-        self.errorLabel.bind('<Button-1>', self.errorDown)
-        self.errorLabel.bind('<ButtonRelease-1>', self.errorUp)
-        self.errorLabel.bind('<Enter>', lambda e: self.errorLabel.configure(image=self.imgError2 if self.currentTab != 3 else self.imgError4))
-        self.errorLabel.bind('<Leave>', self.leaveError)
-        
-        if (self.defaultTab == 4):
-            self.formulaLabel = tk.Label(self.left_frame, image = self.imgFormula3, cursor="hand2", width=100, height=75)
-        else:
-            self.formulaLabel = tk.Label(self.left_frame, image = self.imgFormula, cursor="hand2", width=100, height=75)
-        self.formulaLabel.configure(background=self.backgroundColor)
-        self.formulaLabel.bind('<Button-1>', self.formulaDown)
-        self.formulaLabel.bind('<ButtonRelease-1>', self.formulaUp)
-        self.formulaLabel.bind('<Enter>', lambda e: self.formulaLabel.configure(image=self.imgFormula2 if self.currentTab != 6 else self.imgFormula4))
-        self.formulaLabel.bind('<Leave>', self.leaveFormula)
-        
-        if (self.defaultTab == 5):
-            self.settingsLabel = tk.Label(self.left_frame, image=self.imgSettings3, cursor="hand2", width=100, height=75)
-        else:
-            self.settingsLabel = tk.Label(self.left_frame, image=self.imgSettings, cursor="hand2", width=100, height=75)
-        self.settingsLabel.configure(back=self.backgroundColor)
-        self.settingsLabel.bind('<Button-1>', self.settingsDown)
-        self.settingsLabel.bind('<ButtonRelease-1>', self.settingsUp)
-        self.settingsLabel.bind('<Enter>', lambda e: self.settingsLabel.configure(image=self.imgSettings2 if self.currentTab != 4 else self.imgSettings4))
-        self.settingsLabel.bind('<Leave>', self.leaveSettings)#lambda e: self.settingsLabel.configure(image=self.imgSettingsWhite))
-        
-        if (self.defaultTab == 6):
-            self.helpLabel = tk.Label(self.left_frame, image=self.imgHelp3, cursor="hand2", width=100, height=75)
-        else:
-            self.helpLabel = tk.Label(self.left_frame, image=self.imgHelp, cursor="hand2", width=100, height=75)
-        self.helpLabel.configure(background=self.backgroundColor)
-        self.helpLabel.bind('<Button-1>', self.helpDown)
-        self.helpLabel.bind('<ButtonRelease-1>', self.helpUp)
-        self.helpLabel.bind('<Enter>', lambda e: self.helpLabel.configure(image=self.imgHelp2 if self.currentTab != 5 else self.imgHelp4))
-        self.helpLabel.bind('<Leave>', self.leaveHelp)#lambda e: self.helpLabel.configure(image=self.imgHelpWhite))
-        
-        self.fileOpen.grid(column=0, row=0)
-        self.runModel.grid(column=0, row=1)
-        self.errorFileLabel.grid(column=0, row=2)
-        self.errorLabel.grid(column=0, row=3)
-        self.formulaLabel.grid(column=0, row=4, sticky="N")
-        self.settingsLabel.grid(column=0, row=5, sticky="S")
-        self.helpLabel.grid(column=0, row=6, sticky="S")
-        
-        if (self.defaultScroll == 1):
-            self.left_frame.bind("<MouseWheel>", lambda e: on_mouse_wheel(e, -1))
-            self.fileOpen.bind("<MouseWheel>", lambda e: on_mouse_wheel(e, 0))
-            self.runModel.bind("<MouseWheel>", lambda e: on_mouse_wheel(e, 1))
-            self.errorFileLabel.bind("<MouseWheel>", lambda e: on_mouse_wheel(e, 2))
-            self.errorLabel.bind("<MouseWheel>", lambda e: on_mouse_wheel(e, 3))
-            self.formulaLabel.bind("<MouseWheel>", lambda e: on_mouse_wheel(e, 6))
-            self.settingsLabel.bind("<MouseWheel>", lambda e: on_mouse_wheel(e, 4))
-            self.helpLabel.bind("<MouseWheel>", lambda e: on_mouse_wheel(e, 5))
-        
-        self.input_frame = inputFrame.iF(root, self)
-        #input_frame.grid(row = 0, column=1, sticky="N", padx=20, pady=20)
-        self.help_frame = helpFrame.hF(root, self)
-        self.model_frame = modelFrame.mmF(root, self)
-        self.error_file_frame = errorFileFrame.eFF(root, self)
-        self.error_frame = errorFrame.eF(root, self)
-        self.settings_frame = settingsFrame.sF(root, self)
-        self.formula_frame = formulaFrame.fF(root, self)
-        
-        if (self.defaultTab == 0):
-            self.input_frame.grid(row=1, column=2, sticky="NW", padx=20, pady=20)
-            self.input_frame.bindIt()
-        elif (self.defaultTab == 1):
-            self.model_frame.grid(row=1, column=2, sticky="NW", padx=20, pady=20)
-        elif (self.defaultTab == 2):
-            self.error_file_frame.grid(row=1, column=2, sticky="NW", padx=20, pady=20)
-            self.error_file_frame.bindIt()
-        elif (self.defaultTab == 3):
-            self.error_frame.grid(row=1, column=2, sticky="NW", padx=20, pady=20)
-        elif (self.defaultTab == 4):
-            self.formula_frame.grid(row=1, column=2, sticky="NW", padx=20, pady=20)
-        elif (self.defaultTab == 5):
-            self.settings_frame.grid(row=1, column=2, sticky="NW", padx=20, pady=20)
-            self.settings_frame.bindIt()
-        elif (self.defaultTab == 6):
-            self.help_frame.grid(row=1, column=2, sticky="NW", padx=20, pady=20)
-        
-        self.master.update()
-        self.master.update_idletasks()
-        self.canvasFrame = tk.Frame(root, bg=self.backgroundColor)
-        self.canvasFrame.columnconfigure(0, weight=1)
-        self.canvasFrame.rowconfigure(4, weight=1)
-        self.canvasWidth = 5
-        self.inputCanvas = tk.Canvas(self.canvasFrame, background=self.backgroundColor, bd=0, highlightthickness=0, relief='ridge', width=self.canvasWidth, height=self.fileOpen.winfo_height())
-        self.runCanvas = tk.Canvas(self.canvasFrame, background=self.backgroundColor, bd=0, highlightthickness=0, relief='ridge', width=self.canvasWidth, height=self.runModel.winfo_height())
-        self.errorFileCanvas = tk.Canvas(self.canvasFrame, background=self.backgroundColor, bd=0, highlightthickness=0, relief='ridge', width=self.canvasWidth, height=self.errorFileLabel.winfo_height())
-        self.errorCanvas = tk.Canvas(self.canvasFrame, background=self.backgroundColor, bd=0, highlightthickness=0, relief='ridge', width=self.canvasWidth, height=self.errorLabel.winfo_height())
-        self.formulaCanvas= tk.Canvas(self.canvasFrame, background=self.backgroundColor, bd=0, highlightthickness=0, relief='ridge', width=self.canvasWidth, height=self.errorFileLabel.winfo_height())
-        self.settingsCanvas = tk.Canvas(self.canvasFrame, background=self.backgroundColor, bd=0, highlightthickness=0, relief='ridge', width=self.canvasWidth, height=self.settingsLabel.winfo_height())
-        self.helpCanvas = tk.Canvas(self.canvasFrame, background=self.backgroundColor, bd=0, highlightthickness=0, relief='ridge', width=self.canvasWidth, height=self.helpLabel.winfo_height())
-        
-        if (self.defaultTab == 0):
-            #self.fileOpen.configure(background="SlateGray3")
-            self.inputCanvas.configure(background="DodgerBlue2")
-            #self.inputCanvas.create_polygon([self.canvasWidth, self.fileOpen.winfo_height()*0.6, self.canvasWidth, self.fileOpen.winfo_height()*0.4, 0, self.fileOpen.winfo_height()/2], fill="white")
-        elif (self.defaultTab == 1):
-            self.runCanvas.configure(background="DodgerBlue2")
-            #self.runCanvas.create_polygon([self.canvasWidth, self.runModel.winfo_height()*0.6, self.canvasWidth, self.runModel.winfo_height()*0.4, 0, self.runModel.winfo_height()/2], fill="white")
-        elif (self.defaultTab == 2):
-            self.errorFileCanvas.configure(background="DodgerBlue2")
-            #self.errorFileCanvas.create_polygon([self.canvasWidth, self.errorFileLabel.winfo_height()*0.6, self.canvasWidth, self.errorFileLabel.winfo_height()*0.4, 0, self.errorFileLabel.winfo_height()/2], fill="white")
-        elif (self.defaultTab == 3):
-            self.errorCanvas.configure(background="DodgerBlue2")
-            #self.errorCanvas.create_polygon([self.canvasWidth, self.errorLabel.winfo_height()*0.6, self.canvasWidth, self.errorLabel.winfo_height()*0.4, 0, self.errorLabel.winfo_height()/2], fill="white")
-        elif (self.defaultTab == 4):
-            self.formulaCanvas.configure(background="DodgerBlue2")
-            #self.formulaCanvas.create_polygon([self.canvasWidth, self.formulaLabel.winfo_height()*0.6, self.canvasWidth, self.formulaLabel.winfo_height()*0.4, 0, self.formulaLabel.winfo_height()/2], fill="white")
-        elif (self.defaultTab == 5):
-            self.settingsCanvas.configure(background="DodgerBlue2")
-            #self.settingsCanvas.create_polygon([self.canvasWidth, self.settingsLabel.winfo_height()*0.6, self.canvasWidth, self.settingsLabel.winfo_height()*0.4, 0, self.settingsLabel.winfo_height()/2], fill="white")
-        elif (self.defaultTab == 6):
-            self.helpCanvas.configure(background="DodgerBlue2")
-            #self.helpCanvas.create_polygon([self.canvasWidth, self.helpLabel.winfo_height()*0.6, self.canvasWidth, self.helpLabel.winfo_height()*0.4, 0, self.helpLabel.winfo_height()/2], fill="white")
-        
-        self.canvasFrame.grid(column=0, row=1, sticky="NS")
-        self.inputCanvas.grid(column=0, row=0)
-        self.runCanvas.grid(column=0, row=1)
-        self.errorFileCanvas.grid(column=0, row=2)
-        self.errorCanvas.grid(column=0, row=3)
-        self.formulaCanvas.grid(column=0, row=4, sticky="N")
-        self.settingsCanvas.grid(column=0, row=5, sticky="S")
-        self.helpCanvas.grid(column=0, row=6, sticky="S")
-        
-        #---Check the input file arguments and pass it to the appropriate tab---
-        if (self.argFile != ""):
-            fname, fext = os.path.splitext(self.argFile)
-            if (fext == ".mmfile"):
-                self.enterMeasureModel(self.argFile)
-            elif (fext == ".mmfitting"):
-                self.enterMeasureModelFitting(self.argFile)
-            elif (fext == ".mmresiduals"):
-                self.enterResidual(self.argFile)
-            elif (fext == ".mmerrors"):
-                self.enterError(self.argFile)
-            elif (fext == ".mmcustom"):
-                self.enterCustom(self.argFile)
+    
+    #---Allow the mousewheel to be used to change tabs---
+    def on_mouse_wheel(self, event, overTab):
+        if (self.currentTab == 0):
+            if (event.delta < 0):
+                self.measureModelDown(None)
+        elif (self.currentTab == 1):
+            if (event.delta > 0):
+                self.inputFileDown(None)
             else:
-                self.enterInput(self.argFile)
-                #messagebox.showerror("File error", "Error: 4\nThe file has an unknown extension. Opened files must be either .mmfile, .mmfitting, .mmresiduals, or .mmerrors")
-        elif (len(self.residualsFileList) > 0):
-            self.enterResiduals(self.residualsFileList)
-        elif (len(self.errorsFileList) > 0):
-            self.enterErrors(self.errorsFileList)
+                self.errorFileDown(None)
+        elif (self.currentTab == 2):
+            if (event.delta > 0):
+                self.measureModelDown(None)
+            else:
+                self.errorDown(None)
+        elif (self.currentTab == 3):
+            if (event.delta > 0):
+                self.errorFileDown(None)
+            else:
+                self.formulaDown(None)
+        elif (self.currentTab == 6):
+            if (event.delta > 0):
+                self.errorDown(None)
+            else:
+                self.settingsDown(None)
+        elif (self.currentTab == 4):
+            if (event.delta > 0):
+                self.formulaDown(None)
+            else:
+                self.helpDown(None)
+        elif (self.currentTab == 5):
+            if (event.delta > 0):
+                self.settingsDown(None)
+        
+        if (overTab == 0):
+            self.fileOpen.configure(image=self.imgFile2 if self.currentTab != 0 else self.imgFile4)
+        elif (overTab == 1):
+            self.runModel.configure(image=self.imgModel2 if self.currentTab != 1 else self.imgModel4)
+        elif (overTab == 2):
+            self.errorFileLabel.configure(image=self.imgErrorFile2 if self.currentTab != 2 else self.imgErrorFile4)
+        elif (overTab == 3):
+            self.errorLabel.configure(image=self.imgError2 if self.currentTab != 3 else self.imgError4)
+        elif (overTab == 4):
+            self.settingsLabel.configure(image=self.imgSettings2 if self.currentTab != 4 else self.imgSettings4)
+        elif (overTab == 5):
+            self.helpLabel.configure(image=self.imgHelp2 if self.currentTab != 5 else self.imgHelp4)
+        elif (overTab == 6):
+            self.formulaLabel.configure(image=self.imgFormula2 if self.currentTab != 6 else self.imgFormula4)
     
     #---The functions for what happens when one of the links in the navigation pane is clicked--- 
     def inputFileDown(self, event):
         self.currentTab = 0                                         #Set the current tab to keep track of which one is open
         self.fileOpen.configure(image=self.imgFile3)                #Change the color of the tab being clicked on
-        self.inputCanvas.configure(background="DodgerBlue2")
+        self.inputCanvas.configure(background="#0066FF")
         #self.inputCanvas.create_polygon([self.canvasWidth, self.fileOpen.winfo_height()*0.6, self.canvasWidth, self.fileOpen.winfo_height()*0.4, 0, self.fileOpen.winfo_height()/2], fill="white")  #Create triangle to indicate chosen tab
         self.runModel.configure(image=self.imgModel)                #Set all the other tabs to have the standard background
         self.errorFileLabel.configure(image=self.imgErrorFile)
@@ -719,7 +733,7 @@ class myGUI:
         self.currentTab = 1
         self.fileOpen.configure(image=self.imgFile)
         self.runModel.configure(image=self.imgModel3)
-        self.runCanvas.configure(background="DodgerBlue2")
+        self.runCanvas.configure(background="#0066FF")
         #self.runCanvas.create_polygon([self.canvasWidth, self.runModel.winfo_height()*0.6, self.canvasWidth, self.runModel.winfo_height()*0.4, 0, self.runModel.winfo_height()/2], fill="white")
         self.errorFileLabel.configure(image=self.imgErrorFile)
         self.helpLabel.configure(image=self.imgHelp)
@@ -753,7 +767,7 @@ class myGUI:
         self.fileOpen.configure(image=self.imgFile)
         self.runModel.configure(image=self.imgModel)
         self.errorFileLabel.configure(image=self.imgErrorFile3)
-        self.errorFileCanvas.configure(background="DodgerBlue2")
+        self.errorFileCanvas.configure(background="#0066FF")
        #self.errorFileCanvas.create_polygon([self.canvasWidth, self.fileOpen.winfo_height()*0.6, self.canvasWidth, self.fileOpen.winfo_height()*0.4, 0, self.fileOpen.winfo_height()/2], fill="white")
         self.helpLabel.configure(image=self.imgHelp)
         self.errorLabel.configure(image=self.imgError)
@@ -788,7 +802,7 @@ class myGUI:
         self.errorFileLabel.configure(image=self.imgErrorFile)
         self.helpLabel.configure(image=self.imgHelp)
         self.errorLabel.configure(image=self.imgError3)
-        self.errorCanvas.configure(background="DodgerBlue2")
+        self.errorCanvas.configure(background="#0066FF")
         #self.errorCanvas.create_polygon([self.canvasWidth, self.fileOpen.winfo_height()*0.6, self.canvasWidth, self.fileOpen.winfo_height()*0.4, 0, self.fileOpen.winfo_height()/2], fill="white")
         self.settingsLabel.configure(image=self.imgSettings)
         self.formulaLabel.configure(image=self.imgFormula)
@@ -822,7 +836,7 @@ class myGUI:
         self.errorLabel.configure(image=self.imgError)
         self.settingsLabel.configure(image=self.imgSettings)
         self.formulaLabel.configure(image=self.imgFormula3)
-        self.formulaCanvas.configure(background="DodgerBlue2")
+        self.formulaCanvas.configure(background="#0066FF")
         #self.formulaCanvas.create_polygon([self.canvasWidth, self.fileOpen.winfo_height()*0.6, self.canvasWidth, self.fileOpen.winfo_height()*0.4, 0, self.fileOpen.winfo_height()/2], fill="white")
         self.runCanvas.configure(background=self.backgroundColor)
         self.errorFileCanvas.configure(background=self.backgroundColor)
@@ -854,7 +868,7 @@ class myGUI:
         self.helpLabel.configure(image=self.imgHelp)
         self.errorLabel.configure(image=self.imgError)
         self.settingsLabel.configure(image=self.imgSettings3)
-        self.settingsCanvas.configure(background="DodgerBlue2")
+        self.settingsCanvas.configure(background="#0066FF")
         #self.settingsCanvas.create_polygon([self.canvasWidth, self.fileOpen.winfo_height()*0.6, self.canvasWidth, self.fileOpen.winfo_height()*0.4, 0, self.fileOpen.winfo_height()/2], fill="white")
         self.formulaLabel.configure(image=self.imgFormula)
         self.runCanvas.configure(background=self.backgroundColor)
@@ -884,7 +898,7 @@ class myGUI:
         self.runModel.configure(image=self.imgModel)
         self.errorFileLabel.configure(image=self.imgErrorFile)
         self.helpLabel.configure(image=self.imgHelp3)
-        self.helpCanvas.configure(background="DodgerBlue2")
+        self.helpCanvas.configure(background="#0066FF")
         #self.helpCanvas.create_polygon([self.canvasWidth, self.helpLabel.winfo_height()*0.6, self.canvasWidth, self.helpLabel.winfo_height()*0.4, 0, self.helpLabel.winfo_height()/2], fill="white")
         self.errorLabel.configure(image=self.imgError)
         self.settingsLabel.configure(image=self.imgSettings)
@@ -911,7 +925,7 @@ class myGUI:
     def helpUp(self, event):
         self.helpLabel.configure(image=self.imgHelp4)
     
-    #---The functions for when a link is no longer hovered over: change the background color back to what it was
+    #---The functions for when a link is no longer hovered over: change the background color back to what it was---
     def leaveInputFile(self, event):
         if (self.currentTab == 0):
             self.fileOpen.configure(image=self.imgFile3)
@@ -958,7 +972,7 @@ class myGUI:
     def enterInput(self, fileName):
         self.currentTab = 0
         self.fileOpen.configure(image=self.imgFile3)
-        self.inputCanvas.configure(background="DodgerBlue2")
+        self.inputCanvas.configure(background="#0066FF")
         #self.inputCanvas.create_polygon([self.canvasWidth, self.fileOpen.winfo_height()*0.6, self.canvasWidth, self.fileOpen.winfo_height()*0.4, 0, self.fileOpen.winfo_height()/2], fill="white")  #Create triangle to indicate chosen tab
         self.runModel.configure(image=self.imgModel)
         self.errorFileLabel.configure(image=self.imgErrorFile)
@@ -992,7 +1006,7 @@ class myGUI:
         self.helpLabel.configure(image=self.imgHelp)
         self.settingsLabel.configure(image=self.imgSettings)
         self.formulaLabel.configure(image=self.imgFormula)
-        self.runCanvas.configure(background="DodgerBlue2")
+        self.runCanvas.configure(background="#0066FF")
         #self.runCanvas.create_polygon([self.canvasWidth, self.runCanvas.winfo_height()*0.6, self.canvasWidth, self.runCanvas.winfo_height()*0.4, 0, self.runCanvas.winfo_height()/2], fill="white")
         self.helpCanvas.configure(background=self.backgroundColor)
         self.errorFileCanvas.configure(background=self.backgroundColor)
@@ -1020,7 +1034,7 @@ class myGUI:
         self.helpLabel.configure(image=self.imgHelp)
         self.settingsLabel.configure(image=self.imgSettings)
         self.formulaLabel.configure(image=self.imgFormula)
-        self.runCanvas.configure(background="DodgerBlue2")
+        self.runCanvas.configure(background="#0066FF")
         #self.runCanvas.create_polygon([self.canvasWidth, self.runCanvas.winfo_height()*0.6, self.canvasWidth, self.runCanvas.winfo_height()*0.4, 0, self.runCanvas.winfo_height()/2], fill="white")
         self.helpCanvas.configure(background=self.backgroundColor)
         self.errorFileCanvas.configure(background=self.backgroundColor)
@@ -1045,7 +1059,7 @@ class myGUI:
         self.fileOpen.configure(image=self.imgFile)
         self.runModel.configure(image=self.imgModel)
         self.errorFileLabel.configure(image=self.imgErrorFile3)
-        self.errorFileCanvas.configure(background="DodgerBlue2")
+        self.errorFileCanvas.configure(background="#0066FF")
         #self.errorFileCanvas.create_polygon([self.canvasWidth, self.fileOpen.winfo_height()*0.6, self.canvasWidth, self.fileOpen.winfo_height()*0.4, 0, self.fileOpen.winfo_height()/2], fill="white")
         self.helpLabel.configure(image=self.imgHelp)
         self.errorLabel.configure(image=self.imgError)
@@ -1073,7 +1087,7 @@ class myGUI:
         self.fileOpen.configure(image=self.imgFile)
         self.runModel.configure(image=self.imgModel)
         self.errorFileLabel.configure(image=self.imgErrorFile3)
-        self.errorFileCanvas.configure(background="DodgerBlue2")
+        self.errorFileCanvas.configure(background="#0066FF")
         #self.errorFileCanvas.create_polygon([self.canvasWidth, self.fileOpen.winfo_height()*0.6, self.canvasWidth, self.fileOpen.winfo_height()*0.4, 0, self.fileOpen.winfo_height()/2], fill="white")
         self.helpLabel.configure(image=self.imgHelp)
         self.errorLabel.configure(image=self.imgError)
@@ -1103,7 +1117,7 @@ class myGUI:
         self.errorFileLabel.configure(image=self.imgErrorFile)
         self.helpLabel.configure(image=self.imgHelp)
         self.errorLabel.configure(image=self.imgError3)
-        self.errorCanvas.configure(background="DodgerBlue2")
+        self.errorCanvas.configure(background="#0066FF")
         #self.errorCanvas.create_polygon([self.canvasWidth, self.fileOpen.winfo_height()*0.6, self.canvasWidth, self.fileOpen.winfo_height()*0.4, 0, self.fileOpen.winfo_height()/2], fill="white")
         self.settingsLabel.configure(image=self.imgSettings)
         self.formulaLabel.configure(image=self.imgFormula)
@@ -1131,7 +1145,7 @@ class myGUI:
         self.errorFileLabel.configure(image=self.imgErrorFile)
         self.helpLabel.configure(image=self.imgHelp)
         self.errorLabel.configure(image=self.imgError3)
-        self.errorCanvas.configure(background="DodgerBlue2")
+        self.errorCanvas.configure(background="#0066FF")
         #self.errorCanvas.create_polygon([self.canvasWidth, self.fileOpen.winfo_height()*0.6, self.canvasWidth, self.fileOpen.winfo_height()*0.4, 0, self.fileOpen.winfo_height()/2], fill="white")
         self.settingsLabel.configure(image=self.imgSettings)
         self.formulaLabel.configure(image=self.imgFormula)
@@ -1161,7 +1175,7 @@ class myGUI:
         self.errorLabel.configure(image=self.imgError)
         self.settingsLabel.configure(image=self.imgSettings)
         self.formulaLabel.configure(image=self.imgFormula3)
-        self.formulaCanvas.configure(background="DodgerBlue2")
+        self.formulaCanvas.configure(background="#0066FF")
         #self.formulaCanvas.create_polygon([self.canvasWidth, self.fileOpen.winfo_height()*0.6, self.canvasWidth, self.fileOpen.winfo_height()*0.4, 0, self.fileOpen.winfo_height()/2], fill="white")
         self.runCanvas.configure(background=self.backgroundColor)
         self.errorFileCanvas.configure(background=self.backgroundColor)
@@ -1178,6 +1192,33 @@ class myGUI:
         self.frame_label.configure(text="Custom Formula Fitting")
         self.formula_frame.grid(row=1, column=2, sticky="NW", padx=20, pady=20)
         self.formula_frame.formulaEnter(fileName)
+    
+    def enterFormula(self, fileName):
+        self.currentTab = 6
+        self.fileOpen.configure(image=self.imgFile)
+        self.runModel.configure(image=self.imgModel)
+        self.errorFileLabel.configure(image=self.imgErrorFile)
+        self.helpLabel.configure(image=self.imgHelp)
+        self.errorLabel.configure(image=self.imgError)
+        self.settingsLabel.configure(image=self.imgSettings)
+        self.formulaLabel.configure(image=self.imgFormula3)
+        self.formulaCanvas.configure(background="#0066FF")
+        #self.formulaCanvas.create_polygon([self.canvasWidth, self.fileOpen.winfo_height()*0.6, self.canvasWidth, self.fileOpen.winfo_height()*0.4, 0, self.fileOpen.winfo_height()/2], fill="white")
+        self.runCanvas.configure(background=self.backgroundColor)
+        self.errorFileCanvas.configure(background=self.backgroundColor)
+        self.errorCanvas.configure(background=self.backgroundColor)
+        self.inputCanvas.configure(background=self.backgroundColor)
+        self.settingsCanvas.configure(background=self.backgroundColor)
+        self.helpCanvas.configure(background=self.backgroundColor)
+        self.input_frame.grid_remove()
+        self.model_frame.grid_remove()
+        self.error_file_frame.grid_remove()
+        self.help_frame.grid_remove()
+        self.settings_frame.grid_remove()
+        self.error_frame.grid_remove()
+        self.frame_label.configure(text="Custom Formula Fitting")
+        self.formula_frame.grid(row=1, column=2, sticky="NW", padx=20, pady=20)
+        self.formula_frame.enterFormula(fileName)
     
     #---To check if an "Are you sure you want to close" prompt is needed---
     def canCloseInput(self):
@@ -1313,6 +1354,12 @@ class myGUI:
     def getFreqLoadCustom(self):
         return self.freqLoadCustom
     
+    def setDefaultImports(self, val):
+        self.defaultImports = val
+    
+    def getDefaultImports(self):
+        return self.defaultImports
+    
     def setScroll(self, val):
         if (val == 1):
             self.left_frame.bind("<MouseWheel>", lambda e: self.on_mouse_wheel(e, -1))
@@ -1393,54 +1440,6 @@ class myGUI:
         self.model_frame.setThemeDark()
         self.error_file_frame.setThemeDark()
         self.formula_frame.setThemeDark()
-    
-    def on_mouse_wheel(self, event, overTab):
-        if (self.currentTab == 0):
-            if (event.delta < 0):
-                self.measureModelDown(None)
-        elif (self.currentTab == 1):
-            if (event.delta > 0):
-                self.inputFileDown(None)
-            else:
-                self.errorFileDown(None)
-        elif (self.currentTab == 2):
-            if (event.delta > 0):
-                self.measureModelDown(None)
-            else:
-                self.errorDown(None)
-        elif (self.currentTab == 3):
-            if (event.delta > 0):
-                self.errorFileDown(None)
-            else:
-                self.formulaDown(None)
-        elif (self.currentTab == 6):
-            if (event.delta > 0):
-                self.errorDown(None)
-            else:
-                self.settingsDown(None)
-        elif (self.currentTab == 4):
-            if (event.delta > 0):
-                self.formulaDown(None)
-            else:
-                self.helpDown(None)
-        elif (self.currentTab == 5):
-            if (event.delta > 0):
-                self.settingsDown(None)
-                
-        if (overTab == 0):
-            self.fileOpen.configure(image=self.imgFile2 if self.currentTab != 0 else self.imgFile4)
-        elif (overTab == 1):
-            self.runModel.configure(image=self.imgModel2 if self.currentTab != 1 else self.imgModel4)
-        elif (overTab == 2):
-            self.errorFileLabel.configure(image=self.imgErrorFile2 if self.currentTab != 2 else self.imgErrorFile4)
-        elif (overTab == 3):
-            self.errorLabel.configure(image=self.imgError2 if self.currentTab != 3 else self.imgError4)
-        elif (overTab == 4):
-            self.settingsLabel.configure(image=self.imgSettings2 if self.currentTab != 4 else self.imgSettings4)
-        elif (overTab == 5):
-            self.helpLabel.configure(image=self.imgHelp2 if self.currentTab != 5 else self.imgHelp4)
-        elif (overTab == 6):
-            self.formulaLabel.configure(image=self.imgFormula2 if self.currentTab != 6 else self.imgFormula4)
 
     def closeAllPopups(self, e=None):
         self.input_frame.closeWindows()
@@ -1449,12 +1448,12 @@ class myGUI:
         self.error_frame.closeWindows()
         self.formula_frame.closeWindows()
 
-if (__name__ == "__main__"):        #If the code is being run as the main module
+if (__name__ == "__main__"):            #If the code is being run as the main module
     multiprocessing.freeze_support()    #Allows multiprocessing to work on Windows
     try:
         if 'win' in sys.platform:   #Makes the program sharper on Windows
             ctypes.windll.shcore.SetProcessDpiAwareness(1)
-    except:
+    except Exception:
         pass
     
     def resource_path(relative_path):
@@ -1468,8 +1467,10 @@ if (__name__ == "__main__"):        #If the code is being run as the main module
         return os.path.join(base_path, relative_path)
     
     root = tk.Tk()                  #The root window
-    root.withdraw()
+    root.withdraw()                 #Hide the root window for the copyright notice to apppear
     gui = myGUI(root, sys.argv)     #The GUI object
+    
+    #---Set up the copyright splash screen---
     splashScreen = tk.Toplevel(bg="white")
     splashScreen.after(1, lambda: splashScreen.focus_force())
     splashScreen.title("Measurement Model")
@@ -1484,15 +1485,21 @@ You should have received a copy of the GNU General Public License along with thi
     gnuLicenseLink = tk.Label(splashScreen, text="GNU General Public License", cursor="hand2", bg="white", fg="blue")
     gnuLicenseLink.bind('<Button-1>', lambda e: webbrowser.open_new("gpl-3.0-standalone.html"))
     buttonFrame = tk.Frame(splashScreen, bg="white")
+    
+    #---If Start program is clicked in the splash screen---
     def on_start_splash():
         splashScreen.destroy()
         root.deiconify()
         root.lift()
     okButton = ttk.Button(buttonFrame, text="Start program", command=on_start_splash)
     okButton.bind("<Return>", lambda e: on_start_splash())
+    
+    #---If Cancel is clicked in the splash screen---
     def on_cancel_splash():
         splashScreen.destroy()
         root.destroy()
+    
+    #---Prepare the splash screen---
     cancelButton = ttk.Button(buttonFrame, text="Cancel", command=on_cancel_splash)
     cancelButton.bind("<Return>", lambda e: on_cancel_splash())
     copyrightLabel.pack(side=tk.TOP, fill=tk.X, expand=True)
@@ -1503,6 +1510,7 @@ You should have received a copy of the GNU General Public License along with thi
     splashScreen.protocol("WM_DELETE_WINDOW", on_cancel_splash)
     okButton.focus_set()
     splashScreen.resizable(False, False)
+    
     def on_closing():               #Check what's happening on closing
         if (not gui.canCloseInput() or not gui.canCloseCustom()):   #If there is a need to save and alerting is turned on, ask before closing
             if (messagebox.askokcancel("Exit?", "You have not saved. Do you still wish to exit?")):
