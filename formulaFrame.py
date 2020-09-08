@@ -268,14 +268,10 @@ class fF(tk.Frame):
         self.lowestUndeleted.configure(inactiveselectbackground=self.lowestUndeleted.cget("selectbackground"))
         self.lowestUndeleted.insert(1.0, "Lowest Remaining Frequency: 0")
         self.lowestUndeleted.configure(state="disabled")
-        #self.lowestUndeleted = tk.Label(self.freqWindow, text="Lowest Remaining Frequency: 0", background=self.backgroundColor, foreground=self.foregroundColor)
         self.highestUndeleted = tk.Text(self.freqWindow, height=1, width=40, borderwidth=0, bg=self.backgroundColor, fg=self.foregroundColor)
         self.highestUndeleted.configure(inactiveselectbackground=self.highestUndeleted.cget("selectbackground"))
         self.highestUndeleted.insert(1.0, "Lowest Remaining Frequency: 0")
         self.highestUndeleted.configure(state="disabled")
-        #self.highestUndeleted = tk.Label(self.freqWindow, text="Highest Remaining Frequency: 0", background=self.backgroundColor, foreground=self.foregroundColor)
-        #self.rs = RangeSlider(self.freqWindow, lowerBound=-4, upperBound=7, background=self.backgroundColor, tickColor=self.foregroundColor)
-        #self.rs.grid(column=1, row=1)
         self.lowerSpinboxVariable = tk.StringVar(self, "0")
         self.upperSpinboxVariable = tk.StringVar(self, "0")
         self.upDelete = 0
@@ -423,8 +419,6 @@ class fF(tk.Frame):
         self.formulaDescriptionWindow.geometry("1000x700")
         self.formulaDescriptionWindow.title("Custom formula description")
         self.formulaDescriptionWindow.iconbitmap(resource_path('img/elephant3.ico'))
-        #self.formulaDescriptionVariable = tk.StringVar(self, "")
-        #self.formulaDescriptionLatexVariable = tk.StringVar(self, "")
         self.formulaDescriptionLabel = tk.Label(self.formulaDescriptionWindow, text="Description: ", bg=self.backgroundColor, fg=self.foregroundColor)
         self.formulaDescriptionFrame = tk.Frame(self.formulaDescriptionWindow, bg=self.backgroundColor)
         self.formulaDescriptionContainer = tk.Frame(self.formulaDescriptionFrame, borderwidth=1, relief="sunken")
@@ -456,7 +450,6 @@ class fF(tk.Frame):
         self.latexAx.get_xaxis().set_visible(False)
         self.latexAx.get_yaxis().set_visible(False)
         self.latexFig.tight_layout()
-        #self.latexFig.patch.set_visible(False)
         self.latexAx.axis("off")
         self.formulaLatexFrame.pack(side=tk.BOTTOM, fill=tk.X, expand=False, pady=15, padx=5)
         self.popup_menu_description = tk.Menu(self.formulaDescriptionEntry, tearoff=0)
@@ -489,7 +482,6 @@ class fF(tk.Frame):
         self.loadFormulaYSB = ttk.Scrollbar(self.loadFormulaFrameTwo, orient='vertical', command=self.loadFormulaTree.yview)
         self.loadFormulaXSB = ttk.Scrollbar(self.loadFormulaFrameTwo, orient='horizontal', command=self.loadFormulaTree.xview)
         self.loadFormulaTree.configure(yscroll=self.loadFormulaYSB.set, xscroll=self.loadFormulaXSB.set)
-        #self.loadFormulaTree.heading('#0', text=self.topGUI.getDefaultFormulaDirectory(), anchor='w')
         self.loadFormulaXSB.pack(side=tk.BOTTOM, fill=tk.X, expand=False)
         self.loadFormulaTree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.loadFormulaYSB.pack(side=tk.RIGHT, fill=tk.Y, expand=False)
@@ -532,15 +524,12 @@ class fF(tk.Frame):
         self.loadFormulaIncludeLabel = tk.Label(self.loadFormulaButtonFrame, text="Include: ", bg=self.backgroundColor, fg=self.foregroundColor)
         self.loadFormulaParamsVariable = tk.IntVar(self, 1)
         self.loadFormulaParams = ttk.Checkbutton(self.loadFormulaButtonFrame, variable=self.loadFormulaParamsVariable, text="Parameters")
-        #self.loadFormulaParamAdvancedVariable = tk.IntVar(self, 1)
-        #self.loadFormulaParamAdvanced = ttk.Checkbutton(self.loadFormulaButtonFrame, variable=self.loadFormulaParamAdvancedVariable, text="Other parameter options")
         self.loadFormulaCodeVariable = tk.IntVar(self, 1)
         self.loadFormulaCodeCheck = ttk.Checkbutton(self.loadFormulaButtonFrame, variable=self.loadFormulaCodeVariable, text="Code")
         self.loadFormulaOtherVariable = tk.IntVar(self, 0)
         self.loadFormulaOther = ttk.Checkbutton(self.loadFormulaButtonFrame, variable=self.loadFormulaOtherVariable, text="Other fitting settings")
         self.loadFormulaOther.grid(column=5, row=0)
         self.loadFormulaCodeCheck.grid(column=4, row=0)
-        #self.loadFormulaParamAdvanced.grid(column=3, row=0)
         self.loadFormulaParams.grid(column=2, row=0)
         self.loadFormulaIncludeLabel.grid(column=1, row=0, padx=5)
         self.loadFormula.grid(column=0, row=0)
@@ -551,7 +540,6 @@ class fF(tk.Frame):
         loadFormulaDirectoryButton_ttp = CreateToolTip(self.loadFormulaDirectoryButton, 'Look for directory containing .mmformula files')
         loadFormula_ttp = CreateToolTip(self.loadFormula, 'Load formula to main window')
         loadFormulaParams_ttp = CreateToolTip(self.loadFormulaParams, 'Include parameters (names and values)')
-        #loadFormulaParamsAdvanced_ttp = CreateToolTip(self.loadFormulaParamAdvanced, 'Include advanced parameter options (multistart and limits)')
         loadFormulaCode_ttp = CreateToolTip(self.loadFormulaCodeCheck, 'Include formula')
         loadFormulaOther_ttp = CreateToolTip(self.loadFormulaOther, 'Include other fitting settings (number of simulations, fit type, and weighting)')
         
@@ -569,15 +557,12 @@ class fF(tk.Frame):
         self.bottomButtonsFrame = tk.Frame(self.paramPopup, bg=self.backgroundColor)
         self.advancedOptionsButton = ttk.Button(self.bottomButtonsFrame, text="Advanced options")
         advancedOptions_ttp = CreateToolTip(self.advancedOptionsButton, 'Opens a popup containing advanced parameter settings')
-        #self.loadParamsButton = ttk.Button(self.bottomButtonsFrame, text="Load parameters")
-        #loadParams_ttp = CreateToolTip(self.loadParamsButton, 'Load parameters from a .mmcustom file (this will overwrite existing parameters)')
         self.simplexButton = ttk.Button(self.bottomButtonsFrame, text="Step-by-step simplex", state="disabled")
         simplexButton_ttp = CreateToolTip(self.simplexButton, 'Perform one interation of a simplex algorithm (will replace current parameter values)')
         self.addButton.pack(side=tk.LEFT, fill=tk.X, expand=True)
         self.removeButton.pack(side=tk.LEFT, fill=tk.X, expand=True)
         self.advancedOptionsButton.pack(side=tk.RIGHT, fill=tk.X, expand=True)
         self.simplexButton.pack(side=tk.LEFT, fill=tk.X, expand=True)
-        #self.loadParamsButton.pack(side=tk.LEFT, fill=tk.X, expand=True)
         self.bottomButtonsFrame.pack(side=tk.BOTTOM, fill=tk.X, expand=False)
         self.howMany.pack(side=tk.BOTTOM, fill=tk.X, expand=False)
         self.buttonFrame.pack(side=tk.BOTTOM, fill=tk.X, expand=False, pady=1)
@@ -687,28 +672,7 @@ class fF(tk.Frame):
             ypos_round = round(ypos, 2)
             if (xpos_round != 0.00 or ypos_round != 1.00):
                 self.hcanvas.yview_scroll(int(-1*(event.delta/120)), "units")
-        """
-        self.helpPopup = tk.Toplevel(bg=self.backgroundColor)
-        self.helpPopup.withdraw()
-        self.hcanvas = tk.Canvas(self.helpPopup, borderwidth=0, highlightthickness=0, background=self.backgroundColor)
-        self.hframe = tk.Frame(self.hcanvas, background=self.backgroundColor)
-        self.helpText = "BE CAREFUL WITH THE CODE, AS IT HAS THE POWER TO MODIFY THE PROGRAM OR DAMAGE YOUR COMPUTER.\n\nAny valid Python code can be entered into the formula box. Clicking the \"Run fitting\" button will check the syntax of the code and then execute it.\n\n"\
-                        "The fitting algorithm will vary the parameters listed in the \"Fitting Parameters\" window. The names given to these parameters can be used and modified in the code. Parameters cannot be named after Python reserved words.\n\n"\
-                        "The frequencies from the input file can be accessed as an array named \"freq\". For instance, to access the first frequency, use \"freq[0]\" in the code.\n"\
-                        "The imaginary part of the impendance is an array named Zj. For instance, to access the first imaginary impedance point, use \"Zj[0]\" in the code.\n"\
-                        "The real part of the impedance is an array named Zr. For instance, to access the first real impedance point, use \"Zr[0]\" in the code.\n\n"\
-                        "The imaginary number can be accessed as \"1j\". Built-in functions include: PI, SQRT, SIN, COS, TAN, RAD2DEG, DEG2RAD, SINH, COSH, TANH, ABS, LN, LOG, EXP, ARCSIN, ARCCOS, ARCTAN, ARCSINH, ARCCOSH, and ARCTANH.\n\n"\
-                        "Trig functions take their arguments in radians.\n\n"\
-                        "The code should set variables named \"Zreal\" and \"Zimag\" to arrays of the values for the real and imaginary parts of the impedance, respectively. Each point in the array should correspond to the frequency at that index.\n\n"\
-                        "Most usual Python packages, such as numpy, can be imported. Python built-ins can also be accessed."
-        self.helpTextLabel = tk.Label(self.hframe, text=self.helpText, justify=tk.LEFT, bg=self.backgroundColor, fg=self.foregroundColor)
-        self.helpTextLabel.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-        self.helpTextLabel.bind("<MouseWheel>", _on_mousewheel_help)
-        self.vsbh = tk.Scrollbar(self.helpPopup, orient="vertical", command=self.hcanvas.yview)
-        self.vsbh.pack(side=tk.RIGHT, fill=tk.Y)
-        self.hcanvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.hcanvas.create_window((4,4), window=self.hframe, anchor="nw")
-        """
+
         self.numParams = 0
         self.paramNameEntries = []
         self.paramNameValues = []
@@ -792,7 +756,6 @@ class fF(tk.Frame):
                 onSelect(None, n=num)
         
         def browse():
-#            if (self.browseEntry.get() == ""):
             n = OpenFile()
             if (n != '+'):
                 fname, fext = os.path.splitext(n)
@@ -847,16 +810,7 @@ class fF(tk.Frame):
                                 self.wdata = self.wdataRaw.copy()
                                 self.rdata = self.rdataRaw.copy()
                                 self.jdata = self.jdataRaw.copy()
-                            #self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
-                            #self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
-                            #self.rs.setMajorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
-                            #self.rs.setNumberOfMajorTicks(10)
-                            #self.rs.showMinorTicks(False)
-                            #self.rs.setMinorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
-                            #self.rs.setLower(np.log10(min(self.wdata)))
-                            #self.rs.setUpper(np.log10(max(self.wdata)))
-                            #self.upperSpinboxVariable.set(str(self.upDelete))
-                            #self.lowerSpinboxVariable.set(str(self.lowDelete))
+
                             self.lowestUndeleted.configure(state="normal")
                             self.lowestUndeleted.delete(1.0, tk.END)
                             self.lowestUndeleted.insert(1.0, "Lowest remaining frequency: {:.4e}".format(min(self.wdata)))
@@ -865,11 +819,6 @@ class fF(tk.Frame):
                             self.highestUndeleted.delete(1.0, tk.END)
                             self.highestUndeleted.insert(1.0, "Highest remaining frequency: {:.4e}".format(max(self.wdata)))
                             self.highestUndeleted.configure(state="disabled")
-                            #self.lowestUndeleted.configure(text="Lowest remaining frequency: {:.4e}".format(min(self.wdata)))
-                            #self.highestUndeleted.configure(text="Highest remaining frequency: {:.4e}".format(max(self.wdata)))
-                            #self.wdata = self.wdataRaw.copy()
-                            #self.rdata = self.rdataRaw.copy()
-                            #self.jdata = self.jdataRaw.copy()
                         else:
                             self.upDelete = 0
                             self.lowDelete = 0
@@ -878,12 +827,6 @@ class fF(tk.Frame):
                             self.wdata = self.wdataRaw.copy()
                             self.rdata = self.rdataRaw.copy()
                             self.jdata = self.jdataRaw.copy()
-                            #self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
-                            #self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
-                            #self.rs.setNumberOfMajorTicks(10)
-                            #self.rs.showMinorTicks(False)
-                            #self.rs.setLower(np.log10(min(self.wdata)))
-                            #self.rs.setUpper(np.log10(max(self.wdata)))
                             self.lowestUndeleted.configure(state="normal")
                             self.lowestUndeleted.delete(1.0, tk.END)
                             self.lowestUndeleted.insert(1.0, "Lowest remaining frequency: {:.4e}".format(min(self.wdata)))
@@ -892,8 +835,6 @@ class fF(tk.Frame):
                             self.highestUndeleted.delete(1.0, tk.END)
                             self.highestUndeleted.insert(1.0, "Highest remaining frequency: {:.4e}".format(max(self.wdata)))
                             self.highestUndeleted.configure(state="disabled")
-                            #self.lowestUndeleted.configure(text="Lowest remaining frequency: {:.4e}".format(min(self.wdata)))
-                            #self.highestUndeleted.configure(text="Highest remaining frequency: {:.4e}".format(max(self.wdata)))
                         try:
                             self.figFreq.clear()
                             dataColor = "tab:blue"
@@ -950,7 +891,6 @@ class fF(tk.Frame):
                             fileToLoad = firstLine.split("filename: ")[1][:-1]
                         else:
                             fileToLoad = toLoad.readline().split("filename: ")[1][:-1]
-                        #fileToLoad = toLoad.readline().split("filename: ")[1][:-1]
                         numberOfSimulations = int(toLoad.readline().split("number_simulations: ")[1][:-1])
                         if (numberOfSimulations < 1):
                             raise ValueError
@@ -1059,7 +999,6 @@ class fF(tk.Frame):
                                     break
                                 else:
                                     imports += nextLineIn
-                        #self.importPathListbox.delete(0, tk.END)
                         toImport = imports.rstrip().split('\n')
                         for tI in toImport:
                             if (len(tI) > 0):
@@ -1077,7 +1016,6 @@ class fF(tk.Frame):
                             self.formulaDescriptionEntry.insert("1.0", descriptionIn.rstrip())
                             self.formulaDescriptionLatexEntry.delete("1.0", tk.END)
                             self.formulaDescriptionLatexEntry.insert("1.0", latexIn.rstrip())
-                            #self.formulaDescriptionLatexVariable.set(latexIn.rstrip())
                             self.latexAx.clear()
                             self.latexAx.axis("off")
                             self.latexCanvas.draw()
@@ -1192,7 +1130,6 @@ class fF(tk.Frame):
                         self.paramListbox.select_set(0)
                         self.paramListboxSelection = 0
                         onSelect(None, n=0)
-                        #self.paramListbox.event_generate("<<ListboxSelect>>")
                         try:
                             with open(fileToLoad,'r') as UseFile:
                                 filetext = UseFile.read()
@@ -1232,14 +1169,6 @@ class fF(tk.Frame):
                                 self.wdata = self.wdataRaw.copy()[self.lowDelete:-1*self.upDelete]
                                 self.rdata = self.rdataRaw.copy()[self.lowDelete:-1*self.upDelete]
                                 self.jdata = self.jdataRaw.copy()[self.lowDelete:-1*self.upDelete]
-                            #self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
-                            #self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
-                            #self.rs.setMajorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
-                            #self.rs.setNumberOfMajorTicks(10)
-                            #self.rs.showMinorTicks(False)
-                            #self.rs.setMinorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
-                            #self.rs.setLower(np.log10(min(self.wdata)))
-                            #self.rs.setUpper(np.log10(max(self.wdata)))
                             try:
                                 self.figFreq.clear()
                                 dataColor = "tab:blue"
@@ -1418,13 +1347,7 @@ class fF(tk.Frame):
                     self.wdata = self.wdataRaw.copy()[self.lowDelete:-1*self.upDelete]
                     self.rdata = self.rdataRaw.copy()[self.lowDelete:-1*self.upDelete]
                     self.jdata = self.jdataRaw.copy()[self.lowDelete:-1*self.upDelete]
-                #if (self.upperSpinboxVariable.get() == ""):
-                #    self.upperSpinboxVariable.set("0")
-                #if (self.lowerSpinboxVariable.get() == ""):
-                #    self.lowerSpinboxVariable.set("0")
-                #self.rs.setLower(np.log10(min(self.wdata)))
-                #self.justUpdated = True
-                #self.rs.setUpper(np.log10(max(self.wdata)))
+
                 self.lengthOfData = len(self.wdata)
                 self.lowestUndeleted.configure(state="normal")
                 self.lowestUndeleted.delete(1.0, tk.END)
@@ -1434,8 +1357,6 @@ class fF(tk.Frame):
                 self.highestUndeleted.delete(1.0, tk.END)
                 self.highestUndeleted.insert(1.0, "Highest remaining frequency: {:.4e}".format(max(self.wdata)))
                 self.highestUndeleted.configure(state="disabled")
-                #self.lowestUndeleted.configure(text="Lowest remaining frequency: {:.4e}".format(min(self.wdata)))
-                #self.highestUndeleted.configure(text="Highest remaining frequency: {:.4e}".format(max(self.wdata)))
                 self.realFreqPlot.set_ydata(self.rdata)
                 self.realFreqPlot.set_xdata(self.wdata)
                 self.realFreqDeletedHigh.set_ydata(self.rdataRaw[len(self.wdataRaw)-1-self.upDelete:])
@@ -1449,23 +1370,12 @@ class fF(tk.Frame):
                 self.imagFreqPlot.set_ydata(-1*self.jdata)
                 self.imagFreqPlot.set_xdata(self.wdata)
                 self.canvasFreq.draw()
-                #self.updateFreqButton.configure(text="Updated")
-                #self.after(500, lambda : self.updateFreqButton.configure(text="Update Frequencies"))
+
             def changeFreqSpinboxLower(e = None):
                 try:
                     higherDelete = 0 if self.upperSpinboxVariable.get() == "" else int(self.upperSpinboxVariable.get())
                     lowerDelete = 0 if self.lowerSpinboxVariable.get() == "" else int(self.lowerSpinboxVariable.get())
-                    #print(len(self.wdataRaw)-1-higherDelete-lowerDelete)
-                    #self.lowerSpinbox.configure(to=len(self.wdataRaw)-1-higherDelete-lowerDelete)
                     self.upperSpinbox.configure(to=len(self.wdataRaw)-1-lowerDelete)
-                    #if (higherDelete == 0 and lowerDelete == 0):
-                    #    self.rs.setLower(np.log10(min(self.wdataRaw.copy())))
-                    #elif (higherDelete == 0):
-                    #    self.rs.setLower(np.log10(min(self.wdataRaw.copy()[lowerDelete:])))
-                    #elif (lowerDelete == 0):
-                    #    self.rs.setLower(np.log10(min(self.wdataRaw.copy()[:-1*higherDelete])))
-                    #else:
-                    #    self.rs.setLower(np.log10(min(self.wdataRaw.copy()[lowerDelete:-1*higherDelete])))
                     updateFreqs()
                 except:
                     pass
@@ -1475,35 +1385,14 @@ class fF(tk.Frame):
                     higherDelete = 0 if self.upperSpinboxVariable.get() == "" else int(self.upperSpinboxVariable.get())
                     lowerDelete = 0 if self.lowerSpinboxVariable.get() == "" else int(self.lowerSpinboxVariable.get())
                     self.lowerSpinbox.configure(to=len(self.wdataRaw)-1-higherDelete)
-                    #self.upperSpinbox.configure(to=len(self.wdataRaw)-1-higherDelete-lowerDelete)
-                    #if (higherDelete == 0 and lowerDelete == 0):
-                    #    self.rs.setUpper(np.log10(max(self.wdataRaw.copy())))
-                    #elif (higherDelete == 0):
-                    #    self.rs.setUpper(np.log10(max(self.wdataRaw.copy()[lowerDelete:])))
-                    #elif (lowerDelete == 0):
-                    #    self.rs.setUpper(np.log10(max(self.wdataRaw.copy()[:-1*higherDelete])))
-                    #else:
-                    #    self.rs.setUpper(np.log10(max(self.wdataRaw.copy()[lowerDelete:-1*higherDelete])))
                     updateFreqs()
                 except:
                     pass
             
-            #self.rs.setPaintTicks(True)
-            #self.rs.setSnapToTicks(False) 
-            #self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
-            #self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
-#            self.rs.setMajorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
-            #self.rs.setNumberOfMajorTicks(10)
-            #self.rs.showMinorTicks(False)
-#            self.rs.setMinorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
-            #self.rs.setLower(np.log10(min(self.wdata)))
-            #self.rs.setUpper(np.log10(max(self.wdata)))
-            #self.rs.setFocus()
             self.lowerLabel = tk.Label(self.freqWindow, text="Number of low frequencies\n to delete", bg=self.backgroundColor, fg=self.foregroundColor)
             self.rangeLabel = tk.Label(self.freqWindow, text="Log of Frequency", bg=self.backgroundColor, fg=self.foregroundColor)
             self.upperLabel = tk.Label(self.freqWindow, text="Number of high frequencies\n to delete", bg=self.backgroundColor, fg=self.foregroundColor)
             self.lowerLabel.grid(column=0, row=1, pady=(80, 0), padx=3)
-            #self.rangeLabel.grid(column=1, row=1, pady=85, sticky="N")
             self.upperLabel.grid(column=2, row=1, pady=(80, 0), padx=3)
             self.lowerSpinbox = tk.Spinbox(self.freqWindow, from_=0, to=(len(self.wdataRaw)-1), textvariable=self.lowerSpinboxVariable, state="normal", width=6, validate="all", validatecommand=valfreqLow, command=changeFreqSpinboxLower)
             self.lowerSpinbox.grid(column=0, row=2, padx=(3,0))
@@ -1519,58 +1408,15 @@ class fF(tk.Frame):
             self.highestUndeleted.delete(1.0, tk.END)
             self.highestUndeleted.insert(1.0, "Highest remaining frequency: {:.4e}".format(max(self.wdata)))
             self.highestUndeleted.configure(state="disabled")
-            #self.lowestUndeleted.configure(text="Lowest remaining frequency: {:.4e}".format(min(self.wdata))) #%f" % round_to_n(min(self.wdata), 6)).strip("0"))
-            #self.highestUndeleted.configure(text="Highest remaining frequency: {:.4e}".format(max(self.wdata))) #%f" % round_to_n(max(self.wdata), 6)).strip("0"))
             self.lowestUndeleted.grid(column=0, row=3, sticky="N")
-            self.highestUndeleted.grid(column=2, row=3, sticky="N")
-            #self.updateFreqButton = ttk.Button(self.freqWindow, text="Update Frequencies", width=20)
-            #self.updateFreqButton.grid(column=1, row=1, pady=30, sticky="S")
-            #updateFreqButton_ttp = CreateToolTip(self.updateFreqButton, "Change the number of frequencies used in fitting")
-            #def focusRange(event):
-            #    self.lowerSpinbox.configure(state="readonly")
-            #    self.upperSpinbox.configure(state="readonly")
-            #def focusLower(event):
-            #    self.lowerSpinbox.configure(state="normal")
-            #    self.upperSpinbox.configure(state="readonly")
-            #def focusUpper(event):
-            #    self.upperSpinbox.configure(state="normal")
-            #    self.lowerSpinbox.configure(state="readonly")
-            #self.rs.bind("<FocusIn>", lambda e: focusRange(e))
-            #self.lowerSpinbox.bind("<FocusIn>", lambda e: focusLower(e))
-            #self.lowerSpinbox.bind("<KeyRelease>", changeFreqSpinboxLower)
-            #self.upperSpinbox.bind("<FocusIn>", lambda e: focusUpper(e))
-            #self.upperSpinbox.bind("<KeyRelease>", changeFreqSpinboxUpper)
-            #self.justUpdated = False      
-              
-            #def changeSlider(event):
-            #    pass
-                #if (not self.justUpdated):
-                #    low = 10**self.rs.getLower()
-                #    high = 10**self.rs.getUpper()
-                #    for i in range(len(self.wdataRaw)):
-                #        if (low >= self.wdataRaw[i]):
-                #            self.lowerSpinboxVariable.set(i)
-                #    for i in range(len(self.wdataRaw)-1, 0, -1):
-                #        if (high <= self.wdataRaw[i]):
-                #            self.upperSpinboxVariable.set(len(self.wdataRaw)-1-i)
-                #self.justUpdated = False
-            #self.rs.subscribe(changeSlider) 
-            #self.updateFreqButton.configure(command=updateFreqs)
-            
+            self.highestUndeleted.grid(column=2, row=3, sticky="N")            
             
             def on_closing():
                 self.upperSpinboxVariable.set(str(self.upDelete))
                 self.lowerSpinboxVariable.set(str(self.lowDelete))
                 self.freqWindow.withdraw()
             self.freqWindow.protocol("WM_DELETE_WINDOW", on_closing)
-        """
-        def keyup_return(event):
-            textToSearch = self.customFormula.get("1.0", tk.INSERT)
-            if (len(textToSearch) > 3):
-                if (textToSearch[-2] == ")"):
-                    self.customFormula.insert(tk.INSERT + " - 1c", ":")
-                    self.customFormula.insert(tk.INSERT, "\t")
-        """
+
         def keyup(event):
             self.paramListbox.delete(0, tk.END)
             for n in self.paramNameValues:
@@ -1871,7 +1717,6 @@ class fF(tk.Frame):
                 self.paramListbox.select_set(0)
                 self.paramListboxSelection = 0
                 onSelect(None, n=0)
-                #self.paramListbox.event_generate("<<ListboxSelect>>")
                 self.multistartCheckboxVariables.pop()
                 self.multistartLowerVariables.pop()
                 self.multistartUpperVariables.pop()
@@ -1883,7 +1728,6 @@ class fF(tk.Frame):
                 keyup("")
         
         def advCheck():
-            #num_selected = self.paramListbox.curselection()[0]
             if (self.multistartCheckboxVariables[self.paramListboxSelection].get()):
                 self.multistartSpacing.configure(state="readonly")
                 self.multistartUpperEntry.configure(state="normal")
@@ -1978,17 +1822,10 @@ class fF(tk.Frame):
         def advancedOptionsPopup():
             self.advancedOptionsWindow.deiconify()
             self.advancedOptionsWindow.lift()
-            #self.advancedOptionsWindow.title("Advanced parameter options")
-            #self.advancedOptionsWindow.iconbitmap(resource_path("img/elephant3.ico"))
-            #self.advancedOptionsWindow.geometry("500x400")
-            #self.multistartCheckbox.configure(command=advCheck)
-            #self.multistartSpacing.bind("<<ComboboxSelected>>", advSelectionChange)
-            #print(self.multistartSpacing)
             def onClose():
                 self.advancedOptionsWindow.withdraw()
             
             self.advancedOptionsWindow.protocol("WM_DELETE_WINDOW", onClose)
-            #self.paramListbox.bind("<<ListboxSelect>>", onSelect)
         
         def loadParams():
             a = True
@@ -2164,9 +2001,6 @@ class fF(tk.Frame):
                           or name == "return" or name == "try" or name == "while" or name == "with" or name == "yield"):
                         messagebox.showwarning("Error", "Error 45: \nThe variable name \"" + name + "\" is a Python reserved word. Change the variable name.", parent=self.paramPopup)
                         return
-                    #elif ("self." in name):
-                    #    messagebox.showwarning("Error", "Error 46: \nThe variable name \"" + name + "\" contains \"self.\"; change the variable name.")
-                    #    return
                     elif (name == "freq" or name == "Zr" or name == "Zj" or name == "Zreal" or name == "Zimag" or name == "weighting"):
                         messagebox.showwarning("Error", "Error 47: \nThe variable name \"" + name + "\" is used by the fitting program; change the variable name.", parent=self.paramPopup)
                         return
@@ -2188,7 +2022,6 @@ class fF(tk.Frame):
                     formula = "try:\n\t" + formula
                     formula = formula.rstrip()
                     formula += "\n\tif any(np.isnan(Zreal)) or any(np.isnan(Zimag)):\n\t\traise Exception\nexcept:\n\tZreal = np.full(len(freq), 1E300)\n\tZimag = np.full(len(freq), 1E300)"
-                    #print(formula)
                     compile(formula, 'user_generated_formula', 'exec')
                 except:
                     messagebox.showwarning("Compile error", "There was an issue compiling the code", parent=self.paramPopup)
@@ -2309,7 +2142,6 @@ class fF(tk.Frame):
             self.removeButton.configure(command=removeParam)
             self.advancedOptionsButton.configure(command=advancedOptionsPopup)
             self.simplexButton.configure(command=simplexFit)
-            #self.loadParamsButton.configure(command=loadParams)
             self.paramPopup.title("Custom fitting parameters")
             self.paramPopup.iconbitmap(resource_path("img/elephant3.ico"))
             self.paramPopup.geometry("500x400")
@@ -2320,26 +2152,6 @@ class fF(tk.Frame):
         
         def helpPopup(event):
             webbrowser.open_new(r'file://' + os.path.dirname(os.path.realpath(__file__)) + '\Formula_guide.pdf')
-            """
-            self.hcanvas.configure(yscrollcommand=self.vsbh.set)
-            self.hcanvas.bind("<MouseWheel>", _on_mousewheel)
-            self.hframe.bind("<MouseWheel>", _on_mousewheel)
-            def onHelpFrameConfigure(canvas):
-                #Reset the scroll region to encompass the inner frame
-                canvas.configure(scrollregion=canvas.bbox("all"))
-            def onClose():
-                self.helpPopup.withdraw()
-            def helpConfigure(configEvent):
-                self.helpTextLabel.configure(wraplength=configEvent.width)
-            self.helpPopup.title("Custom formula help")
-            self.helpPopup.iconbitmap(resource_path("img/elephant3.ico"))
-            self.helpPopup.geometry("500x400")
-            self.helpPopup.deiconify()
-            self.helpPopup.protocol("WM_DELETE_WINDOW", onClose)
-            
-            self.hframe.bind("<Configure>", lambda event, canvas=self.hcanvas: onHelpFrameConfigure(canvas))
-            self.helpPopup.bind("<Configure>", helpConfigure)
-            """
         
         def graphLatex(e=None):
             try:
@@ -2579,9 +2391,6 @@ class fF(tk.Frame):
                       or name == "return" or name == "try" or name == "while" or name == "with" or name == "yield"):
                     messagebox.showwarning("Error", "Error 45: \nThe variable name \"" + name + "\" is a Python reserved word. Change the variable name.")
                     return
-                #elif ("self." in name):
-                #    messagebox.showwarning("Error", "Error 46: \nThe variable name \"" + name + "\" contains \"self.\"; change the variable name.")
-                #    return
                 elif (name == "freq" or name == "Zr" or name == "Zj" or name == "Zreal" or name == "Zimag" or name == "weighting"):
                     messagebox.showwarning("Error", "Error 47: \nThe variable name \"" + name + "\" is used by the fitting program; change the variable name.")
                     return
@@ -2603,7 +2412,6 @@ class fF(tk.Frame):
                 formula = "try:\n\t" + formula
                 formula = formula.rstrip()
                 formula += "\n\tif any(np.isnan(Zreal)) or any(np.isnan(Zimag)):\n\t\traise Exception\nexcept:\n\tZreal = np.full(len(freq), 1E300)\n\tZimag = np.full(len(freq), 1E300)"
-                #print(formula)
                 compile(formula, 'user_generated_formula', 'exec')
             except:
                 messagebox.showwarning("Compile error", "There was an issue compiling the code")
@@ -2632,15 +2440,6 @@ class fF(tk.Frame):
             param_names = []
             for pNV in self.paramNameValues:
                 param_names.append(pNV.get())
-            """
-            param_guesses = []
-            for pNG in self.paramValueValues:
-                try:
-                    param_guesses.append(float(pNG.get()))
-                except:
-                    messagebox.showwarning("Bad parameter value", "The parameter values must be real numbes")
-                    return
-            """
             param_limits = []
             for pL in self.paramComboboxValues:
                 if (pL.get() == "+"):
@@ -2729,7 +2528,6 @@ class fF(tk.Frame):
                 self.taskbar.SetProgressState(self.masterWindowId, 0x2)
             except:
                 pass
-            #self.prog_bar.start(40)
             self.listPercent = [bootstrapNum]
             extra_imports = self.importPathListbox.get(0, tk.END)
             for eI in extra_imports:
@@ -2739,7 +2537,6 @@ class fF(tk.Frame):
             self.currentThreads.append(ThreadedTaskBootstrap(self.queueBootstrap, extra_imports, self.listPercent, bootstrapNum, r,s,sdR,sdI,chi,aic,realF,imagF,fit_type, num_monte, weight, assumed_noise, formula, self.wdata, self.jdata, self.rdata, param_names, self.bestParams, param_limits, errorModelParams))
             self.currentThreads[len(self.currentThreads) - 1].start()
             self.bootstrapRunning = True
-            #self.bootstrapThreadIndex = len(self.currentThreads)-1
             self.cancelButton.configure(command=lambda: self.currentThreads[len(self.currentThreads)-1].terminate())
             self.cancelButton.grid(column=3, row=0, sticky="W", padx=15)
             self.after(100, process_queue_bootstrap)
@@ -2794,37 +2591,6 @@ class fF(tk.Frame):
                         for i in range(len(custom_weight)):
                             self.fitWeightR[i] = custom_weight[i]
                             self.fitWeightJ[i] = custom_weight[i]
-                    """
-                    try:
-                        #---Check if a formula has been entered----
-                        formula = self.customFormula.get("1.0", tk.END)
-                        if ("".join(formula.split()) == ""):
-                            messagebox.showwarning("Error", "Error 44: \nFormula is empty")
-                            return
-                        prebuiltFormulas = ['PI', 'ARCSINH', 'ARCCOSH', 'ARCTANH', 'ARCSIN', 'ARCCOS', 'ARCTAN', 'COSH', 'SINH', 'TANH', 'SIN', 'COS', 'TAN', 'SQRT', 'EXP', 'ABS', 'DEG2RAD', 'RAD2DEG']
-                        formula = formula.replace("^", "**")    #Replace ^ with ** for exponentiation (this could prevent some features like regex from being used effectively)
-                        formula = formula.replace("LN", "np.emath.log")#, "cmath.log")
-                        formula = formula.replace("LOG", "np.emath.log10")
-                        for pf in prebuiltFormulas:
-                            toReplace = "np." + pf.lower()
-                            formula = formula.replace(pf, toReplace)
-                        formula = formula.replace("\n", "\n\t")
-                        formula = "try:\n\t" + formula
-                        formula = formula.rstrip()
-                        formula += "\n\tif any(np.isnan(Zreal)) or any(np.isnan(Zimag)):\n\t\traise Exception\nexcept:\n\tZreal = np.full(len(freq), 1E300)\n\tZimag = np.full(len(freq), 1E300)"
-                        compile(formula, 'user_generated_formula', 'exec')
-                        param_names = []
-                        for pNV in self.paramNameValues:
-                            param_names.append(pNV.get())
-                        weights = customWeightingReturn.weightingReturn(formula, self.rdata, self.jdata, self.wdata, len(r), param_names, r)
-                        for i in range(len(weights)):
-                            self.fitWeightR[i] = weights[i]
-                            self.fitWeightJ[i] = weights[i]
-                    except:
-                        messagebox.showwarning("Error", "There was an error finding the error structure")
-                        self.fitWeightR = np.ones(len(self.wdata))
-                        self.fitWeightJ = np.ones(len(self.wdata))
-                    """
                 try:
                     self.progStatus.grid_remove()
                     self.progStatus.destroy()
@@ -2872,8 +2638,6 @@ class fF(tk.Frame):
                             self.bootstrapButton.destroy()
                             self.bootstrapCancel.destroy()
                             self.bootstrapPopup.destroy()
-                            #if (self.bootstrapRunning):
-                            #    self.currentThreads[self.bootstrapThreadIndex].terminate()
                         self.bootstrapCancel['command'] = bootstrap_closing
                         self.bootstrapPopup.protocol("WM_DELETE_WINDOW", bootstrap_closing)
                         
@@ -2934,7 +2698,6 @@ class fF(tk.Frame):
             except:
                 if (self.listPercent[0] > 1):
                     percent_to_step = (len(self.listPercent) - 1)/self.listPercent[0]
-                    #print(percent_to_step*100)
                     self.prog_bar.config(value=percent_to_step*100)
                     try:
                         self.taskbar.SetProgressValue(self.masterWindowId, (len(self.listPercent) - 1), self.listPercent[0])
@@ -2968,9 +2731,6 @@ class fF(tk.Frame):
                       or name == "return" or name == "try" or name == "while" or name == "with" or name == "yield"):
                     messagebox.showwarning("Error", "Error 45: \nThe variable name \"" + name + "\" is a Python reserved word. Change the variable name.")
                     return
-                #elif ("self." in name):
-                #    messagebox.showwarning("Error", "Error 46: \nThe variable name \"" + name + "\" contains \"self.\"; change the variable name.")
-                #    return
                 elif (name == "freq" or name == "Zr" or name == "Zj" or name == "Zreal" or name == "Zimag" or name == "weighting"):
                     messagebox.showwarning("Error", "Error 47: \nThe variable name \"" + name + "\" is used by the fitting program; change the variable name.")
                     return
@@ -2992,7 +2752,6 @@ class fF(tk.Frame):
                 formula = "try:\n\t" + formula
                 formula = formula.rstrip()
                 formula += "\n\tif any(np.isnan(Zreal)) or any(np.isnan(Zimag)):\n\t\traise Exception\nexcept:\n\tZreal = np.full(len(freq), 1E300)\n\tZimag = np.full(len(freq), 1E300)"
-                #print(formula)
                 compile(formula, 'user_generated_formula', 'exec')
             except:
                 messagebox.showwarning("Compile error", "There was an issue compiling the code")
@@ -3425,10 +3184,8 @@ class fF(tk.Frame):
                             error_above = np.zeros(len(self.wdata))
                             error_below = np.zeros(len(self.wdata))
                             for i in range(len(self.wdata)):
-                                error_above[i] = max(np.log10(abs(RealFit[i]+2*self.sdrReal[i])), np.log10(abs(RealFit[i]-2*self.sdrReal[i]))) #np.log10(max(abs(Zfit.real[i]+2*self.sdrReal[i]), abs(Zfit.real[i]-2*self.sdrReal[i])))
-                                error_below[i] = min(np.log10(abs(RealFit[i]+2*self.sdrReal[i])), np.log10(abs(RealFit[i]-2*self.sdrReal[i])))#np.log10(min(abs(Zfit.real[i]+2*self.sdrReal[i]), abs(Zfit.real[i]-2*self.sdrReal[i])))
-    #                            error_above[i] = np.log10(max(abs(Zfit.real[i]+2*self.sdrReal[i]), abs(Zfit.real[i]-2*self.sdrReal[i])))
-    #                            error_below[i] = np.log10(min(abs(Zfit.real[i]+2*self.sdrReal[i]), abs(Zfit.real[i]-2*self.sdrReal[i])))
+                                error_above[i] = max(np.log10(abs(RealFit[i]+2*self.sdrReal[i])), np.log10(abs(RealFit[i]-2*self.sdrReal[i])))
+                                error_below[i] = min(np.log10(abs(RealFit[i]+2*self.sdrReal[i])), np.log10(abs(RealFit[i]-2*self.sdrReal[i])))
                             larger.plot(self.wdata, error_above, "--", color=self.ellipseColor)
                             larger.plot(self.wdata, error_below, "--", color=self.ellipseColor)
                         larger.set_xscale("log")
@@ -3446,10 +3203,8 @@ class fF(tk.Frame):
                             error_above = np.zeros(len(self.wdata))
                             error_below = np.zeros(len(self.wdata))
                             for i in range(len(self.wdata)):
-                                error_above[i] = max(np.log10(abs(ImagFit[i]+2*self.sdrImag[i])), np.log10(abs(ImagFit[i]-2*self.sdrImag[i])))#np.log10(max(abs(Zfit.imag[i]+2*self.sdrImag[i]), abs(Zfit.imag[i]-2*self.sdrImag[i])))
-                                error_below[i] = min(np.log10(abs(ImagFit[i]+2*self.sdrImag[i])), np.log10(abs(ImagFit[i]-2*self.sdrImag[i])))#np.log10(min(abs(Zfit.imag[i]+2*self.sdrImag[i]), abs(Zfit.imag[i]-2*self.sdrImag[i])))
-    #                            error_above[i] = np.log10(max(abs(Zfit.imag[i]+2*self.sdrImag[i]), abs(Zfit.imag[i]-2*self.sdrImag[i])))
-    #                            error_below[i] = np.log10(min(abs(Zfit.imag[i]+2*self.sdrImag[i]), abs(Zfit.imag[i]-2*self.sdrImag[i])))
+                                error_above[i] = max(np.log10(abs(ImagFit[i]+2*self.sdrImag[i])), np.log10(abs(ImagFit[i]-2*self.sdrImag[i])))
+                                error_below[i] = min(np.log10(abs(ImagFit[i]+2*self.sdrImag[i])), np.log10(abs(ImagFit[i]-2*self.sdrImag[i])))
                             larger.plot(self.wdata, error_above, "--", color=self.ellipseColor)
                             larger.plot(self.wdata, error_below, "--", color=self.ellipseColor)
                          larger.set_xscale("log")
@@ -3582,9 +3337,7 @@ class fF(tk.Frame):
                 def on_closing():   #Clear the figure before closing the popup
                     fig.clear()
                     resultPlotBig.destroy()
-                    #self.resultPlot.lift(self.parent)       #Keep other popups open if a lower one is closed
 
-                #self.resultPlot.lift(self.parent)
                 resultPlotBig.protocol("WM_DELETE_WINDOW", on_closing)
 
             except:
@@ -3594,11 +3347,7 @@ class fF(tk.Frame):
             self.nyCanvas._tkcanvas.config(cursor="arrow")
         
         def graphOver(event):
-            #axes = event.inaxes
-            #autoAxis = event.inaxes
             whichCan = self.nyCanvas._tkcanvas
-            #he = int(whichCan.winfo_height())
-            #wi = int(whichCan.winfo_width())
             whichCan.config(cursor="hand2")
         
         def plotResults():
@@ -3613,7 +3362,7 @@ class fF(tk.Frame):
             ImagFit = np.array(self.imagFit)
             phase_fit = np.arctan2(self.imagFit, self.realFit) * (180/np.pi)
             with plt.rc_context({'axes.edgecolor':self.foregroundColor, 'xtick.color':self.foregroundColor, 'ytick.color':self.foregroundColor, 'figure.facecolor':self.backgroundColor}):
-                self.f = Figure()   #figsize=((5,4), dpi=100)
+                self.f = Figure()
                 self.resultPlotFigs.append(self.f)
                 self.f.set_facecolor(self.backgroundColor)
                 dataColor = "tab:blue"
@@ -3641,11 +3390,6 @@ class fF(tk.Frame):
                         ellipse.set_facecolor(self.ellipseColor)
                 self.aplot.axis("equal")
                 self.aplot.set_title("Nyquist", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
-                #extra = patches.Rectangle((0, 0), 1, 1, fc="w", fill=False, edgecolor='none', linewidth=0)
-                #legA = self.aplot.legend([extra], ["Nyquist"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                #for text in legA.get_texts():
-                #    text.set_color(self.foregroundColor)
-                #self.aplot.set_xlabel("Zr / Ω", color=self.foregroundColor)
                 self.aplot.set_ylabel("-Zj / Ω", color=self.foregroundColor)
                 
                 self.bplot = self.f.add_subplot(332)
@@ -3666,10 +3410,6 @@ class fF(tk.Frame):
                     self.bplot.plot(self.wdata, error_below, "--", color=self.ellipseColor)
                 self.bplot.set_xscale('log')
                 self.bplot.set_title("Real Impedance", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
-                #legB = self.bplot.legend([extra], ["Real Impedance"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                #for text in legB.get_texts():
-                #   text.set_color(self.foregroundColor)
-                #self.bplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.bplot.set_ylabel("Zr / Ω", color=self.foregroundColor)
                 
                 self.cplot = self.f.add_subplot(333)
@@ -3690,10 +3430,6 @@ class fF(tk.Frame):
                     self.cplot.plot(self.wdata, -1*error_below, "--", color=self.ellipseColor)
                 self.cplot.set_xscale('log')
                 self.cplot.set_title("Imaginary Impedance", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
-                #legC = self.cplot.legend([extra], ["Imaginary Impedance"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                #for text in legC.get_texts():
-                #    text.set_color(self.foregroundColor)
-                #self.cplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.cplot.set_ylabel("-Zj / Ω", color=self.foregroundColor)
                 
                 self.dplot = self.f.add_subplot(334)
@@ -3715,10 +3451,6 @@ class fF(tk.Frame):
                 self.dplot.set_xscale('log')
                 self.dplot.set_yscale('log')
                 self.dplot.set_title("|Z| Bode", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
-                #legD = self.dplot.legend([extra], ["|Z| Bode"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                #for text in legD.get_texts():
-                #    text.set_color(self.foregroundColor)
-                #self.dplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.dplot.set_ylabel("|Z| / Ω", color=self.foregroundColor)
                 
                 self.eplot = self.f.add_subplot(335)
@@ -3730,11 +3462,6 @@ class fF(tk.Frame):
                 self.eplot.plot(self.wdata, np.arctan2(self.jdata, self.rdata)*(180/np.pi), "o", color=dataColor)
                 self.eplot.plot(self.wdata, phase_fit, color=fitColor)
                 if (self.confInt):
-    #                error_above = np.zeros(len(self.wdata))
-    #                error_below = np.zeros(len(self.wdata))
-    #                for i in range(len(self.wdata)):
-    #                    error_above[i] = np.arctan2(max((Zfit.imag[i]+2*self.sdrImag[i]), (Zfit.imag[i]-2*self.sdrImag[i])), min((Zfit.real[i]+2*self.sdrReal[i]), (Zfit.real[i]-2*self.sdrReal[i])))
-    #                    error_below[i] = np.arctan2(min((Zfit.imag[i]+2*self.sdrImag[i]), (Zfit.imag[i]-2*self.sdrImag[i])), max((Zfit.real[i]+2*self.sdrReal[i]), (Zfit.real[i]-2*self.sdrReal[i])))
                     error_above = np.arctan2((ImagFit+2*self.sdrImag) , (RealFit+2*self.sdrReal)) * (180/np.pi)
                     error_below = np.arctan2((ImagFit-2*self.sdrImag) , (RealFit-2*self.sdrReal)) * (180/np.pi)
                     self.eplot.plot(self.wdata, error_above, "--", color=self.ellipseColor)
@@ -3743,10 +3470,6 @@ class fF(tk.Frame):
                 self.eplot.set_ylim(bottom=0, top=-90)
                 self.eplot.set_xscale('log')
                 self.eplot.set_title("Phase Angle Bode", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
-                #legE = self.eplot.legend([extra], ["Phase Angle Bode"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                #for text in legE.get_texts():
-                #    text.set_color(self.foregroundColor)
-                #self.eplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.eplot.set_ylabel("Phase angle / Deg.", color=self.foregroundColor)
                 
                 self.hplot = self.f.add_subplot(336)
@@ -3767,10 +3490,6 @@ class fF(tk.Frame):
                     self.hplot.plot(self.wdata, error_below, "--", color=self.ellipseColor)
                 self.hplot.set_xscale('log')
                 self.hplot.set_title("Log|Zr|", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
-                #legH = self.hplot.legend([extra], ["Log|Zr|"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                #for text in legH.get_texts():
-                #    text.set_color(self.foregroundColor)
-                #self.hplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.hplot.set_ylabel("Log|Zr|", color=self.foregroundColor)
                 
                 self.iplot = self.f.add_subplot(337)
@@ -3791,10 +3510,6 @@ class fF(tk.Frame):
                     self.iplot.plot(self.wdata, error_below, "--", color=self.ellipseColor)
                 self.iplot.set_xscale('log')
                 self.iplot.set_title("Log|Zj|", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
-                #legI = self.iplot.legend([extra], ["Log|Zj|"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                #for text in legI.get_texts():
-                #    text.set_color(self.foregroundColor)
-                #self.iplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.iplot.set_ylabel("Log|Zj|", color=self.foregroundColor)
                 
                 normalized_residuals_real = np.zeros(len(self.wdata))
@@ -3831,14 +3546,9 @@ class fF(tk.Frame):
                 if (self.errStruct):
                     self.kplot.plot(self.wdata, errStruct_real_above, "--", color="black")
                     self.kplot.plot(self.wdata, errStruct_real_below, "--", color="black")
-                #fplot.plot(self.wdata, phase_fit, color="orange")
                 self.kplot.axhline(0, color="black", linewidth=1.0)
                 self.kplot.set_xscale('log')
                 self.kplot.set_title("Real Residuals", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
-                #legK = self.kplot.legend([extra], ["Real Residuals"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                #for text in legK.get_texts():
-                #    text.set_color(self.foregroundColor)
-                #self.kplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.kplot.set_ylabel("(Zr-Zrmodel)/Zr", color=self.foregroundColor)
                 
                 self.lplot = self.f.add_subplot(339)
@@ -3854,15 +3564,10 @@ class fF(tk.Frame):
                 if (self.errStruct):
                     self.lplot.plot(self.wdata, errStruct_imag_above, "--", color="black")
                     self.lplot.plot(self.wdata, errStruct_imag_below, "--", color="black")
-                #fplot.plot(self.wdata, phase_fit, color="orange")
                 self.lplot.axhline(0, color="black", linewidth=1.0)
                 self.lplot.set_xscale('log')
                 self.lplot.set_title("Imaginary Residuals", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
-                #legL = self.lplot.legend([extra], ["Imaginary Residuals"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                #self.lplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.lplot.set_ylabel("(Zj-Zjmodel)/Zj", color=self.foregroundColor)
-                #for text in legL.get_texts():
-                #    text.set_color(self.foregroundColor)
                 self.nyCanvas = FigureCanvasTkAgg(self.f, self.resultPlot)
                 self.f.subplots_adjust(top=0.95, bottom=0.1, right=0.95, left=0.05)
             self.nyCanvas.draw()
@@ -3981,11 +3686,6 @@ class fF(tk.Frame):
                     ax_save.plot(self.wdata, np.arctan2(self.jdata, self.rdata)*(180/np.pi), "o", color=dataColor)
                     ax_save.plot(self.wdata, phase_fit, color=fitColor)
                     if (self.confInt):
-        #                error_above = np.zeros(len(self.wdata))
-        #                error_below = np.zeros(len(self.wdata))
-        #                for i in range(len(self.wdata)):
-        #                    error_above[i] = np.arctan2(max((Zfit.imag[i]+2*self.sdrImag[i]), (Zfit.imag[i]-2*self.sdrImag[i])), min((Zfit.real[i]+2*self.sdrReal[i]), (Zfit.real[i]-2*self.sdrReal[i])))
-        #                    error_below[i] = np.arctan2(min((Zfit.imag[i]+2*self.sdrImag[i]), (Zfit.imag[i]-2*self.sdrImag[i])), max((Zfit.real[i]+2*self.sdrReal[i]), (Zfit.real[i]-2*self.sdrReal[i])))
                         error_above = np.arctan2((ImagFit+2*self.sdrImag) , (RealFit+2*self.sdrReal)) * (180/np.pi)
                         error_below = np.arctan2((ImagFit-2*self.sdrImag) , (RealFit-2*self.sdrReal)) * (180/np.pi)
                         ax_save.plot(self.wdata, error_above, "--", color=self.ellipseColor)
@@ -4040,7 +3740,6 @@ class fF(tk.Frame):
                     if (self.errStruct):
                         ax_save.plot(self.wdata, errStruct_real_above, "--", color="black")
                         ax_save.plot(self.wdata, errStruct_real_below, "--", color="black")
-                    #fplot.plot(self.wdata, phase_fit, color="orange")
                     ax_save.axhline(0, color="black", linewidth=1.0)
                     ax_save.set_xscale('log')
                     ax_save.set_title("Real Residuals", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
@@ -4367,9 +4066,6 @@ class fF(tk.Frame):
                       or name == "return" or name == "try" or name == "while" or name == "with" or name == "yield"):
                     messagebox.showwarning("Error", "Error 45: \nThe variable name \"" + name + "\" is a Python reserved word. Change the variable name.")
                     return
-                #elif ("self." in name):
-                #    messagebox.showwarning("Error", "Error 46: \nThe variable name \"" + name + "\" contains \"self.\"; change the variable name.")
-                #    return
                 elif (name == "freq"  or name == "Zreal" or name == "Zimag" or name == "weighting"):
                     messagebox.showwarning("Error", "Error 47: \nThe variable name \"" + name + "\" is used by the fitting program; change the variable name.")
                     return
@@ -4390,7 +4086,6 @@ class fF(tk.Frame):
                 formula = "try:\n\t" + formula
                 formula = formula.rstrip()
                 formula += "\n\tif any(np.isnan(Zreal)) or any(np.isnan(Zimag)):\n\t\traise Exception\nexcept:\n\tZreal = np.full(len(freq), 1E300)\n\tZimag = np.full(len(freq), 1E300)"
-                #print(formula)
                 compile(formula, 'user_generated_formula', 'exec')
             except:
                 messagebox.showwarning("Compile error", "There was an issue compiling the code", parent=self.simulationWindow)
@@ -4502,7 +4197,7 @@ class fF(tk.Frame):
             simPlot.iconbitmap(resource_path('img/elephant3.ico'))
             simPlot.state("zoomed")
             with plt.rc_context({'axes.edgecolor':self.foregroundColor, 'xtick.color':self.foregroundColor, 'ytick.color':self.foregroundColor, 'figure.facecolor':self.backgroundColor}):
-                sim_pltFig = Figure()   #figsize=((5,4), dpi=100)
+                sim_pltFig = Figure()
                 self.simPlotFigs.append(sim_pltFig)
                 sim_pltFig.set_facecolor(self.backgroundColor)
                 dataColor = "tab:blue"
@@ -5143,7 +4838,6 @@ class fF(tk.Frame):
         tab_width = formulaFont.measure(' ' * 4)
         self.customFormula.configure(tabs=(tab_width,))
         self.customFormula.bind("<KeyRelease>", keyup)
-        #self.customFormula.bind("<KeyRelease-Return>", keyup_return)
         self.customFormula.grid(row=0, column=0, sticky="nsew")
         customFormulaVertical.grid(row=0, column=1, sticky="ns")
         customFormulaHorizontal.grid(row=1, column=0, sticky="ew")
@@ -5197,7 +4891,6 @@ class fF(tk.Frame):
         self.resultsView.column("percent", width=120, anchor=tk.CENTER)
         self.resultsViewScrollbar['command'] = self.resultsView.yview
         self.advancedResultsButton = ttk.Button(self.resultsFrame, text="Advanced results", command=advancedResults)
-        #self.results= scrolledtext.ScrolledText(self.resultsFrame, width=50, height=10, bg="white", state="disabled")
         self.copyButton.grid(column=0, row=5, sticky="E")
         self.resultsView.grid(column=0, row=0, sticky="W")
         self.resultsViewScrollbar.grid(column=1, row=0, sticky="NS")
@@ -5205,7 +4898,6 @@ class fF(tk.Frame):
         self.advancedResultsButton.grid(column=0, row=5, pady=3, sticky="W")
         self.resultsView.bind("<Button-1>", handle_click)
         self.resultsView.bind("<Motion>", handle_motion)
-        #self.results.grid(column=0, row=4, sticky="W") 
         copy_ttp = CreateToolTip(self.copyButton, 'Copy fitted values and standard deviations in a format that can be opened in a spreadsheet')
         advancedResults_ttp = CreateToolTip(self.advancedResultsButton, 'Open popup with detailed output')
         resultAlert_ttp = CreateToolTip(self.resultAlert, 'At least one 95% confidence interval is nan or greater than 100%')
@@ -5486,7 +5178,6 @@ class fF(tk.Frame):
     def advancedOptionsPopup(self):
         self.advancedOptionsWindow.deiconify()
         self.advancedOptionsWindow.lift()
-        #print(self.multistartSpacing)
         def onClose():
             self.advancedOptionsWindow.withdraw()
         self.advancedOptionsWindow.protocol("WM_DELETE_WINDOW", onClose) 
@@ -5682,12 +5373,6 @@ class fF(tk.Frame):
                 self.wdata = self.wdataRaw.copy()
                 self.rdata = self.rdataRaw.copy()
                 self.jdata = self.jdataRaw.copy()
-                #self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
-                #self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
-                #self.rs.setNumberOfMajorTicks(10)
-                #self.rs.showMinorTicks(False)
-                #self.rs.setLower(np.log10(min(self.wdata)))
-                #self.rs.setUpper(np.log10(max(self.wdata)))
                 self.lowestUndeleted.configure(state="normal")
                 self.lowestUndeleted.delete(1.0, tk.END)
                 self.lowestUndeleted.insert(1.0, "Lowest remaining frequency: {:.4e}".format(min(self.wdata)))
@@ -5696,8 +5381,6 @@ class fF(tk.Frame):
                 self.highestUndeleted.delete(1.0, tk.END)
                 self.highestUndeleted.insert(1.0, "Highest remaining frequency: {:.4e}".format(max(self.wdata)))
                 self.highestUndeleted.configure(state="disabled")
-                #self.lowestUndeleted.configure(text="Lowest remaining frequency: {:.4e}".format(min(self.wdata)))
-                #self.highestUndeleted.configure(text="Highest remaining frequency: {:.4e}".format(max(self.wdata)))
                 self.lengthOfData = len(self.wdata)
                 self.freqRangeButton.configure(state="normal")
                 self.browseEntry.configure(state="normal")
@@ -5827,7 +5510,6 @@ class fF(tk.Frame):
                             break
                         else:
                             imports += nextLineIn
-                #self.importPathListbox.delete(0, tk.END)
                 toImport = imports.rstrip().split('\n')
                 for tI in toImport:
                     if (len(tI) > 0):
@@ -5845,7 +5527,6 @@ class fF(tk.Frame):
                     self.formulaDescriptionEntry.insert("1.0", descriptionIn.rstrip())
                     self.formulaDescriptionLatexEntry.delete("1.0", tk.END)
                     self.formulaDescriptionLatexEntry.insert("1.0", latexIn.rstrip())
-                    #self.formulaDescriptionLatexVariable.set(latexIn.rstrip())
                     self.latexAx.clear()
                     self.latexAx.axis("off")
                     self.latexCanvas.draw()
@@ -6243,13 +5924,6 @@ class fF(tk.Frame):
             paramName.configure(background="#FFFFFF", foreground="#000000")
         for paramVal in self.paramValueLabels:
             paramVal.configure(background="#FFFFFF", foreground="#000000")
-        #try:
-        #    self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
-        #    self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
-        #    self.rs.setLower(np.log10(min(self.wdata)))
-        #    self.rs.setUpper(np.log10(max(self.wdata)))
-        #except:
-        #    pass
         try:
             self.upperLabel.configure(background="#FFFFFF", foreground="#000000")
             self.lowerLabel.configure(background="#FFFFFF", foreground="#000000")
@@ -6649,7 +6323,6 @@ class fF(tk.Frame):
                 with plt.rc_context({'mathtext.fontset': "cm"}):
                     self.load_latexAx.clear()
                     self.load_latexAx.axis("off")
-                    #self.latexAx.text(0.01, 0.5, tmptext, transform=self.latexAx.transAxes, fontsize = 30)  
                     self.load_latexCanvas.draw()
         except:
             pass    #Ignore clicks that would be out-of-range
@@ -6774,7 +6447,6 @@ class fF(tk.Frame):
                         break
                     else:
                         imports += nextLineIn
-            #self.importPathListbox.delete(0, tk.END)
             toImport = imports.rstrip().split('\n')
             for tI in toImport:
                 if (len(tI) > 0):
@@ -7107,7 +6779,6 @@ class fF(tk.Frame):
                         break
                     else:
                         imports += nextLineIn
-            #self.importPathListbox.delete(0, tk.END)
             toImport = imports.rstrip().split('\n')
             for tI in toImport:
                 if (len(tI) > 0):
@@ -7125,7 +6796,6 @@ class fF(tk.Frame):
                 self.formulaDescriptionEntry.insert("1.0", descriptionIn.rstrip())
                 self.formulaDescriptionLatexEntry.delete("1.0", tk.END)
                 self.formulaDescriptionLatexEntry.insert("1.0", latexIn.rstrip())
-                #self.formulaDescriptionLatexVariable.set(latexIn.rstrip())
                 self.latexAx.clear()
                 self.latexAx.axis("off")
                 self.latexCanvas.draw()

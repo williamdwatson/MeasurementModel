@@ -27,7 +27,6 @@ import itertools
 import multiprocessing as mp
 import threading
 import sys
-#sys.path.append(r"C:\Users\willd\Documents\Research\Python\32820\extra")
 
 def mp_complex(guesses, sharedList, index, parameters, numParams, weight, assumedNoise, formula, w, ZrIn, ZjIn, Z_append, percentVal, paramNames, fitType, errorParams):
     def diffComplex(params):
@@ -36,11 +35,10 @@ def mp_complex(guesses, sharedList, index, parameters, numParams, weight, assume
         p.valuesdict()
         Zr = ZrIn.copy()
         Zj = ZjIn.copy()
-        Zreal = [] #np.zeros(len(w))
-        Zimag = [] #np.zeros(len(w))
+        Zreal = []
+        Zimag = []
         freq = w.copy()
         for i in range(numParams):
-            #print(paramNames[i] + " = " + str(float(p[paramNames[i]])))
             exec(paramNames[i] + " = " + str(float(p[paramNames[i]])))
         ldict = locals()
         exec(formula, globals(), ldict)
@@ -48,11 +46,11 @@ def mp_complex(guesses, sharedList, index, parameters, numParams, weight, assume
         Zimag = ldict['Zimag']
         return np.append(Zreal, Zimag)
     def weightCode(p):
-        V = np.ones(len(w))     #Default - no weighting
-        if (weight == 1):       #Modulus weighting
+        V = np.ones(len(w))                 #Default - no weighting
+        if (weight == 1):                   #Modulus weighting
             for i in range(len(V)):
                 V[i] = assumedNoise*np.sqrt(ZrIn[i]**2 + ZjIn[i]**2)
-        elif (weight == 2):     #Proportional weighting
+        elif (weight == 2):                 #Proportional weighting
             Vj = np.ones(len(w))
             for i in range(len(V)):
                 if (fitType != 1):          #If the fit type isn't imaginary use both Zr and Zj
@@ -60,10 +58,10 @@ def mp_complex(guesses, sharedList, index, parameters, numParams, weight, assume
                 else:                       #If the fit is imaginary use only Zj in weighting
                     V[i] = assumedNoise*ZjIn[i]
                 Vj[i] = assumedNoise*ZjIn[i]
-        elif (weight == 3):     #Error structure weighting
+        elif (weight == 3):                 #Error structure weighting
             for i in range(len(V)):
                 V[i] = errorParams[0]*ZjIn[i] + (errorParams[1]*ZrIn[i] - errorParams[2]) + errorParams[3]*np.sqrt(ZrIn[i]**2 + ZjIn[i]**2) + errorParams[4]
-        elif (weight == 4):     #Custom weighting
+        elif (weight == 4):                 #Custom weighting
             p.valuesdict()
             Zr = ZrIn.copy()
             Zj = ZjIn.copy()
@@ -126,17 +124,15 @@ def mp_real(guesses, sharedList, index, parameters, numParams, weight, assumedNo
         p.valuesdict()
         Zr = ZrIn.copy()
         Zj = ZjIn.copy()
-        Zreal = [] #np.zeros(len(w))
-        Zimag = [] #np.zeros(len(w))
+        Zreal = []
+        Zimag = []
         freq = w.copy()
         for i in range(numParams):
-            #print(paramNames[i] + " = " + str(float(p[paramNames[i]])))
             exec(paramNames[i] + " = " + str(float(p[paramNames[i]])))
         ldict = locals()
         exec(formula, globals(), ldict)
         Zreal = ldict['Zreal']
         Zimag = ldict['Zimag']
-        #print(Zreal)
         return Zreal
     current_best_val = 1E308
     current_best_params = guesses[0]
@@ -184,17 +180,15 @@ def mp_imag(guesses, sharedList, index, parameters, numParams, weight, assumedNo
         p.valuesdict()
         Zr = ZrIn.copy()
         Zj = ZjIn.copy()
-        Zreal = [] #np.zeros(len(w))
-        Zimag = [] #np.zeros(len(w))
+        Zreal = []
+        Zimag = []
         freq = w.copy()
         for i in range(numParams):
-            #print(paramNames[i] + " = " + str(float(p[paramNames[i]])))
             exec(paramNames[i] + " = " + str(float(p[paramNames[i]])))
         ldict = locals()
         exec(formula, globals(), ldict)
         Zreal = ldict['Zreal']
         Zimag = ldict['Zimag']
-        #print(Zreal)
         return Zimag
     current_best_val = 1E308
     current_best_params = guesses[0]
@@ -222,7 +216,7 @@ class customFitter:
             process.terminate()
     
     def findFit(self, extra_imports, listPercent, fitType, numMonteCarlo, weight, assumedNoise, formula, w, ZrIn, ZjIn, paramNames, paramGuesses, paramBounds, errorParams):
-        np.random.seed(1234)        #Use constant seed to ensure reproducibility of Monte Carlo simulations
+        np.random.seed(1234)                    #Use constant seed to ensure reproducibility of Monte Carlo simulations
         Z_append = np.append(ZrIn, ZjIn)
         numParams = len(paramNames)
         for extra in extra_imports:
@@ -244,11 +238,11 @@ class customFitter:
         
         #---Used to calculate weights---
         def weightCode(p):
-            V = np.ones(len(w))     #Default - no weighting
-            if (weight == 1):       #Modulus weighting
+            V = np.ones(len(w))                 #Default - no weighting
+            if (weight == 1):                   #Modulus weighting
                 for i in range(len(V)):
                     V[i] = assumedNoise*np.sqrt(ZrIn[i]**2 + ZjIn[i]**2)
-            elif (weight == 2):     #Proportional weighting
+            elif (weight == 2):                 #Proportional weighting
                 Vj = np.ones(len(w))
                 for i in range(len(V)):
                     if (fitType != 1):          #If the fit type isn't imaginary use both Zr and Zj
@@ -256,10 +250,10 @@ class customFitter:
                     else:                       #If the fit is imaginary use only Zj in weighting
                         V[i] = assumedNoise*ZjIn[i]
                     Vj[i] = assumedNoise*ZjIn[i]
-            elif (weight == 3):     #Error structure weighting
+            elif (weight == 3):                 #Error structure weighting
                 for i in range(len(V)):
                     V[i] = errorParams[0]*ZjIn[i] + (errorParams[1]*ZrIn[i] - errorParams[2]) + errorParams[3]*np.sqrt(ZrIn[i]**2 + ZjIn[i]**2) + errorParams[4]
-            elif (weight == 4):     #Custom weighting
+            elif (weight == 4):                 #Custom weighting
                 p.valuesdict()
                 Zr = ZrIn.copy()
                 Zj = ZjIn.copy()
@@ -278,19 +272,19 @@ class customFitter:
                 return np.append(V, V)
         
         def weightCodeHalf(p):
-            V = np.ones(len(w)) #Default (weight == 0) is no weighting (weights are 1)
-            if (weight == 1):   #Modulus weighting
+            V = np.ones(len(w))             #Default (weight == 0) is no weighting (weights are 1)
+            if (weight == 1):               #Modulus weighting
                 for i in range(len(V)):
                     V[i] = assumedNoise*np.sqrt(ZrIn[i]**2 + ZjIn[i]**2)
-            elif (weight == 2): #Proportional weighting
+            elif (weight == 2):             #Proportional weighting
                 for i in range(len(V)):
                     if (fitType != 1):
                         V[i] = assumedNoise*ZrIn[i]
                     else:
                         V[i] = assumedNoise*ZjIn[i]
-            elif (weight == 3): #Error structure weighting
+            elif (weight == 3):             #Error structure weighting
                 pass
-            elif (weight == 4): #Custom weighting
+            elif (weight == 4):             #Custom weighting
                 p.valuesdict()
                 Zr = ZrIn.copy()
                 Zj = ZjIn.copy()
@@ -310,11 +304,10 @@ class customFitter:
             p.valuesdict()
             Zr = ZrIn.copy()
             Zj = ZjIn.copy()
-            Zreal = [] #np.zeros(len(w))
-            Zimag = [] #np.zeros(len(w))
+            Zreal = []
+            Zimag = []
             freq = w.copy()
             for i in range(numParams):
-                #print(paramNames[i] + " = " + str(float(p[paramNames[i]])))
                 exec(paramNames[i] + " = " + str(float(p[paramNames[i]])))
             ldict = locals()
             exec(formula, globals(), ldict)
@@ -327,17 +320,15 @@ class customFitter:
             p.valuesdict()
             Zr = ZrIn.copy()
             Zj = ZjIn.copy()
-            Zreal = [] #np.zeros(len(w))
-            Zimag = [] #np.zeros(len(w))
+            Zreal = []
+            Zimag = []
             freq = w.copy()
             for i in range(numParams):
-                #print(paramNames[i] + " = " + str(float(p[paramNames[i]])))
                 exec(paramNames[i] + " = " + str(float(p[paramNames[i]])))
             ldict = locals()
             exec(formula, globals(), ldict)
             Zreal = ldict['Zreal']
             Zimag = ldict['Zimag']
-            #print(Zreal)
             return Zimag
     
         #---Model used in real fitting; returns only real part---
@@ -345,17 +336,15 @@ class customFitter:
             p.valuesdict()
             Zr = ZrIn.copy()
             Zj = ZjIn.copy()
-            Zreal = [] #np.zeros(len(w))
-            Zimag = [] #np.zeros(len(w))
+            Zreal = []
+            Zimag = []
             freq = w.copy()
             for i in range(numParams):
-                #print(paramNames[i] + " = " + str(float(p[paramNames[i]])))
                 exec(paramNames[i] + " = " + str(float(p[paramNames[i]])))
             ldict = locals()
             exec(formula, globals(), ldict)
             Zreal = ldict['Zreal']
             Zimag = ldict['Zimag']
-            #print(Zreal)
             return Zreal
         
         if (not self.keepGoing):
@@ -495,7 +484,6 @@ class customFitter:
             result.append(fitted[paramNames[i]])
             sigma.append(minimized.params[paramNames[i]].stderr)
 
-        #print(result)
         #---Calculate newly fitted values---
         ToReturnReal = []
         ToReturnImag = []
@@ -549,8 +537,8 @@ class customFitter:
         for i in range(numMonteCarlo):
             Zr = ZrIn.copy()
             Zj = ZjIn.copy()
-            Zreal = [] #np.zeros(len(w))
-            Zimag = [] #np.zeros(len(w))
+            Zreal = []
+            Zimag = []
             freq = w.copy()
             for k in range(numParams):
                 exec(paramNames[k] + " = " + str(float(randomParams[k][i])))
@@ -569,82 +557,3 @@ class customFitter:
             standardDevsImag[i] = np.std(randomlyCalculatedImag[i])
         
         return result, sigma, standardDevsReal, standardDevsImag, minimized.chisqr, minimized.aic, ToReturnReal, ToReturnImag, current_best_params, weightingToReturn
-        """    
-        cor = np.zeros((numParams, numParams))
-        if (minimized.params['Re'].correl == None):
-            cor[:,0] = 0
-            cor[0,:] = 0
-            cor[0][0] = 1
-        else:
-            cor[0][0] = 1
-            parameterCorrector = 0
-            for i in range(1, numVoigtElements+1):
-                try:
-                    cor[0][i+parameterCorrector] = minimized.params['Re'].correl['R'+str(i)]
-                except KeyError:
-                    cor[0][i+parameterCorrector] = 0
-                try:
-                    cor[0][i+1+parameterCorrector] = minimized.params['Re'].correl['T'+str(i)]
-                except KeyError:
-                    cor[0][i+1+parameterCorrector] = 0
-                parameterCorrector += 1
-        parameterCorrectorA = 0
-        for i in range(1, numVoigtElements+1):
-            #---R---
-            if (minimized.params['R'+str(i)].correl == None):
-                cor[i+parameterCorrectorA,:] = 0
-                cor[i+parameterCorrectorA][i+parameterCorrectorA] = 1
-            else:
-                try:
-                    cor[i+parameterCorrectorA][0] = minimized.params['R'+str(i)].correl['Re']
-                except KeyError:
-                    cor[i+parameterCorrectorA][0] = 0
-                cor[i+parameterCorrectorA][i+parameterCorrectorA] = 1
-                parameterCorrectorB = 0
-                for j in range(1, numVoigtElements+1):
-                    
-                    if (i != j):
-                        try:
-                            cor[i+parameterCorrectorA][j+parameterCorrectorB] = minimized.params['R'+str(i)].correl['R'+str(j)]
-                        except KeyError:
-                            cor[i+parameterCorrectorA][j+parameterCorrectorB] = 0
-                    try:
-                        cor[i+parameterCorrectorA][j+1+parameterCorrectorB] = minimized.params['R'+str(i)].correl['T'+str(j)]
-                    except KeyError:
-                        cor[i+parameterCorrectorA][j+1+parameterCorrectorB] = 0
-                    parameterCorrectorB += 1
-                    
-            #---Tau---
-            if (minimized.params['T'+str(i)].correl == None):
-                cor[i+1+parameterCorrectorA,:] = 0
-                cor[i+1+parameterCorrectorA][i+1+parameterCorrectorA] = 1
-            else:
-                try:
-                    cor[i+1+parameterCorrectorA][0] = minimized.params['T'+str(i)].correl['Re']
-                except KeyError:
-                    cor[i+1+parameterCorrectorA][0] = 0
-                cor[i+1+parameterCorrectorA][i+1+parameterCorrectorA] = 1
-                
-                parameterCorrectorB = 0
-                for j in range(1, numVoigtElements+1):         
-                    try:
-                        cor[i+1+parameterCorrectorA][j+parameterCorrectorB] = minimized.params['T'+str(i)].correl['R'+str(j)]
-                    except KeyError:
-                        cor[i+1+parameterCorrectorA][j+parameterCorrectorB] = 0
-                    if (i != j):
-                        try:
-                            cor[i+1+parameterCorrectorA][j+1+parameterCorrectorB] = minimized.params['T'+str(i)].correl['T'+str(j)]
-                        except KeyError:
-                            cor[i+1+parameterCorrectorA][j+1+parameterCorrectorB] = 0
-                    parameterCorrectorB += 1    
-                
-            parameterCorrectorA += 1
-        
-    #    #---Replace "fitted" values for fixed parameters with their initial guesses---
-    #    if (constants[0] != -1):
-    #        for constant in constants:
-    #            result[constant] = initialGuesses[constant]
-                
-        #---Return everything---
-        return result, sigma, standardDevsReal, standardDevsImag, minimized.chisqr, cor, minimized.aic
-        """
