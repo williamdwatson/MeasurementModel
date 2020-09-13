@@ -1,5 +1,5 @@
 # Measurement Model
-A GUI Python-based impedance measurement model tool. _mm.py_ is the program launching point. See Measurement_model_guide.pdf for a very in-depth look at the program's abilities. This project served as my University of Florida honors thesis.
+A GUI Python-based impedance measurement model tool. _mm.py_ is the program launching point. See _Measurement_model_guide.pdf_ for a very in-depth look at the program's abilities. This project served as my University of Florida honors thesis.
 
 ### Features
 ##### Importing data
