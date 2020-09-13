@@ -2533,6 +2533,18 @@ class fF(tk.Frame):
             for eI in extra_imports:
                 if not os.path.isdir(eI):
                     messagebox.showerror("Path error", "Error 63 :\nThe additional import path \"" + eI + "\" does not exist.")
+                    self.simplexButton.configure(state="normal")
+                    self.runButton.configure(state="normal")
+                    self.browseButton.configure(state="normal")
+                    self.customFormula.configure(state="normal")
+                    self.freqRangeButton.configure(state="normal")
+                    self.parametersButton.configure(state="normal")
+                    self.fittingTypeCombobox.configure(state="readonly")
+                    self.monteCarloEntry.configure(state="normal")
+                    self.saveFormulaButton.configure(state="normal")
+                    self.weightingCombobox.configure(state="readonly")
+                    self.noiseEntry.configure(state="normal")
+                    self.cancelButton.grid_remove()
                     return
             self.currentThreads.append(ThreadedTaskBootstrap(self.queueBootstrap, extra_imports, self.listPercent, bootstrapNum, r,s,sdR,sdI,chi,aic,realF,imagF,fit_type, num_monte, weight, assumed_noise, formula, self.wdata, self.jdata, self.rdata, param_names, self.bestParams, param_limits, errorModelParams))
             self.currentThreads[len(self.currentThreads) - 1].start()
@@ -2936,6 +2948,18 @@ class fF(tk.Frame):
             for eI in extra_imports:
                 if not os.path.isdir(eI):
                     messagebox.showerror("Path error", "Error 63: \nThe additional import path \"" + eI + "\" does not exist.")
+                    self.simplexButton.configure(state="normal")
+                    self.runButton.configure(state="normal")
+                    self.browseButton.configure(state="normal")
+                    self.customFormula.configure(state="normal")
+                    self.freqRangeButton.configure(state="normal")
+                    self.parametersButton.configure(state="normal")
+                    self.fittingTypeCombobox.configure(state="readonly")
+                    self.monteCarloEntry.configure(state="normal")
+                    self.saveFormulaButton.configure(state="normal")
+                    self.weightingCombobox.configure(state="readonly")
+                    self.noiseEntry.configure(state="normal")
+                    self.cancelButton.grid_remove()
                     return
             num_guesses = 1
             for a in param_guesses:
@@ -3035,8 +3059,9 @@ class fF(tk.Frame):
             for child in self.resultsView.get_children():
                 resultName, resultValue, resultStdDev, result95 = self.resultsView.item(child, 'values')
                 stringToCopy += resultName + "\t" + resultValue + "\t" + resultStdDev + "\n"
-            stringToCopy += "Chi^2/nu\t" + str(self.chiSquared/(self.lengthOfData*2-len(self.fits)))
-            pyperclip.copy(stringToCopy[:-1])
+            chi_squared_over_nu = str(self.chiSquared/(self.lengthOfData*2-len(self.fits)))
+            stringToCopy += "Chi^2/nu\t" + chi_squared_over_nu
+            pyperclip.copy(stringToCopy)
             self.after(500, lambda : self.copyButton.configure(text="Copy values and std. devs. as spreadsheet"))
         
         def advancedResults():

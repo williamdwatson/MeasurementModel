@@ -3801,7 +3801,6 @@ class mmF(tk.Frame):
             ZpolarSigma = np.sqrt(ZpolarSigma)
             stringToCopy += "Polarization Resistance\t" + str(Zpolar) + "\t" + str(ZpolarSigma) + "\n"
             stringToCopy += "Overall Capacitance\t" + str(ceff) + "\t" + str(sigmaCeff) + "\n"
-            #stringToCopy += "Z zero freq.\t" + str(Zzero) + "\tZ zero freq. std. dev.\t" + str(ZzeroSigma) + "\nZ polarization\t" + str(Zpolar) + "\tZ polarization std. dev.\t" + str(ZpolarSigma) + "\nOverall C\t" + str(ceff) + "\tOverall C std. dev.\t" + str(sigmaCeff) + "\n"
             if (self.fits[0] != 0 and ceff != 0):
                 fchar = 1/(2*np.pi*self.fits[0]*ceff)
             else:
@@ -3810,9 +3809,8 @@ class mmF(tk.Frame):
                 sigmaFchar = (1/(2*np.pi))*fchar*np.sqrt((self.sigmas[0]/self.fits[0])**2 + (sigmaCeff/ceff)**2)
             else:
                 sigmaFchar = 0
-            #stringToCopy += "Char. freq.\t" + str(fchar) + "\tChar. freq. std. dev.\t" + str(sigmaFchar) + "\n"
             stringToCopy += "Characteristic Frequency\t" + str(fchar) + "\t" + str(sigmaFchar) + "\tHz\n"
-            stringToCopy += "Chi^2/nu\t" + str(self.chiSquared/(self.lengthOfData*2-len(self.fits))) + "\n"
+            stringToCopy += "Chi^2/nu\t" + str(self.chiSquared/(self.lengthOfData*2-len(self.fits)))
             pyperclip.copy(stringToCopy)
             self.after(500, lambda : self.copyButton.configure(text="Copy values and std. devs. as spreadsheet"))
             

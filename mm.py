@@ -707,12 +707,6 @@ class myGUI:
         self.helpCanvas.configure(background=self.backgroundColor)
         self.settingsCanvas.configure(background=self.backgroundColor)
         self.formulaCanvas.configure(background=self.backgroundColor)
-        #self.runCanvas.delete("all")
-        #self.errorFileCanvas.delete("all")
-        #self.errorCanvas.delete("all")
-        #self.helpCanvas.delete("all")
-        #self.settingsCanvas.delete("all")
-        #self.formulaCanvas.delete("all")
         self.help_frame.grid_remove()                                #Remove the other tabs
         self.model_frame.grid_remove()
         self.error_file_frame.grid_remove()
