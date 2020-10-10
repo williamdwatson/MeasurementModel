@@ -330,8 +330,6 @@ class mmF(tk.Frame):
         self.paramComboboxVariables.append(tk.StringVar(self, "+"))
         self.tauComboboxes = []
         self.tauComboboxVariables = []
-        #self.paramRemoveLabels = []
-        #self.tauComboboxVariables.append(tk.StringVar(self, "+"))
         self.paramFrames = []
         self.paramDeleteButtons = []
         self.capacitanceCheckboxVariable = tk.IntVar(self, 0)
@@ -434,13 +432,10 @@ class mmF(tk.Frame):
         self.freqWindow.withdraw()
         self.freqWindow.title("Change Frequency Range")
         self.freqWindow.iconbitmap(resource_path('img/elephant3.ico'))
-        #self.rs = RangeSlider(self.freqWindow, lowerBound=-4, upperBound=7, background=self.backgroundColor, tickColor=self.foregroundColor)
-        #self.rs.grid(column=1, row=1, rowspan=5)
-        self.lowestUndeleted = tk.Text(self.freqWindow, height=1, width=40, borderwidth=0, bg=self.backgroundColor, fg=self.foregroundColor) #tk.Label(self.freqWindow, text="Lowest Remaining Frequency: 0", background=self.backgroundColor, foreground=self.foregroundColor)
+        self.lowestUndeleted = tk.Text(self.freqWindow, height=1, width=40, borderwidth=0, bg=self.backgroundColor, fg=self.foregroundColor)
         self.lowestUndeleted.configure(inactiveselectbackground=self.lowestUndeleted.cget("selectbackground"))
         self.lowestUndeleted.insert(1.0, "Lowest Remaining Frequency: 0")
         self.lowestUndeleted.configure(state="disabled")
-        #self.highestUndeleted = tk.Label(self.freqWindow, text="Highest Remaining Frequency: 0", background=self.backgroundColor, foreground=self.foregroundColor)
         self.highestUndeleted = tk.Text(self.freqWindow, height=1, width=40, borderwidth=0, bg=self.backgroundColor, fg=self.foregroundColor)
         self.highestUndeleted.configure(inactiveselectbackground=self.highestUndeleted.cget("selectbackground"))
         self.highestUndeleted.insert(1.0, "Lowest Remaining Frequency: 0")
@@ -495,7 +490,6 @@ class mmF(tk.Frame):
                 return "+"
             
         def browse():
-#            if (self.browseEntry.get() == ""):
             n = OpenFile()
             if (n != '+'):
                 fname, fext = os.path.splitext(n)
@@ -513,9 +507,6 @@ class mmF(tk.Frame):
                         w_in = data[:,0]
                         r_in = data[:,1]
                         j_in = data[:,2]
-#                        self.wdata = w_in
-#                        self.rdata = r_in
-#                        self.jdata = j_in
                         self.wdataRaw = w_in
                         self.rdataRaw = r_in
                         self.jdataRaw = j_in
@@ -555,27 +546,14 @@ class mmF(tk.Frame):
                                 self.wdata = self.wdataRaw.copy()
                                 self.rdata = self.rdataRaw.copy()
                                 self.jdata = self.jdataRaw.copy()
-                            #self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
-                            #self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
-                            #self.rs.setMajorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
-                            #self.rs.setNumberOfMajorTicks(10)
-                            #self.rs.showMinorTicks(False)
-                            #self.rs.setMinorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
-                            #self.rs.setLower(np.log10(min(self.wdata)))
-                            #self.rs.setUpper(np.log10(max(self.wdata)))
                             self.lowestUndeleted.configure(state="normal")
                             self.lowestUndeleted.delete(1.0, tk.END)
                             self.lowestUndeleted.insert(1.0, "Lowest remaining frequency: {:.4e}".format(min(self.wdata)))
                             self.lowestUndeleted.configure(state="disabled")
-                            #self.lowestUndeleted.configure(text="Lowest remaining frequency: {:.4e}".format(min(self.wdata))) #%f" % round_to_n(min(self.wdata), 6)).strip("0"))
                             self.highestUndeleted.configure(state="normal")
                             self.highestUndeleted.delete(1.0, tk.END)
                             self.highestUndeleted.insert(1.0, "Highest remaining frequency: {:.4e}".format(max(self.wdata)))
                             self.highestUndeleted.configure(state="disabled")
-                            #self.highestUndeleted.configure(text="Highest remaining frequency: {:.4e}".format(max(self.wdata))) #%f" % round_to_n(max(self.wdata), 6)).strip("0"))
-                            #self.wdata = self.wdataRaw.copy()
-                            #self.rdata = self.rdataRaw.copy()
-                            #self.jdata = self.jdataRaw.copy()
                         else:
                             self.upDelete = 0
                             self.lowDelete = 0
@@ -584,22 +562,14 @@ class mmF(tk.Frame):
                             self.wdata = self.wdataRaw.copy()
                             self.rdata = self.rdataRaw.copy()
                             self.jdata = self.jdataRaw.copy()
-                            #self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
-                            #self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
-                            #self.rs.setNumberOfMajorTicks(10)
-                            #self.rs.showMinorTicks(False)
-                            #self.rs.setLower(np.log10(min(self.wdata)))
-                            #self.rs.setUpper(np.log10(max(self.wdata)))
                             self.lowestUndeleted.configure(state="normal")
                             self.lowestUndeleted.delete(1.0, tk.END)
                             self.lowestUndeleted.insert(1.0, "Lowest remaining frequency: {:.4e}".format(min(self.wdata)))
                             self.lowestUndeleted.configure(state="disabled")
-                            #self.lowestUndeleted.configure(text="Lowest remaining frequency: {:.4e}".format(min(self.wdata))) #%f" % round_to_n(min(self.wdata), 6)).strip("0"))
                             self.highestUndeleted.configure(state="normal")
                             self.highestUndeleted.delete(1.0, tk.END)
                             self.highestUndeleted.insert(1.0, "Highest remaining frequency: {:.4e}".format(max(self.wdata)))
                             self.highestUndeleted.configure(state="disabled")
-                            #self.highestUndeleted.configure(text="Highest remaining frequency: {:.4e}".format(max(self.wdata))) #%f" % round_to_n(max(self.wdata), 6)).strip("0"))
                         try:
                             self.figFreq.clear()
                             dataColor = "tab:blue"
@@ -644,7 +614,6 @@ class mmF(tk.Frame):
                         self.measureModelButton.configure(state="normal")
                         self.autoButton.configure(state="normal")
                         self.magicButton.configure(state="normal")
-                        #self.saveCurrent.configure(state="normal")
                         self.numVoigtSpinbox.configure(state="readonly")
                         self.numVoigtMinus.bind("<Enter>", lambda e: self.numVoigtMinus.configure(bg="DodgerBlue1", fg="white"))
                         self.numVoigtMinus.bind("<Leave>", lambda e: self.numVoigtMinus.configure(bg="DodgerBlue3", fg="white"))
@@ -775,9 +744,6 @@ class mmF(tk.Frame):
                         w_in = data[:,0]
                         r_in = data[:,1]
                         j_in = data[:,2]
-    #                        self.wdata = w_in
-    #                        self.rdata = r_in
-    #                        self.jdata = j_in
                         self.wdataRaw = w_in
                         self.rdataRaw = r_in
                         self.jdataRaw = j_in
@@ -809,14 +775,6 @@ class mmF(tk.Frame):
                             self.wdata = self.wdataRaw.copy()[self.lowDelete:-1*self.upDelete]
                             self.rdata = self.rdataRaw.copy()[self.lowDelete:-1*self.upDelete]
                             self.jdata = self.jdataRaw.copy()[self.lowDelete:-1*self.upDelete]
-                        #self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
-                        #self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
-                        #self.rs.setMajorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
-                        #self.rs.setNumberOfMajorTicks(10)
-                        #self.rs.showMinorTicks(False)
-                        #self.rs.setMinorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
-                        #self.rs.setLower(np.log10(min(self.wdata)))
-                        #self.rs.setUpper(np.log10(max(self.wdata)))
                         try:
                             self.figFreq.clear()
                             dataColor = "tab:blue"
@@ -864,7 +822,6 @@ class mmF(tk.Frame):
                         self.freqRangeButton.configure(state="normal")
                         self.autoButton.configure(state="normal")
                         self.magicButton.configure(state="normal")
-                        #self.saveCurrent.configure(state="normal")
                         self.numMonteVariable.set(str(numberOfSimulations))
                         self.alphaVariable.set(str(alphaValue))
                         self.fitTypeVariable.set(fitType)
@@ -1152,7 +1109,6 @@ class mmF(tk.Frame):
                 elif (self.nVoigt < num_VE):
                     self.paramEntryVariables.append(tk.StringVar(self, str(round(defaultRGuess, -int(np.floor(np.log10(defaultRGuess))) + (4 - 1)))))
                     self.paramEntryVariables.append(tk.StringVar(self, str(round(defaultTauGuess, -int(np.floor(np.log10(defaultTauGuess))) + (4 - 1)))))
-                    #self.paramFrames.append(tk.LabelFrame(self.pframe, text="Element " + str(num_VE), bg="white", padx=4, pady=4))
                     self.paramFrames.append(tk.Label(self.pframe, text="Element " + str(num_VE) + ": ", bg=self.backgroundColor, fg=self.foregroundColor))
                     self.paramLabels.append(tk.Label(self.pframe, text="R ", bg=self.backgroundColor, fg=self.foregroundColor))
                     self.paramLabels.append(tk.Label(self.pframe, text="  Tau ", bg=self.backgroundColor, fg=self.foregroundColor))
@@ -1304,7 +1260,6 @@ class mmF(tk.Frame):
                         self.paramEntryVariables.append(tk.StringVar(self, str(round(self.rDefault, -int(np.floor(np.log10(self.rDefault))) + (4 - 1)))))
                         self.paramEntryVariables.append(tk.StringVar(self, str(round(self.tauDefault, -int(np.floor(np.log10(self.tauDefault))) + (4 - 1)))))
                     for i in range(num_VE):
-                        #self.paramFrames.append(tk.LabelFrame(frame, bg="white", padx=4, pady=4, text="Element " + str(i+1)))
                         self.paramFrames.append(tk.Label(frame, text="Element " + str(i+1) + ":  ", bg=self.backgroundColor, fg=self.foregroundColor))
                         self.paramLabels.append(tk.Label(frame, text="R ", bg=self.backgroundColor, fg=self.foregroundColor))
                         self.paramLabels.append(tk.Label(frame, text="  Tau ", bg=self.backgroundColor, fg=self.foregroundColor))
@@ -1342,9 +1297,6 @@ class mmF(tk.Frame):
                 self.paramPopup.geometry("700x400")
                 self.paramPopup.deiconify()
                 self.paramPopup.protocol("WM_DELETE_WINDOW", onClose)
-                #canvas = tk.Canvas(self.paramPopup, borderwidth=0, highlightthickness=0, background=self.backgroundColor)
-                #frame = tk.Frame(canvas, background="white")
-                #vsb = tk.Scrollbar(self.paramPopup, orient="vertical", command=self.pcanvas.yview)
                 self.pcanvas.configure(yscrollcommand=self.vsb.set)
                 self.pcanvas.bind("<MouseWheel>", _on_mousewheel)
                 self.pframe.bind("<MouseWheel>", _on_mousewheel)
@@ -1375,7 +1327,6 @@ class mmF(tk.Frame):
                     self.pframe.destroy()
                     self.pcanvas.destroy()
                     self.vsb.destroy()
-                    #vsb.destroy()
                     self.addButton.destroy()
                     self.removeButton.destroy()
                     self.buttonFrame.destroy()
@@ -1587,19 +1538,6 @@ class mmF(tk.Frame):
                 with open(name,'r') as toLoad:
                     for i in range(12):
                         toLoad.readline()
-    #                    fileToLoad = toLoad.readline().split("filename: ")[1][:-1]
-    #                    numberOfVoigt = int(toLoad.readline().split("number_voigt: ")[1][:-1])
-    #                    if (numberOfVoigt < 1):
-    #                        raise ValueError
-    #                    numberOfSimulations = int(toLoad.readline().split("number_simulations: ")[1][:-1])
-    #                    if (numberOfSimulations < 1):
-    #                        raise ValueError
-    #                    fitType = toLoad.readline().split("fit_type: ")[1][:-1]
-    #                    if (fitType != "Real" and fitType != "Complex" and fitType != "Imaginary"):
-    #                        raise ValueError
-    #                    weightType = toLoad.readline().split("weight_type: ")[1][:-1]
-    #                    if (weightType != "Modulus" and weightType != "None" and weightType != "Proportional" and weightType != "Error Model"):
-    #                        raise ValueError
                     alphaValue = float(toLoad.readline().split("alpha: ")[1][:-1])
                     if (alphaValue < 0):
                         raise ValueError
@@ -1672,15 +1610,6 @@ class mmF(tk.Frame):
                 self.multistartUpper.clear()
                 self.multistartNumber.clear()
                 self.paramListbox.delete(0, tk.END)
-                """
-                for i in range(3):
-                    self.multistartEnabled.append(tk.IntVar(self, 0))
-                    self.multistartSelection.append(tk.StringVar(self, "Logarithmic"))
-                    self.multistartLower.append(tk.StringVar(self, "1"))
-                    self.multistartUpper.append(tk.StringVar(self, "1E5"))
-                    self.multistartNumber.append(tk.StringVar(self, "10"))
-                    self.multistartCustom.append(tk.StringVar(self, "0,1,10,100,1000"))
-                """
                 self.numVoigtTextVariable.set(str(len(tComboboxes)))
                 self.numVoigtVariable.set(str(len(tComboboxes)))
                 self.nVoigt = int(self.numVoigtVariable.get())
@@ -1735,7 +1664,6 @@ class mmF(tk.Frame):
                 self.autoPercent = []
                 self.autoStatusLabel.configure(text="")
                 self.ellipsisPercent = 0
-                #self.topGUI.master.focus_force()
                 try:
                     self.taskbar.SetProgressState(self.masterWindowId, 0x0)
                 except:
@@ -1744,8 +1672,6 @@ class mmF(tk.Frame):
                     ctypes.windll.user32.FlashWindow(self.masterWindowId, True)
                 except:
                     pass
-                #self.numVoigtVariable.set((len(r)-1)//2)
-                #changeNVE()
                 if (len(r) == 1 and len(s) == 1 and len(sdr) == 1 and len(sdi)==1 and len(zz)==1 and len(zzs)==1 and len(chi)==1):
                     if (r=="^" and s=="^" and sdr=="^" and sdi=="^" and zz=="^" and zzs=="^" and zp=="^" and zps=="^" and chi=="^"):
                         messagebox.showerror("Fitting error", "Error 11:\nThe fitting failed")
@@ -1827,8 +1753,6 @@ class mmF(tk.Frame):
                         self.undoErrorModelValuesStack.append(self.pastErrorValues)
                         self.pastErrorValues = [self.errorAlphaVariable.get(), self.errorBetaVariable.get(), self.errorBetaReVariable.get(), self.errorGammaVariable.get(), self.errorDeltaVariable.get()]
                         self.undoButton.configure(state="normal")
-#                        self.redoStack = []
-#                        self.redoButton.configure(state="disabled")
                     else:
                         self.pastUpDelete = self.upDelete
                         self.pastLowDelete = self.lowDelete
@@ -1847,10 +1771,6 @@ class mmF(tk.Frame):
                     self.chiSquared = chi
                     self.aicResult = aic
                     self.corResult = cor
-#                    self.resultData = r
-#                    self.sigmaData = s
-#                    self.sdrData = sdr
-#                    self.sdiData = sdi
                     self.aR = ""
                     self.resultsView.delete(*self.resultsView.get_children())
                     for i in range(len(self.paramEntryVariables)):
@@ -1906,8 +1826,6 @@ class mmF(tk.Frame):
                         else:
                             self.aR += "  R" + str(int(i/2 + 1)) + "   " + " Tau" + str(int(i/2 + 1)) + "  "
                     self.aR += "\n      \u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510"
-                    #for i in range(1, len(r), 2):
-                    #    self.aR += "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
                     self.aR += "\n"
                     self.aR += "Re    "
                     for i in range(len(r)):
@@ -1955,22 +1873,9 @@ class mmF(tk.Frame):
                     self.aR += "\nChi-squared statistic = %.4g"%chi + "\n"
                     self.aR += "Chi-squared/Degrees of freedom = %.4g"%(chi/(self.lengthOfData*2-len(r))) + "\n"
                     try:
-                        self.aR += "Akaike Information Criterion = %.4g"%aic#(np.log(chi*((1+2*len(r))/self.lengthOfData))) + "\n"
+                        self.aR += "Akaike Information Criterion = %.4g"%aic
                     except:
                         self.aR += "Akaike Information Criterion could not be calculated"
-                    #self.aR += "Akaike Performance Index = %.4g"%(chi*((1+(len(r)/self.lengthOfData))/(1-(len(r)/self.lengthOfData))))
-                    """
-                    self.results.configure(state="normal")
-                    self.results.insert(tk.INSERT, "Re (Rsol) = %.4g"%r[0] + " ± %.1g"%s[0] +"\n")
-                    for i in range(1, len(r), 2):
-                        self.results.insert(tk.INSERT, "Rt" + str(int(i/2 + 1)) + " = %.4g"%r[i] + " ± %.1g"%s[i] + "\n")
-                        self.results.insert(tk.INSERT, "Tau" + str(int(i/2+1)) + " = %.4g"%r[i+1] + " ± %.1g"%s[i+1] + "\n")
-                    self.results.insert(tk.INSERT, "\nZero frequency impedance = %.4g"%zz + " ± %.1g"%zzs + "\n")
-                    self.results.insert(tk.INSERT, "Polarization impedance = %.4g"%zp + " ± %.1g"%zps + "\n")
-                    self.results.insert(tk.INSERT, "Chi-squared statistic = %.4g"%chi + "\n")
-                    self.results.insert(tk.INSERT, "Chi-squared/Degrees of freedom = %.4g"%(chi/(self.lengthOfData*2-(int(self.numVoigtVariable.get())*2+1))))
-                    self.results.configure(state="disabled")
-                    """
                     self.resultAlert.grid_remove()
                     if (len(s) == 1):
                         self.resultsView.insert("", tk.END, text="", values=("Re (Rsol)", "%.5g"%r[0], "nan", "nan"))
@@ -2033,7 +1938,7 @@ class mmF(tk.Frame):
                                 for k in range(1, len(self.fits), 2):
                                     Zfit[i] += (self.fits[k]/(1+(1j*self.wdata[i]*2*np.pi*self.fits[k+1])))
                         
-                        x = np.array(self.rdata)    #Doesn't plot without this
+                        x = np.array(self.rdata)    #Must be a numpy array to plot
                         y = np.array(self.jdata)
                         dataColor = "tab:blue"
                         fitColor = "orange"
@@ -2070,7 +1975,7 @@ class mmF(tk.Frame):
                             annot.xy = (xval, yval)
                             text = "Zr=%.3g"%xval + "\nZj=-%.3g"%yval + "\nf=%.5g"%self.wdata[np.where(self.rdata == xval)][0]
                             annot.set_text(text)
-                            #---Check if we're within 5% of the right or top edges, and adjust label positions accordingly
+                            #---Check if we're within 5% of the right or top edges, and adjust label positions accordingly---
                             if (rightPoint != 0):
                                 if (abs(xval - rightPoint)/rightPoint <= 0.2):
                                     annot.set_position((-90, -10))
@@ -2235,8 +2140,6 @@ class mmF(tk.Frame):
                         self.undoErrorModelValuesStack.append(self.pastErrorValues)
                         self.pastErrorValues = [self.errorAlphaVariable.get(), self.errorBetaVariable.get(), self.errorBetaReVariable.get(), self.errorGammaVariable.get(), self.errorDeltaVariable.get()]
                         self.undoButton.configure(state="normal")
-#                        self.redoStack = []
-#                        self.redoButton.configure(state="disabled")
                     else:
                         self.pastUpDelete = self.upDelete
                         self.pastLowDelete = self.lowDelete
@@ -2255,10 +2158,6 @@ class mmF(tk.Frame):
                     self.chiSquared = chi
                     self.aicResult = aic
                     self.corResult = cor
-#                    self.resultData = r
-#                    self.sigmaData = s
-#                    self.sdrData = sdr
-#                    self.sdiData = sdi
                     self.aR = ""
                     self.resultsView.delete(*self.resultsView.get_children())
                     for i in range(len(self.paramEntryVariables)):
@@ -2314,8 +2213,6 @@ class mmF(tk.Frame):
                         else:
                             self.aR += "  R" + str(int(i/2 + 1)) + "   " + " Tau" + str(int(i/2 + 1)) + "  "
                     self.aR += "\n      \u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510"
-                    #for i in range(1, len(r), 2):
-                    #    self.aR += "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
                     self.aR += "\n"
                     self.aR += "Re    "
                     for i in range(len(r)):
@@ -2363,22 +2260,9 @@ class mmF(tk.Frame):
                     self.aR += "\nChi-squared statistic = %.4g"%chi + "\n"
                     self.aR += "Chi-squared/Degrees of freedom = %.4g"%(chi/(self.lengthOfData*2-len(r))) + "\n"
                     try:
-                        self.aR += "Akaike Information Criterion = %.4g"%aic#(np.log(chi*((1+2*len(r))/self.lengthOfData))) + "\n"
+                        self.aR += "Akaike Information Criterion = %.4g"%aic
                     except:
                         self.aR += "Akaike Information Criterion could not be calculated"
-                    #self.aR += "Akaike Performance Index = %.4g"%(chi*((1+(len(r)/self.lengthOfData))/(1-(len(r)/self.lengthOfData))))
-                    """
-                    self.results.configure(state="normal")
-                    self.results.insert(tk.INSERT, "Re (Rsol) = %.4g"%r[0] + " ± %.1g"%s[0] +"\n")
-                    for i in range(1, len(r), 2):
-                        self.results.insert(tk.INSERT, "Rt" + str(int(i/2 + 1)) + " = %.4g"%r[i] + " ± %.1g"%s[i] + "\n")
-                        self.results.insert(tk.INSERT, "Tau" + str(int(i/2+1)) + " = %.4g"%r[i+1] + " ± %.1g"%s[i+1] + "\n")
-                    self.results.insert(tk.INSERT, "\nZero frequency impedance = %.4g"%zz + " ± %.1g"%zzs + "\n")
-                    self.results.insert(tk.INSERT, "Polarization impedance = %.4g"%zp + " ± %.1g"%zps + "\n")
-                    self.results.insert(tk.INSERT, "Chi-squared statistic = %.4g"%chi + "\n")
-                    self.results.insert(tk.INSERT, "Chi-squared/Degrees of freedom = %.4g"%(chi/(self.lengthOfData*2-(int(self.numVoigtVariable.get())*2+1))))
-                    self.results.configure(state="disabled")
-                    """
                     self.resultAlert.grid_remove()
                     
                     if (len(s) == 1):
@@ -2501,10 +2385,6 @@ class mmF(tk.Frame):
                                         annot.set_visible(False)
                                         self.magicInput.canvas.draw_idle()
                         self.magicInput.canvas.mpl_connect("motion_notify_event", hover)
-#                    self.editReVariable.set("%.4g"%r[0])
-#                    self.needUndo = True
-#                    if (self.justUndid):
-#                        afterUndoRun()
             except queue.Empty:
                 if (self.listPercent[0] != 1):
                     percent_to_step = (len(self.listPercent) - 1)/self.listPercent[0]
@@ -2642,8 +2522,6 @@ class mmF(tk.Frame):
                         self.undoErrorModelValuesStack.append(self.pastErrorValues)
                         self.pastErrorValues = [self.errorAlphaVariable.get(), self.errorBetaVariable.get(), self.errorBetaReVariable.get(), self.errorGammaVariable.get(), self.errorDeltaVariable.get()]
                         self.undoButton.configure(state="normal")
-#                        self.redoStack = []
-#                        self.redoButton.configure(state="disabled")
                     else:
                         self.pastUpDelete = self.upDelete
                         self.pastLowDelete = self.lowDelete
@@ -2665,10 +2543,6 @@ class mmF(tk.Frame):
                     self.resultCap = rc
                     self.sigmaCap = sc
                     self.capCor = cor_cap.copy()
-#                    self.resultData = r
-#                    self.sigmaData = s
-#                    self.sdrData = sdr
-#                    self.sdiData = sdi
                     self.aR = ""
                     self.resultsView.delete(*self.resultsView.get_children())
                     for i in range(len(self.paramEntryVariables)):
@@ -2691,7 +2565,6 @@ class mmF(tk.Frame):
                             sigmaCapacitances[int(i/2)] = 0
                         else:
                             sigmaCapacitances[int(i/2)] = capacitances[int(i/2)]*np.sqrt((s[i+1]/r[i+1])**2 + (s[i]/r[i])**2)
-                    #sigmaOtherC = (1/rc)*(sc/rc)
                     partCap = 0
                     for i in range(len(capacitances)):
                         partCap += sigmaCapacitances[i]**2/capacitances[i]**4
@@ -2735,8 +2608,6 @@ class mmF(tk.Frame):
                             self.aR += "  R" + str(int(i/2 + 1)) + "   " + " Tau" + str(int(i/2 + 1)) + "  "
                     self.aR += "  Cap "
                     self.aR += "\n      \u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510"
-                    #for i in range(1, len(r), 2):
-                    #    self.aR += "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
                     self.aR += "\n"
                     self.aR += "Re    "
                     for i in range(len(r)):
@@ -2797,22 +2668,9 @@ class mmF(tk.Frame):
                     self.aR += "\nChi-squared statistic = %.4g"%chi + "\n"
                     self.aR += "Chi-squared/Degrees of freedom = %.4g"%(chi/(self.lengthOfData*2-len(r))) + "\n"
                     try:
-                        self.aR += "Akaike Information Criterion = %.4g"%aic#(np.log(chi*((1+2*len(r))/self.lengthOfData))) + "\n"
+                        self.aR += "Akaike Information Criterion = %.4g"%aic
                     except:
                         self.aR += "Akaike Information Criterion could not be calculated"
-                    #self.aR += "Akaike Performance Index = %.4g"%(chi*((1+(len(r)/self.lengthOfData))/(1-(len(r)/self.lengthOfData))))
-                    """
-                    self.results.configure(state="normal")
-                    self.results.insert(tk.INSERT, "Re (Rsol) = %.4g"%r[0] + " ± %.1g"%s[0] +"\n")
-                    for i in range(1, len(r), 2):
-                        self.results.insert(tk.INSERT, "Rt" + str(int(i/2 + 1)) + " = %.4g"%r[i] + " ± %.1g"%s[i] + "\n")
-                        self.results.insert(tk.INSERT, "Tau" + str(int(i/2+1)) + " = %.4g"%r[i+1] + " ± %.1g"%s[i+1] + "\n")
-                    self.results.insert(tk.INSERT, "\nZero frequency impedance = %.4g"%zz + " ± %.1g"%zzs + "\n")
-                    self.results.insert(tk.INSERT, "Polarization impedance = %.4g"%zp + " ± %.1g"%zps + "\n")
-                    self.results.insert(tk.INSERT, "Chi-squared statistic = %.4g"%chi + "\n")
-                    self.results.insert(tk.INSERT, "Chi-squared/Degrees of freedom = %.4g"%(chi/(self.lengthOfData*2-(int(self.numVoigtVariable.get())*2+1))))
-                    self.results.configure(state="disabled")
-                    """
                     self.resultAlert.grid_remove()
                     if (len(s) == 1):
                         self.resultsView.insert("", tk.END, text="", values=("Re (Rsol)", "%.5g"%r[0], "nan", "nan"))
@@ -2883,7 +2741,7 @@ class mmF(tk.Frame):
                                 for k in range(1, len(self.fits), 2):
                                     Zfit[i] += (self.fits[k]/(1+(1j*self.wdata[i]*2*np.pi*self.fits[k+1])))
                         
-                        x = np.array(self.rdata)    #Doesn't plot without this
+                        x = np.array(self.rdata)    #Must be a numpy array to plot
                         y = np.array(self.jdata)
                         dataColor = "tab:blue"
                         fitColor = "orange"
@@ -2920,7 +2778,7 @@ class mmF(tk.Frame):
                             annot.xy = (xval, yval)
                             text = "Zr=%.3g"%xval + "\nZj=-%.3g"%yval + "\nf=%.5g"%self.wdata[np.where(self.rdata == xval)][0]
                             annot.set_text(text)
-                            #---Check if we're within 5% of the right or top edges, and adjust label positions accordingly
+                            #---Check if we're within 5% of the right or top edges, and adjust label positions accordingly---
                             if (rightPoint != 0):
                                 if (abs(xval - rightPoint)/rightPoint <= 0.2):
                                     annot.set_position((-90, -10))
@@ -2943,10 +2801,6 @@ class mmF(tk.Frame):
                                         annot.set_visible(False)
                                         self.magicInput.canvas.draw_idle()
                         self.magicInput.canvas.mpl_connect("motion_notify_event", hover)
-#                    self.editReVariable.set("%.4g"%r[0])
-#                    self.needUndo = True
-#                    if (self.justUndid):
-#                        afterUndoRun()
             except queue.Empty:
                 if (self.listPercent[0] != 1):
                     percent_to_step = (len(self.listPercent) - 1)/self.listPercent[0]
@@ -2965,7 +2819,6 @@ class mmF(tk.Frame):
                 self.after(100, process_queue_cap)
     
         def terminateRun(running_thread):
-            #self.keepRunning = False
             running_thread.terminate()
         
         def runMeasurementModel():
@@ -2975,9 +2828,6 @@ class mmF(tk.Frame):
                 pass
             if (self.browseEntry.get() != ""):
                 if (self.capacitanceCheckboxVariable.get() == 0):
-                    #self.results.configure(state="normal")
-                    #self.results.delete("1.0", tk.END)
-                    #self.results.configure(state="disabled")
                     nVE = int(self.numVoigtVariable.get())
                     nMC = int(self.numMonteEntry.get())
                     c = 0
@@ -2995,7 +2845,6 @@ class mmF(tk.Frame):
                     const = [-1]
                     numCombo = 1
                     const[0] = 0 if (self.paramComboboxVariables[0].get() == "fixed") else -1
-                    #print(self.paramComboboxVariables)
                     for comboboxVariable in self.paramComboboxVariables[1:]:
                         bU[numCombo+1] = np.inf
                         if (comboboxVariable.get() == "+ or -" or comboboxVariable.get() == "+"):
@@ -3220,7 +3069,6 @@ class mmF(tk.Frame):
                     const = [-1]
                     numCombo = 1
                     const[0] = 0 if (self.paramComboboxVariables[0].get() == "fixed") else -1
-                    #print(self.paramComboboxVariables)
                     for comboboxVariable in self.paramComboboxVariables[1:]:
                         bU[numCombo+1] = np.inf
                         if (comboboxVariable.get() == "+ or -" or comboboxVariable.get() == "+"):
@@ -3669,7 +3517,6 @@ class mmF(tk.Frame):
             self.autoWeighting.bind("<<ComboboxSelected>>", checkWeightAuto)
             self.autoSliderFrame = tk.Frame(self.autoFitWindow, background=self.backgroundColor)
             self.autoRadioLabel = tk.Label(self.autoSliderFrame, text="Fit type: ", bg=self.backgroundColor, fg=self.foregroundColor)
-            #self.radio1 = ttk.Radiobutton(self.autoSliderFrame, text="Fastest", variable=self.radioVal, value=1)
             self.radio2 = ttk.Radiobutton(self.autoSliderFrame, text="Complex", variable=self.radioVal, value=2)
             self.radio3 = ttk.Radiobutton(self.autoSliderFrame, text="Real", variable=self.radioVal, value=3)
             self.radio4 = ttk.Radiobutton(self.autoSliderFrame, text="Imaginary", variable=self.radioVal, value=4)
@@ -3678,7 +3525,6 @@ class mmF(tk.Frame):
             autoWeighting_ttp = CreateToolTip(self.autoWeighting, "Weighting to be used")
             autoRunButton_ttp = CreateToolTip(self.autoRunButton, "Run automatic fitting")
             autoCancelButton_ttp = CreateToolTip(self.autoCancelButton, "Cancel automatic fitting")
-            #radio1_ttp = CreateToolTip(self.radio1, "Use complex fit with modulus weighting only")
             radio2_ttp = CreateToolTip(self.radio2, "Fit both real and imaginary parts")
             radio3_ttp = CreateToolTip(self.radio3, "Fit real part only")
             radio4_ttp = CreateToolTip(self.radio4, "Fit imaginary part only")
@@ -3692,7 +3538,6 @@ class mmF(tk.Frame):
             self.autoWeightingLabel.grid(column=0, row=1, sticky="W", pady=5, padx=(3, 0))
             self.autoWeighting.grid(column=1, row=1, sticky="W", columnspan=3, padx=3, pady=5)
             self.autoRadioLabel.grid(column=0, row=0, sticky="W", padx=3)
-            #self.radio1.grid(column=0, row=0, sticky="W", padx=3)
             self.radio2.grid(column=1, row=0, sticky="W", padx=3)
             self.radio3.grid(column=2, row=0, sticky="W", padx=3)
             self.radio4.grid(column=3, row=0, sticky="W", padx=3)
@@ -3704,7 +3549,6 @@ class mmF(tk.Frame):
             self.autoRunButton.grid(column=0, row=6, sticky="EW", columnspan=2, pady=10, padx=(3, 0))
             self.autoCancelButton.grid(column=2, row=6, sticky="EW", columnspan=2, pady=10, padx=3)
             
-            #self.autoFitWindow.geometry("500x200")
             self.autoFitWindow.deiconify()
             self.autoFitWindow.bind("<Return>", runAuto)
             self.autoFitWindow.protocol("WM_DELETE_WINDOW", onClose)
@@ -3777,7 +3621,6 @@ class mmF(tk.Frame):
                     sigmaCapacitances[int(i/2)] = 0
                 else:
                     sigmaCapacitances[int(i/2)] = capacitances[int(i/2)]*np.sqrt((self.sigmas[i+1]/self.fits[i+1])**2 + (self.sigmas[i]/self.fits[i])**2)
-            #sigmaOtherC = (1/rc)*(sc/rc)
             partCap = 0
             for i in range(len(capacitances)):
                 partCap += sigmaCapacitances[i]**2/capacitances[i]**4
@@ -4150,10 +3993,8 @@ class mmF(tk.Frame):
                             error_above = np.zeros(len(self.wdata))
                             error_below = np.zeros(len(self.wdata))
                             for i in range(len(self.wdata)):
-                                error_above[i] = max(np.log10(abs(Zfit.real[i]+2*self.sdrReal[i])), np.log10(abs(Zfit.real[i]-2*self.sdrReal[i]))) #np.log10(max(abs(Zfit.real[i]+2*self.sdrReal[i]), abs(Zfit.real[i]-2*self.sdrReal[i])))
-                                error_below[i] = min(np.log10(abs(Zfit.real[i]+2*self.sdrReal[i])), np.log10(abs(Zfit.real[i]-2*self.sdrReal[i])))#np.log10(min(abs(Zfit.real[i]+2*self.sdrReal[i]), abs(Zfit.real[i]-2*self.sdrReal[i])))
-    #                            error_above[i] = np.log10(max(abs(Zfit.real[i]+2*self.sdrReal[i]), abs(Zfit.real[i]-2*self.sdrReal[i])))
-    #                            error_below[i] = np.log10(min(abs(Zfit.real[i]+2*self.sdrReal[i]), abs(Zfit.real[i]-2*self.sdrReal[i])))
+                                error_above[i] = max(np.log10(abs(Zfit.real[i]+2*self.sdrReal[i])), np.log10(abs(Zfit.real[i]-2*self.sdrReal[i])))
+                                error_below[i] = min(np.log10(abs(Zfit.real[i]+2*self.sdrReal[i])), np.log10(abs(Zfit.real[i]-2*self.sdrReal[i])))
                             larger.plot(self.wdata, error_above, "--", color=self.ellipseColor)
                             larger.plot(self.wdata, error_below, "--", color=self.ellipseColor)
                         rightPoint = max(self.wdata)
@@ -4171,10 +4012,8 @@ class mmF(tk.Frame):
                             error_above = np.zeros(len(self.wdata))
                             error_below = np.zeros(len(self.wdata))
                             for i in range(len(self.wdata)):
-                                error_above[i] = max(np.log10(abs(Zfit.imag[i]+2*self.sdrImag[i])), np.log10(abs(Zfit.imag[i]-2*self.sdrImag[i])))#np.log10(max(abs(Zfit.imag[i]+2*self.sdrImag[i]), abs(Zfit.imag[i]-2*self.sdrImag[i])))
-                                error_below[i] = min(np.log10(abs(Zfit.imag[i]+2*self.sdrImag[i])), np.log10(abs(Zfit.imag[i]-2*self.sdrImag[i])))#np.log10(min(abs(Zfit.imag[i]+2*self.sdrImag[i]), abs(Zfit.imag[i]-2*self.sdrImag[i])))
-    #                            error_above[i] = np.log10(max(abs(Zfit.imag[i]+2*self.sdrImag[i]), abs(Zfit.imag[i]-2*self.sdrImag[i])))
-    #                            error_below[i] = np.log10(min(abs(Zfit.imag[i]+2*self.sdrImag[i]), abs(Zfit.imag[i]-2*self.sdrImag[i])))
+                                error_above[i] = max(np.log10(abs(Zfit.imag[i]+2*self.sdrImag[i])), np.log10(abs(Zfit.imag[i]-2*self.sdrImag[i])))
+                                error_below[i] = min(np.log10(abs(Zfit.imag[i]+2*self.sdrImag[i])), np.log10(abs(Zfit.imag[i]-2*self.sdrImag[i])))
                             larger.plot(self.wdata, error_above, "--", color=self.ellipseColor)
                             larger.plot(self.wdata, error_below, "--", color=self.ellipseColor)
                          rightPoint = max(self.wdata)
@@ -4199,12 +4038,12 @@ class mmF(tk.Frame):
                             Dw = self.wdata[i]*1E-6
                             deriv[i] = (logModel(self.wdata[i]+Dw)-logModel(self.wdata[i]))/Dw    #Numerically calculate the derivative
                             deriv[i] *= self.wdata[i]       #Multiply by the frequency as per chain rule of d/dlog(omega)
-                        resultPlotBig.title("dlog|Zj|/dlog(f)")#ω)")
+                        resultPlotBig.title("dlog|Zj|/dlog(f)")
                         larger.plot(self.wdata, deriv, color=fitColor)
                         larger.set_xscale("log")
-                        larger.set_title("dlog|Zj|/dlog(f)", color=self.foregroundColor)#ω)", color=self.foregroundColor)
+                        larger.set_title("dlog|Zj|/dlog(f)", color=self.foregroundColor)
                         larger.set_xlabel("Frequency / Hz", color=self.foregroundColor)
-                        larger.set_ylabel(r'$\frac{dlog|Zj|}{dlog(f)}$', color=self.foregroundColor)#ω)}$', color=self.foregroundColor)
+                        larger.set_ylabel(r'$\frac{dlog|Zj|}{dlog(f)}$', color=self.foregroundColor)
                     elif (event.inaxes == self.kplot):
                         normalized_residuals_real = np.zeros(len(self.wdata))
                         normalized_error_real_below = np.zeros(len(self.wdata))
@@ -4342,13 +4181,8 @@ class mmF(tk.Frame):
         
         def graphOut(event):
             self.nyCanvas._tkcanvas.config(cursor="arrow")
-#            self.nyCanvas._tkcanvas.delete(self.rec)
-            #event.inaxes.set_facecolor("white")
-            #self.nyCanvas.draw_idle()
         
         def graphOver(event):
-            #axes = event.inaxes
-            #autoAxis = event.inaxes
             whichCan = self.nyCanvas._tkcanvas
             he = int(whichCan.winfo_height())
             wi = int(whichCan.winfo_width())
@@ -4367,8 +4201,6 @@ class mmF(tk.Frame):
             self.resultPlots.append(self.resultPlot)
             self.resultPlot.title("Measurement Model Plots")
             self.resultPlot.iconbitmap(resource_path('img/elephant3.ico'))
-            #w, h = self.winfo_screenwidth(), self.winfo_screenheight()
-            #resultPlot.geometry("%dx%d+0+0" % (w, h))
             self.resultPlot.state("zoomed")
             self.confInt = False if self.confidenceIntervalCheckboxVariable.get() == 0 else True
             self.errStruct = False if self.errorStructureCheckboxVariable.get() == 0 else True
@@ -4388,7 +4220,7 @@ class mmF(tk.Frame):
                 phase_fit = np.arctan2(Zfit.imag, Zfit.real) * (180/np.pi)  
             
             with plt.rc_context({'axes.edgecolor':self.foregroundColor, 'xtick.color':self.foregroundColor, 'ytick.color':self.foregroundColor, 'figure.facecolor':self.backgroundColor}):
-                pltFig = Figure()   #figsize=((5,4), dpi=100)
+                pltFig = Figure()
                 self.pltFigs.append(pltFig)
                 pltFig.set_facecolor(self.backgroundColor)
                 dataColor = "tab:blue"
@@ -4416,11 +4248,6 @@ class mmF(tk.Frame):
                         ellipse.set_facecolor(self.ellipseColor)
                 self.aplot.axis("equal")
                 self.aplot.set_title("Nyquist", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
-                #extra = patches.Rectangle((0, 0), 1, 1, fc="w", fill=False, edgecolor='none', linewidth=0)
-                #legA = self.aplot.legend([extra], ["Nyquist"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                #for text in legA.get_texts():
-                #    text.set_color(self.foregroundColor)
-                #self.aplot.set_xlabel("Zr / Ω", color=self.foregroundColor)
                 self.aplot.set_ylabel("-Zj / Ω", color=self.foregroundColor)
                 
                 self.bplot = pltFig.add_subplot(342)
@@ -4441,10 +4268,6 @@ class mmF(tk.Frame):
                     self.bplot.plot(self.wdata, error_below, "--", color=self.ellipseColor)
                 self.bplot.set_xscale('log')
                 self.bplot.set_title("Real Impedance", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
-                #legB = self.bplot.legend([extra], ["Real Impedance"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                #for text in legB.get_texts():
-                #    text.set_color(self.foregroundColor)
-                #self.bplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.bplot.set_ylabel("Zr / Ω", color=self.foregroundColor)
                 
                 self.cplot = pltFig.add_subplot(343)
@@ -4465,10 +4288,6 @@ class mmF(tk.Frame):
                     self.cplot.plot(self.wdata, -1*error_below, "--", color=self.ellipseColor)
                 self.cplot.set_xscale('log')
                 self.cplot.set_title("Imaginary Impedance", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
-                #legC = self.cplot.legend([extra], ["Imaginary Impedance"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                #for text in legC.get_texts():
-                #    text.set_color(self.foregroundColor)
-                #self.cplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.cplot.set_ylabel("-Zj / Ω", color=self.foregroundColor)
                 
                 self.dplot = pltFig.add_subplot(344)
@@ -4490,10 +4309,6 @@ class mmF(tk.Frame):
                 self.dplot.set_xscale('log')
                 self.dplot.set_yscale('log')
                 self.dplot.set_title("|Z| Bode", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
-                #legD = self.dplot.legend([extra], ["|Z| Bode"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                #for text in legD.get_texts():
-                #    text.set_color(self.foregroundColor)
-                #self.dplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.dplot.set_ylabel("|Z| / Ω", color=self.foregroundColor)
                 
                 self.eplot = pltFig.add_subplot(345)
@@ -4505,11 +4320,6 @@ class mmF(tk.Frame):
                 self.eplot.plot(self.wdata, np.arctan2(self.jdata, self.rdata)*(180/np.pi), "o", color=dataColor)
                 self.eplot.plot(self.wdata, phase_fit, color=fitColor)
                 if (self.confInt):
-    #                error_above = np.zeros(len(self.wdata))
-    #                error_below = np.zeros(len(self.wdata))
-    #                for i in range(len(self.wdata)):
-    #                    error_above[i] = np.arctan2(max((Zfit.imag[i]+2*self.sdrImag[i]), (Zfit.imag[i]-2*self.sdrImag[i])), min((Zfit.real[i]+2*self.sdrReal[i]), (Zfit.real[i]-2*self.sdrReal[i])))
-    #                    error_below[i] = np.arctan2(min((Zfit.imag[i]+2*self.sdrImag[i]), (Zfit.imag[i]-2*self.sdrImag[i])), max((Zfit.real[i]+2*self.sdrReal[i]), (Zfit.real[i]-2*self.sdrReal[i])))
                     error_above = np.arctan2((Zfit.imag+2*self.sdrImag) , (Zfit.real+2*self.sdrReal)) * (180/np.pi)
                     error_below = np.arctan2((Zfit.imag-2*self.sdrImag) , (Zfit.real-2*self.sdrReal)) * (180/np.pi)
                     self.eplot.plot(self.wdata, error_above, "--", color=self.ellipseColor)
@@ -4518,10 +4328,6 @@ class mmF(tk.Frame):
                 self.eplot.set_ylim(bottom=0, top=-90)
                 self.eplot.set_xscale('log')
                 self.eplot.set_title("Phase Angle Bode", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
-                #legE = self.eplot.legend([extra], ["Phase Angle Bode"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                #for text in legE.get_texts():
-                #    text.set_color(self.foregroundColor)
-                #self.eplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.eplot.set_ylabel("Phase angle / Deg.", color=self.foregroundColor)
                 
                 self.fplot = pltFig.add_subplot(346)
@@ -4535,10 +4341,6 @@ class mmF(tk.Frame):
                 self.fplot.set_xscale('log')
                 self.fplot.set_yscale('log')
                 self.fplot.set_title("Re-adj. |Z| Bode", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
-                #legF = self.fplot.legend([extra], ["Re-adj. |Z| Bode"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                #for text in legF.get_texts():
-                #    text.set_color(self.foregroundColor)
-                #self.fplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.fplot.set_ylabel("Re-adj. |Z| / Ω", color=self.foregroundColor)
                 
                 self.gplot = pltFig.add_subplot(347)
@@ -4553,10 +4355,6 @@ class mmF(tk.Frame):
                 self.gplot.set_ylim(bottom=0, top=-90)
                 self.gplot.set_xscale('log')
                 self.gplot.set_title("Re-adj. Phase Angle Bode", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
-                #legG = self.gplot.legend([extra], ["Re-adj. Phase Angle Bode"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                #for text in legG.get_texts():
-                #    text.set_color(self.foregroundColor)
-                #self.gplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.gplot.set_ylabel("Re-adj. Phase angle / Deg.", color=self.foregroundColor)
                 
                 self.hplot = pltFig.add_subplot(348)
@@ -4577,10 +4375,6 @@ class mmF(tk.Frame):
                     self.hplot.plot(self.wdata, error_below, "--", color=self.ellipseColor)
                 self.hplot.set_xscale('log')
                 self.hplot.set_title("Log|Zr|", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
-                #legH = self.hplot.legend([extra], ["Log|Zr|"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                #for text in legH.get_texts():
-                #    text.set_color(self.foregroundColor)
-                #self.hplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.hplot.set_ylabel("Log|Zr|", color=self.foregroundColor)
                 
                 self.iplot = pltFig.add_subplot(349)
@@ -4601,10 +4395,6 @@ class mmF(tk.Frame):
                     self.iplot.plot(self.wdata, error_below, "--", color=self.ellipseColor)
                 self.iplot.set_xscale('log')
                 self.iplot.set_title("Log|Zj|", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
-                #legI = self.iplot.legend([extra], ["Log|Zj|"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                #for text in legI.get_texts():
-                #    text.set_color(self.foregroundColor)
-                #self.iplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.iplot.set_ylabel("Log|Zj|", color=self.foregroundColor)
                 
                 def logModel(freq):
@@ -4620,7 +4410,7 @@ class mmF(tk.Frame):
                 for i in range(len(self.wdata)):
                     Dw = self.wdata[i]*1E-6
                     deriv[i] = (logModel(self.wdata[i]+Dw)-logModel(self.wdata[i]))/Dw    #Numerically calculate the derivative
-                    deriv[i] *= self.wdata[i]       #Multiply by the frequency as per chain rule of d/dlog(omega)
+                    deriv[i] *= self.wdata[i]                                             #Multiply by the frequency as per chain rule of d/dlog(omega)
                 
                 self.jplot = pltFig.add_subplot(3, 4, 10)
                 self.jplot.set_facecolor(self.backgroundColor)
@@ -4628,14 +4418,9 @@ class mmF(tk.Frame):
                 self.jplot.yaxis.set_tick_params(color=self.foregroundColor, direction="in")
                 self.jplot.xaxis.set_ticks_position("both")
                 self.jplot.xaxis.set_tick_params(color=self.foregroundColor, direction="in", which="both")
-                #jplot.plot(self.wdata, np.log10(-1*self.jdata), "o")
                 self.jplot.plot(self.wdata, deriv, color=fitColor)
                 self.jplot.set_xscale('log')
                 self.jplot.set_title("dlog|Zj|/dlog(f)", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
-                #legJ = self.jplot.legend([extra], ["dlog|Zj|/dlog(ω)"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                #for text in legJ.get_texts():
-                #    text.set_color(self.foregroundColor)
-                #self.jplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.jplot.set_ylabel(r'$\frac{dlog|Zj|}{dlog(f)}$', color=self.foregroundColor)
                 
                 normalized_residuals_real = np.zeros(len(self.wdata))
@@ -4672,14 +4457,9 @@ class mmF(tk.Frame):
                 if (self.errStruct):
                     self.kplot.plot(self.wdata, errStruct_real_above, "--", color="black")
                     self.kplot.plot(self.wdata, errStruct_real_below, "--", color="black")
-                #fplot.plot(self.wdata, phase_fit, color="orange")
                 self.kplot.axhline(0, color="black", linewidth=1.0)
                 self.kplot.set_xscale('log')
                 self.kplot.set_title("Real Residuals", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
-                #legK = self.kplot.legend([extra], ["Real Residuals"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                #for text in legK.get_texts():
-                #    text.set_color(self.foregroundColor)
-                #self.kplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.kplot.set_ylabel("(Zr-Zrmodel)/Zr", color=self.foregroundColor)
                 
                 self.lplot = pltFig.add_subplot(3, 4, 12)
@@ -4695,14 +4475,9 @@ class mmF(tk.Frame):
                 if (self.errStruct):
                     self.lplot.plot(self.wdata, errStruct_imag_above, "--", color="black")
                     self.lplot.plot(self.wdata, errStruct_imag_below, "--", color="black")
-                #fplot.plot(self.wdata, phase_fit, color="orange")
                 self.lplot.axhline(0, color="black", linewidth=1.0)
                 self.lplot.set_xscale('log')
                 self.lplot.set_title("Imaginary Residuals", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
-                #legL = self.lplot.legend([extra], ["Imaginary Residuals"], loc=9, frameon=False, bbox_to_anchor=(0., 1.01, 1., .101), borderaxespad=0., prop={'size': 17})
-                #for text in legL.get_texts():
-                #    text.set_color(self.foregroundColor)
-                #self.lplot.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.lplot.set_ylabel("(Zj-Zjmodel)/Zj", color=self.foregroundColor)
             
             self.nyCanvas = FigureCanvasTkAgg(pltFig, self.resultPlot)
@@ -4710,8 +4485,6 @@ class mmF(tk.Frame):
             self.nyCanvas.draw()
             self.nyCanvas.get_tk_widget().pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
             self.nyCanvas.mpl_connect('button_press_event', onclick)
-            #toolbar = NavigationToolbar2Tk(nyCanvas, resultPlot)
-            #toolbar.update()
             self.nyCanvas._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
             def saveAllPlots():
                 folder = askdirectory(parent=self.resultPlot, initialdir=self.topGUI.getCurrentDirectory())
@@ -4825,11 +4598,6 @@ class mmF(tk.Frame):
                     ax_save.plot(self.wdata, np.arctan2(self.jdata, self.rdata)*(180/np.pi), "o", color=dataColor)
                     ax_save.plot(self.wdata, phase_fit, color=fitColor)
                     if (self.confInt):
-        #                error_above = np.zeros(len(self.wdata))
-        #                error_below = np.zeros(len(self.wdata))
-        #                for i in range(len(self.wdata)):
-        #                    error_above[i] = np.arctan2(max((Zfit.imag[i]+2*self.sdrImag[i]), (Zfit.imag[i]-2*self.sdrImag[i])), min((Zfit.real[i]+2*self.sdrReal[i]), (Zfit.real[i]-2*self.sdrReal[i])))
-        #                    error_below[i] = np.arctan2(min((Zfit.imag[i]+2*self.sdrImag[i]), (Zfit.imag[i]-2*self.sdrImag[i])), max((Zfit.real[i]+2*self.sdrReal[i]), (Zfit.real[i]-2*self.sdrReal[i])))
                         error_above = np.arctan2((Zfit.imag+2*self.sdrImag) , (Zfit.real+2*self.sdrReal)) * (180/np.pi)
                         error_below = np.arctan2((Zfit.imag-2*self.sdrImag) , (Zfit.real-2*self.sdrReal)) * (180/np.pi)
                         ax_save.plot(self.wdata, error_above, "--", color=self.ellipseColor)
@@ -4911,7 +4679,7 @@ class mmF(tk.Frame):
                     for i in range(len(self.wdata)):
                         Dw = self.wdata[i]*1E-6
                         deriv[i] = (logModel(self.wdata[i]+Dw)-logModel(self.wdata[i]))/Dw    #Numerically calculate the derivative
-                        deriv[i] *= self.wdata[i]       #Multiply by the frequency as per chain rule of d/dlog(omega)
+                        deriv[i] *= self.wdata[i]                                             #Multiply by the frequency as per chain rule of d/dlog(omega)
                     
                     ax_save.plot(self.wdata, deriv, color=fitColor)
                     ax_save.set_xscale('log')
@@ -4928,7 +4696,6 @@ class mmF(tk.Frame):
                     if (self.errStruct):
                         ax_save.plot(self.wdata, errStruct_real_above, "--", color="black")
                         ax_save.plot(self.wdata, errStruct_real_below, "--", color="black")
-                    #fplot.plot(self.wdata, phase_fit, color="orange")
                     ax_save.axhline(0, color="black", linewidth=1.0)
                     ax_save.set_xscale('log')
                     ax_save.set_title("Real Residuals", fontdict={'fontsize' : 17, 'color' : self.foregroundColor})
@@ -4958,7 +4725,6 @@ class mmF(tk.Frame):
             saveNyCanvasButton_ttp = CreateToolTip(self.saveNyCanvasButton, "Save all plots")
             self.saveNyCanvasButton_ttps.append(saveNyCanvasButton_ttp)
             self.saveNyCanvasButton.pack(side=tk.BOTTOM, pady=5, expand=False)
-            #self.nyCanvas._tkcanvas.config(cursor="hand2")
             enterAxes = pltFig.canvas.mpl_connect('axes_enter_event', graphOver)
             leaveAxes = pltFig.canvas.mpl_connect('axes_leave_event', graphOut)
             def on_closing():   #Clear the figure before closing the popup
@@ -5111,121 +4877,7 @@ class mmF(tk.Frame):
                 self.errorDeltaEntry.configure(state="normal")
             else:
                 self.errorDeltaEntry.configure(state="disabled")
-        """
-        def simplexFit():
-            choice = 0
-            fT = 0
-            error_alpha = 0
-            error_beta = 0
-            error_gamma = 0
-            error_delta = 0
-            try:
-                aN = float(self.alphaVariable.get()) if (self.alphaVariable.get() != "") else 1
-            except:
-                messagebox.showerror("Value error", "Error 25:\nThe assumed noise (alpha) has an invalid value")
-                return
-            if (self.weightingVariable.get() == "Modulus"):
-                choice = 1
-            elif (self.weightingVariable.get() == "Proportional"):
-                choice = 2
-            elif (self.weightingVariable.get() == "Error model"):
-                if (self.errorAlphaCheckboxVariable.get() != 1 and self.errorBetaCheckboxVariable.get() != 1 and self.errorGammaCheckboxVariable.get() != 1 and self.errorDeltaCheckboxVariable.get() != 1):
-                    messagebox.showerror("Error structure error", "Error 22:\nAt least one parameter must be chosen to use error structure weighting")
-                    return
-                try:
-                    if (self.errorAlphaCheckboxVariable.get() == 1):
-                        if (self.errorAlphaVariable.get() == "" or self.errorAlphaVariable.get() == " " or self.errorAlphaVariable.get() == "."):
-                            error_alpha = 0
-                        else:
-                            error_alpha = float(self.errorAlphaVariable.get())
-                    if (self.errorBetaCheckboxVariable.get() == 1):
-                        if (self.errorBetaVariable.get() == "" or self.errorBetaVariable.get() == " " or self.errorBetaVariable.get() == "."):
-                            error_beta = 0
-                        else:
-                            error_beta = float(self.errorBetaVariable.get())
-                    if (self.errorGammaCheckboxVariable.get() == 1):
-                        if (self.errorGammaVariable.get() == "" or self.errorGammaVariable.get() == " " or self.errorGammaVariable.get() == "."):
-                            error_gamma = 0
-                        else:
-                            error_gamma = float(self.errorGammaVariable.get())
-                    if (self.errorDeltaCheckboxVariable.get() == 1):
-                        if (self.errorDeltaVariable.get() == "" or self.errorDeltaVariable.get() == " " or self.errorDeltaVariable.get() == "."):
-                            error_delta = 0
-                        else:
-                            error_delta = float(self.errorDeltaVariable.get())
-                except:
-                    messagebox.showerror("Value error", "Error 23:\nOne of the error structure parameters has an invalid value")
-                    return
-                if (error_alpha == 0 and error_beta == 0 and error_gamma == 0 and error_delta == 0):
-                    messagebox.showerror("Valid error", "Error 24:\nAt least one of the error structure parameters must be nonzero")
-                    return
-                choice = 3
-            if (self.fitTypeVariable.get() == "Real"):
-                fT = 1
-            elif (self.fitTypeVariable.get() == "Imaginary"):
-                fT = 2
-            
-            g = np.zeros(int(self.numVoigtVariable.get())*2+1)
-            g[0] = self.rDefault
-            for i in range(1, len(g), 2):
-                g[i] = self.rDefault
-                g[i+1] = self.tauDefault
-            for i in range(len(self.paramEntryVariables)):
-                possibleVal = self.paramEntryVariables[i].get()
-                if (possibleVal == '' or possibleVal == '.' or possibleVal == 'E' or possibleVal == 'e'):
-                    messagebox.showerror("Value error", "Error 19:\nOne of the parameters is missing a value")
-                    return
-                try:
-                    g[i] = float(possibleVal)
-                except:
-                    messagebox.showerror("Value error", "Error 21:\nOne of the parameters has an invalid value: " + str(possibleVal))
-                    return
-            
-            bounds = []
-#            bounds.append((-1E9 if self.paramComboboxVariables[0].get() == "+ or -" else 0, 1E9))
-#            for comboboxVariable in self.paramComboboxVariables[1:]:
-#                if (comboboxVariable.get() == "+ or -"):
-#                    bounds.append((-1E9, 1E9))
-#                    bounds.append((0, 1E9))
-#                elif (comboboxVariable.get() == "fixed"):
-#                    messagebox.showerror("Fitting error", "One of the variables is set to \"fixed\". Evolutionary fitting cannot be used with fixed variables.")
-#                else:
-#                    bounds.append((0, 1E9))
-#                    bounds.append((0, 1E9))
-            self.queue_simplex = queue.Queue()
-            
-            self.measureModelButton.configure(state="disabled")
-            self.freqRangeButton.configure(state="disabled")
-            self.magicButton.configure(state="disabled")
-            self.parametersButton.configure(state="disabled")
-            self.parametersLoadButton.configure(state="disabled")
-            self.numVoigtSpinbox.configure(state="disabled")
-            self.browseButton.configure(state="disabled")
-            self.numMonteEntry.configure(state="disabled")
-            self.fitTypeCombobox.configure(state="disabled")
-            self.weightingCombobox.configure(state="disabled")
-            if (str(self.undoButton['state']) == "disabled"):
-                self.undoDisabled = True
-            else:
-                self.undoDisabled = False
-            self.undoButton.configure(state="disabled")
-            self.numVoigtMinus.configure(cursor="arrow", bg="gray60")
-            self.numVoigtMinus.unbind("<Enter>")
-            self.numVoigtMinus.unbind("<Leave>")
-            self.numVoigtMinus.unbind("<Button-1>")
-            self.numVoigtMinus.unbind("<ButtonRelease-1>")
-            self.numVoigtPlus.configure(cursor="arrow", bg="gray60")
-            self.numVoigtPlus.unbind("<Enter>")
-            self.numVoigtPlus.unbind("<Leave>")
-            self.numVoigtPlus.unbind("<Button-1>")
-            self.numVoigtPlus.unbind("<ButtonRelease-1>")
-            self.prog_bar_simplex = ttk.Progressbar(self.measureModelFrame, orient="horizontal", length=150, mode="indeterminate")
-            self.prog_bar_simplex.grid(column=2, row=0, padx=5)
-            self.prog_bar_simplex.start(40)
-            
-            ThreadedTaskSimplex(self.queue_simplex, self.wdata, self.rdata, self.jdata, int(self.numVoigtVariable.get()), choice, aN, fT, g, bounds, error_alpha, error_beta, error_gamma, error_delta).start()
-            self.after(100, process_queue_simplex)
-        """
+
         def undoFit():
             if (len(self.undoStack) > 0):
                 capNeeded = self.undoCapNeededStack.pop()
@@ -5297,8 +4949,6 @@ class mmF(tk.Frame):
                             self.wdata = self.wdataRaw.copy()
                             self.rdata = self.rdataRaw.copy()
                             self.jdata = self.jdataRaw.copy()
-                        #self.rs.setLower(np.log10(min(self.wdata)))
-                        #self.rs.setUpper(np.log10(max(self.wdata)))
                         try:
                             self.figFreq.clear()
                             dataColor = "tab:blue"
@@ -5430,8 +5080,6 @@ class mmF(tk.Frame):
                         else:
                             self.aR += "  R" + str(int(i/2 + 1)) + "   " + " Tau" + str(int(i/2 + 1)) + "  "
                     self.aR += "\n      \u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510"
-                    #for i in range(1, len(r), 2):
-                    #    self.aR += "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
                     self.aR += "\n"
                     self.aR += "Re    "
                     for i in range(len(self.fits)):
@@ -5487,7 +5135,6 @@ class mmF(tk.Frame):
                     self.alreadyChanged = False
                     if (len(self.undoStack) == 0):
                         self.undoButton.configure(state="disabled")
-                    #runMeasurementModel()
                 else:       #If capacitance is needed
                     NVE_undo = int((len(self.undoStack[len(self.undoStack)-1])-1)/2)
                     if (NVE_undo < self.nVoigt):
@@ -5554,8 +5201,6 @@ class mmF(tk.Frame):
                             self.wdata = self.wdataRaw.copy()
                             self.rdata = self.rdataRaw.copy()
                             self.jdata = self.jdataRaw.copy()
-                        #self.rs.setLower(np.log10(min(self.wdata)))
-                        #self.rs.setUpper(np.log10(max(self.wdata)))
                         try:
                             self.figFreq.clear()
                             dataColor = "tab:blue"
@@ -5649,7 +5294,6 @@ class mmF(tk.Frame):
                             sigmaCapacitances[int(i/2)] = 0
                         else:
                             sigmaCapacitances[int(i/2)] = capacitances[int(i/2)]*np.sqrt((self.sigmas[i+1]/self.fits[i+1])**2 + (self.sigmas[i]/self.fits[i])**2)
-                    #sigmaOtherC = (1/rc)*(sc/rc)
                     partCap = 0
                     for i in range(len(capacitances)):
                         partCap += sigmaCapacitances[i]**2/capacitances[i]**4
@@ -5693,8 +5337,6 @@ class mmF(tk.Frame):
                             self.aR += "  R" + str(int(i/2 + 1)) + "   " + " Tau" + str(int(i/2 + 1)) + "  "
                     self.aR += "  Cap "
                     self.aR += "\n      \u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510"
-                    #for i in range(1, len(r), 2):
-                    #    self.aR += "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
                     self.aR += "\n"
                     self.aR += "Re    "
                     for i in range(len(self.fits)):
@@ -5756,7 +5398,7 @@ class mmF(tk.Frame):
                     self.aR += "\nChi-squared statistic = %.4g"%chi + "\n"
                     self.aR += "Chi-squared/Degrees of freedom = %.4g"%(chi/(self.lengthOfData*2-len(self.fits))) + "\n"
                     try:
-                        self.aR += "Akaike Information Criterion = %.4g"%aic#(np.log(chi*((1+2*len(r))/self.lengthOfData))) + "\n"
+                        self.aR += "Akaike Information Criterion = %.4g"%aic
                     except:
                         self.aR += "Akaike Information Criterion could not be calculated"
                     self.undoStack.pop()
@@ -5765,29 +5407,6 @@ class mmF(tk.Frame):
                     self.alreadyChanged = False
                     if (len(self.undoStack) == 0):
                         self.undoButton.configure(state="disabled")
-        
-#        def afterUndoRun():
-#            self.justUndid = False
-#            if (len(self.undoStack) == 0):
-#                self.needUndo = False
-#                self.undoButton.configure(state="disabled")
-#            else:
-#                self.undoButton.configure(state="normal")
-#                self.needUndo = True
-        
-#        def redoFit():
-#            if (len(self.redoStack) > 0):
-#                NVE_redo = int((len(self.redoStack[len(self.redoStack)-1])-1)/2)
-#                if (NVE_redo < self.nVoigt):
-#                    while (NVE_redo-self.nVoigt != 0):
-#                        self.numVoigtSpinbox.invoke("buttondown")
-#                elif (NVE_redo > self.nVoigt):
-#                    while(NVE_redo-self.nVoigt != 0):
-#                        self.numVoigtSpinbox.invoke("buttonup")
-#                self.undoStack.append(self.redoStack.pop())
-#                self.undoButton.configure(state="normal")
-#                if (len(self.redoStack) == 0):
-#                    self.redoButton.configure(state="disabled")
         
         def updateRe():
             updateWindow = tk.Toplevel(background=self.backgroundColor)
@@ -5804,10 +5423,6 @@ class mmF(tk.Frame):
                 updatePlot.yaxis.set_tick_params(direction="in", color=self.foregroundColor, which="both")
                 updatePlot.xaxis.set_ticks_position("both")
                 updatePlot.xaxis.set_tick_params(direction="in", color=self.foregroundColor, which="both")
-                #updatePlot.spines['bottom'].set_color(self.foregroundColor)
-                #updatePlot.spines['top'].set_color(self.foregroundColor)
-                #updatePlot.spines['left'].set_color(self.foregroundColor)
-                #updatePlot.spines['right'].set_color(self.foregroundColor)
                 self.updateReVariable.set(self.paramEntryVariables[0].get())
                 Zfit = np.zeros(len(self.wdata), dtype=np.complex128)
                 for i in range(len(self.wdata)):
@@ -5962,9 +5577,6 @@ class mmF(tk.Frame):
             updateReFrame = tk.Frame(updateFrame, background=self.backgroundColor)
             update5Arrows = tk.Frame(updateFrame, background=self.backgroundColor)
             update1Arrows = tk.Frame(updateFrame, background=self.backgroundColor)
-            #updatePlotButton = ttk.Button(updateFrame, text="Update", command=updatePlotNow)
-            #updatePlotButton.pack(side=tk.BOTTOM, pady=3)
-            #updatePlotButton_ttp = CreateToolTip(updatePlotButton, "Update the value for the ohmic resistance")
             updateLabel = tk.Label(updateReFrame, text="R\u2091 = ", background=self.backgroundColor, foreground=self.foregroundColor)
             updateEntry = ttk.Entry(updateReFrame, textvariable=self.updateReVariable, width=10, validate="all", validatecommand=valcom)
             update5Label = tk.Label(updateFrame, text="5%: ", background=self.backgroundColor, foreground=self.foregroundColor)
@@ -5986,8 +5598,6 @@ class mmF(tk.Frame):
             update1Down.bind("<Enter>", lambda e: update1Down.configure(foreground="gray50"))
             update1Down.bind("<Leave>", lambda e: update1Down.configure(foreground=update5Label["foreground"]))
             update1Down.bind("<Button-1>", updatePlotDown1)
-            #updateTicker = tk.Spinbox(updateFrame, format="%.2f", textvariable=self.updateReVariable, exportselection=0, from_=0.0, to_=np.inf, width=10)
-            #updateTicker.pack(side=tk.RIGHT)
             updateLabel.grid(column=0, row=0)
             updateEntry.grid(column=1, row=0)
             updateReFrame.grid(column=0, row=0, columnspan=4)
@@ -6006,61 +5616,12 @@ class mmF(tk.Frame):
             updateCanvas = FigureCanvasTkAgg(updateFig, updateWindow)
             updateCanvas.draw()
             updateCanvas.get_tk_widget().pack(side=tk.BOTTOM, fill=tk.BOTH, pady=5, padx=5, expand=True)
-#            toolbar = NavigationToolbar2Tk(updateCanvas, updateWindow)
-#            toolbar.configure(background="white")
-#            toolbar.update()
             updateCanvas._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
             def on_closing():   #Clear the figure before closing the popup
                 updateFig.clear()
                 updateWindow.destroy()
             updateWindow.protocol("WM_DELETE_WINDOW", on_closing)
-        
-#        def validateFreqsLow(P):
-#            print(P)
-#            if P == '':
-#                return True
-#            if " " in P:
-#                return False
-#            if "\t" in P:
-#                return False
-#            if "\n" in P:
-#                return False 
-#            try:
-#                int(P)
-#                if (int(P) < 0):     #No negative numbers of frequencies deleted
-#                    return False
-#                if (self.upperSpinboxVariable.get() != ""):
-#                    if (int(self.upperSpinboxVariable.get()) + int(P) >= len(self.wdataRaw)):
-##                        messagebox.showwarning("Value error", "The total number of frequencies deleted cannot exceed the total number of frequencies", parent=self.freqWindow)
-#                        return False
-#                else:
-#                    if (int(P) >= len(self.wdataRaw)):
-##                        messagebox.showwarning("Value error", "The total number of frequencies deleted cannot exceed the total number of frequencies", parent=self.freqWindow)
-#                        return False
-#                return True
-#            except:
-#                return False
-#        vcmdFreqsLow = (self.register(validateFreqsLow), '%P')
-#        
-#        def validateFreqsUp(P):
-#            if P == '':
-#                return True
-#            if " " in P:
-#                return False
-#            if "\t" in P:
-#                return False
-#            if "\n" in P:
-#                return False 
-#            try:
-#                int(P)
-#                if (int(P) < 0):     #No negative numbers of frequencies deleted
-#                    return False
-#                else:
-#                    return True
-#            except:
-#                return False
-#        vcmdFreqsUp = (self.register(validateFreqsUp), '%P')
         
         def graphOutMagic(event):
             self.magicInput.canvas._tkcanvas.config(cursor="arrow")
@@ -6076,10 +5637,6 @@ class mmF(tk.Frame):
                     if np.sqrt((self.rdata[i] - event.xdata)**2 + (self.jdata[i] + event.ydata)**2) < min_dist:
                         min_dist = np.sqrt((self.rdata[i] - event.xdata)**2 + (self.jdata[i] + event.ydata)**2)
                         min_index = i
-                #print("freq:" + str(1/(2*np.pi*self.wdata[min_index])))
-                #print("R:" + str(-1*self.jdata[min_index]))          
-                #self.numVoigtSpinbox.invoke("buttonup")
-                #round(1/(2*np.pi*self.wdata[min_index]), -int(np.floor(np.log10(abs(1/(2*np.pi*self.wdata[min_index]))))) + (5 - 1))
                 self.magicElementRVariable.set(round(-1*self.jdata[min_index], -int(np.floor(np.log10(abs(-1*self.jdata[min_index])))) + (5 - 1)))
                 self.magicElementTVariable.set(round(1/(2*np.pi*self.wdata[min_index]), -int(np.floor(np.log10(abs(1/(2*np.pi*self.wdata[min_index]))))) + (5 - 1)))
                 self.magicElementRealVariable = self.rdata[min_index]
@@ -6103,11 +5660,8 @@ class mmF(tk.Frame):
                     pass
                 self.magicElementTVariable.set('0')
                 self.magicElementRVariable.set('0')
-                #self.magicInput.clf()
-                #self.magicPlot.withdraw()
             except:
                 messagebox.showwarning("Bad value(s)", "Invalid element or values", parent=self.magicPlot)
-                #self.magicPlot.deiconify()
                 self.magicPlot.lift()
         
         def magicFinger():
@@ -6207,7 +5761,6 @@ class mmF(tk.Frame):
             self.freqWindow.lift()
             self.lowerSpinboxVariable.set(str(self.lowDelete))
             self.upperSpinboxVariable.set(str(self.upDelete))
-            #round_to_n = lambda x, n: 0 if x == 0 else round(x, -int(np.floor(np.log10(abs(x)))) + (n - 1))   #To round to n sig figs; from Roy Hyunjin Han at https://stackoverflow.com/questions/3410976/how-to-round-a-number-to-significant-figures-in-python
             dataColor = "tab:blue"
             deletedColor = "#A9CCE3"
             if (self.topGUI.getTheme() == "dark"):
@@ -6264,24 +5817,15 @@ class mmF(tk.Frame):
                     self.wdata = self.wdataRaw.copy()[self.lowDelete:-1*self.upDelete]
                     self.rdata = self.rdataRaw.copy()[self.lowDelete:-1*self.upDelete]
                     self.jdata = self.jdataRaw.copy()[self.lowDelete:-1*self.upDelete]
-                #if (self.upperSpinboxVariable.get() == ""):
-                #    self.upperSpinboxVariable.set("0")
-                #if (self.lowerSpinboxVariable.get() == ""):
-                #    self.lowerSpinboxVariable.set("0")
-                #self.rs.setLower(np.log10(min(self.wdata)))
-                #self.justUpdated = True
-                #self.rs.setUpper(np.log10(max(self.wdata)))
                 self.lengthOfData = len(self.wdata)
                 self.lowestUndeleted.configure(state="normal")
                 self.lowestUndeleted.delete(1.0, tk.END)
                 self.lowestUndeleted.insert(1.0, "Lowest remaining frequency: {:.4e}".format(min(self.wdata)))
                 self.lowestUndeleted.configure(state="disabled")
-                #self.lowestUndeleted.configure(text="Lowest remaining frequency: {:.4e}".format(min(self.wdata))) #%f" % round_to_n(min(self.wdata), 6)).strip("0"))
                 self.highestUndeleted.configure(state="normal")
                 self.highestUndeleted.delete(1.0, tk.END)
                 self.highestUndeleted.insert(1.0, "Highest remaining frequency: {:.4e}".format(max(self.wdata)))
                 self.highestUndeleted.configure(state="disabled")
-                #self.highestUndeleted.configure(text="Highest remaining frequency: {:.4e}".format(max(self.wdata))) #%f" % round_to_n(max(self.wdata), 6)).strip("0"))
                 self.realFreqPlot.set_ydata(self.rdata)
                 self.realFreqPlot.set_xdata(self.wdata)
                 self.realFreqDeletedHigh.set_ydata(self.rdataRaw[len(self.wdataRaw)-1-self.upDelete:])
@@ -6295,23 +5839,12 @@ class mmF(tk.Frame):
                 self.imagFreqPlot.set_ydata(-1*self.jdata)
                 self.imagFreqPlot.set_xdata(self.wdata)
                 self.canvasFreq.draw()
-                #self.updateFreqButton.configure(text="Updated")
-                #self.after(500, lambda : self.updateFreqButton.configure(text="Update Frequencies"))
+
             def changeFreqSpinboxLower(e = None):
                 try:
                     higherDelete = 0 if self.upperSpinboxVariable.get() == "" else int(self.upperSpinboxVariable.get())
                     lowerDelete = 0 if self.lowerSpinboxVariable.get() == "" else int(self.lowerSpinboxVariable.get())
-                    #print(len(self.wdataRaw)-1-higherDelete-lowerDelete)
-                    #self.lowerSpinbox.configure(to=len(self.wdataRaw)-1-higherDelete-lowerDelete)
                     self.upperSpinbox.configure(to=len(self.wdataRaw)-1-lowerDelete)
-                    #if (higherDelete == 0 and lowerDelete == 0):
-                    #    self.rs.setLower(np.log10(min(self.wdataRaw.copy())))
-                    #elif (higherDelete == 0):
-                    #    self.rs.setLower(np.log10(min(self.wdataRaw.copy()[lowerDelete:])))
-                    #elif (lowerDelete == 0):
-                    #    self.rs.setLower(np.log10(min(self.wdataRaw.copy()[:-1*higherDelete])))
-                    #else:
-                    #    self.rs.setLower(np.log10(min(self.wdataRaw.copy()[lowerDelete:-1*higherDelete])))
                     updateFreqs()
                 except:
                     pass
@@ -6321,35 +5854,13 @@ class mmF(tk.Frame):
                     higherDelete = 0 if self.upperSpinboxVariable.get() == "" else int(self.upperSpinboxVariable.get())
                     lowerDelete = 0 if self.lowerSpinboxVariable.get() == "" else int(self.lowerSpinboxVariable.get())
                     self.lowerSpinbox.configure(to=len(self.wdataRaw)-1-higherDelete)
-                    #self.upperSpinbox.configure(to=len(self.wdataRaw)-1-higherDelete-lowerDelete)
-                    #if (higherDelete == 0 and lowerDelete == 0):
-                    #    self.rs.setUpper(np.log10(max(self.wdataRaw.copy())))
-                    #elif (higherDelete == 0):
-                    #    self.rs.setUpper(np.log10(max(self.wdataRaw.copy()[lowerDelete:])))
-                    #elif (lowerDelete == 0):
-                    #    self.rs.setUpper(np.log10(max(self.wdataRaw.copy()[:-1*higherDelete])))
-                    #else:
-                    #    self.rs.setUpper(np.log10(max(self.wdataRaw.copy()[lowerDelete:-1*higherDelete])))
                     updateFreqs()
                 except:
                     pass
             
-            #self.rs.setPaintTicks(True)
-            #self.rs.setSnapToTicks(False) 
-            #self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
-            #self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
-#            self.rs.setMajorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
-            #self.rs.setNumberOfMajorTicks(10)
-            #self.rs.showMinorTicks(False)
-#            self.rs.setMinorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
-            #self.rs.setLower(np.log10(min(self.wdata)))
-           # self.rs.setUpper(np.log10(max(self.wdata)))
-            #self.rs.setFocus()
             self.lowerLabel = tk.Label(self.freqWindow, text="Number of low frequencies\n to delete", fg=self.foregroundColor, bg=self.backgroundColor)
-            #self.rangeLabel = tk.Label(self.freqWindow, text="Log of Frequency", fg=self.foregroundColor, bg=self.backgroundColor)
             self.upperLabel = tk.Label(self.freqWindow, text="Number of high frequencies\n to delete", fg=self.foregroundColor, bg=self.backgroundColor)
             self.lowerLabel.grid(column=0, row=1, pady=(80, 5), padx=3, sticky="N")
-            #self.rangeLabel.grid(column=1, row=1, pady=(85, 5), sticky="N")
             self.upperLabel.grid(column=2, row=1, pady=(80, 5), padx=3, sticky="N")
             self.lowerSpinbox = tk.Spinbox(self.freqWindow, from_=0, to=(len(self.wdataRaw)-1), textvariable=self.lowerSpinboxVariable, state="normal", width=6, validate="all", validatecommand=valfreqLow2, command=changeFreqSpinboxLower)
             self.lowerSpinbox.grid(column=0, row=2, padx=(3,0), sticky="N")
@@ -6361,48 +5872,12 @@ class mmF(tk.Frame):
             self.lowestUndeleted.delete(1.0, tk.END)
             self.lowestUndeleted.insert(1.0, "Lowest remaining frequency: {:.4e}".format(min(self.wdata)))
             self.lowestUndeleted.configure(state="disabled")
-            #self.lowestUndeleted.configure(text="Lowest remaining frequency: {:.4e}".format(min(self.wdata))) #%f" % round_to_n(min(self.wdata), 6)).strip("0"))
             self.highestUndeleted.configure(state="normal")
             self.highestUndeleted.delete(1.0, tk.END)
             self.highestUndeleted.insert(1.0, "Highest remaining frequency: {:.4e}".format(max(self.wdata)))
             self.highestUndeleted.configure(state="disabled")
-            #self.highestUndeleted.configure(text="Highest remaining frequency: {:.4e}".format(max(self.wdata))) #%f" % round_to_n(max(self.wdata), 6)).strip("0"))
             self.lowestUndeleted.grid(column=0, row=3, sticky="N")
-            self.highestUndeleted.grid(column=2, row=3, sticky="N")
-            #self.updateFreqButton = ttk.Button(self.freqWindow, text="Update Frequencies", width=20)
-            #self.updateFreqButton.grid(column=1, row=1, pady=30, sticky="S")
-            #updateFreqButton_ttp = CreateToolTip(self.updateFreqButton, "Change the number of frequencies used in fitting")
-            #def focusRange(event):
-            #    self.lowerSpinbox.configure(state="readonly")
-            #    self.upperSpinbox.configure(state="readonly")
-            #def focusLower(event):
-            #    self.lowerSpinbox.configure(state="normal")
-            #    self.upperSpinbox.configure(state="readonly")
-            #def focusUpper(event):
-            #    self.upperSpinbox.configure(state="normal")
-            #    self.lowerSpinbox.configure(state="readonly")
-            #self.rs.bind("<FocusIn>", lambda e: focusRange(e))
-            #self.lowerSpinbox.bind("<FocusIn>", lambda e: focusLower(e))
-            #self.lowerSpinbox.bind("<KeyRelease>", changeFreqSpinboxLower)
-            #self.upperSpinbox.bind("<FocusIn>", lambda e: focusUpper(e))
-            #self.upperSpinbox.bind("<KeyRelease>", changeFreqSpinboxUpper)
-            #self.justUpdated = False      
-              
-            #def changeSlider(event):
-            #    pass
-                #if (not self.justUpdated):
-                #    low = 10**self.rs.getLower()
-                #    high = 10**self.rs.getUpper()
-                #    for i in range(len(self.wdataRaw)):
-                #        if (low >= self.wdataRaw[i]):
-                #            self.lowerSpinboxVariable.set(i)
-                #    for i in range(len(self.wdataRaw)-1, 0, -1):
-                #        if (high <= self.wdataRaw[i]):
-                #            self.upperSpinboxVariable.set(len(self.wdataRaw)-1-i)
-                #self.justUpdated = False
-            #self.rs.subscribe(changeSlider) 
-            #self.updateFreqButton.configure(command=updateFreqs)
-            
+            self.highestUndeleted.grid(column=2, row=3, sticky="N")            
             
             def on_closing():
                 self.upperSpinboxVariable.set(str(self.upDelete))
@@ -6460,8 +5935,8 @@ class mmF(tk.Frame):
                 phase_fit = np.arctan2(ZfitA.imag, ZfitA.real) * (180/np.pi)
             Zzero = self.fits[0]
             ZzeroSigma = self.sigmas[0]
-            Zpolar = 0 #self.fits[0]
-            ZpolarSigma = 0 #self.sigmas[0]
+            Zpolar = 0
+            ZpolarSigma = 0
             for i in range(1, len(self.fits), 2):
                 Zpolar += self.fits[i]
                 Zzero += self.fits[i]
@@ -6928,11 +6403,9 @@ class mmF(tk.Frame):
         self.parametersButton = ttk.Button(self.parametersFrame, text="Edit Model Parameters", width=30, state="disabled", command=paramsPopup)
         self.parametersLoadButton = ttk.Button(self.parametersFrame, text="Load Existing Parameters...", state="disabled", command=loadParams)
         self.undoButton = ttk.Button(self.parametersFrame, text="Undo Fit", state="disabled", command=undoFit)
-#        self.redoButton = ttk.Button(self.parametersFrame, text="Redo Fit", state="disabled", command=redoFit)
         self.parametersButton.grid(column=0, row=0)
         self.parametersLoadButton.grid(column=1, row=0, padx=5)
         self.undoButton.grid(column=2, row=0)
-#        self.redoButton.grid(column=3, row=0, padx=5)
         self.parametersFrame.grid(column = 0, row=3, sticky="W", pady=5)
         params_ttp = CreateToolTip(self.parametersButton, 'View and modify fitting parameters')
         paramsLoad_ttp = CreateToolTip(self.parametersLoadButton, 'Load existing parameters from .mmfitting file')
@@ -6947,7 +6420,6 @@ class mmF(tk.Frame):
         autoButton_ttp = CreateToolTip(self.autoButton, 'Opens popup to attempt to automatically fit data')
         magicButton_ttp = CreateToolTip(self.magicButton, 'Opens popup to select initial guess from Nyquist plot')
         
-        #self.progressBar = ttk.Progressbar(self.measureModelFrame, mode="indeterminate", orient=tk.HORIZONTAL)
         self.measureModelButton.grid(column=0, row=0, sticky="W")
         self.autoButton.grid(column=1, row=0, sticky="W", padx=5)
         self.magicButton.grid(column=2, row=0, padx=5, sticky="W")
@@ -6978,7 +6450,6 @@ class mmF(tk.Frame):
         self.resultsView.column("percent", width=120, anchor=tk.CENTER)
         self.resultsViewScrollbar['command'] = self.resultsView.yview
         self.advancedResultsButton = ttk.Button(self.resultsFrame, text="Advanced results", command=advancedResults)
-        #self.results= scrolledtext.ScrolledText(self.resultsFrame, width=50, height=10, bg="white", state="disabled")
         self.resultRe.grid(column=0, row=0, sticky="W")
         self.resultRp.grid(column=0, row=1, sticky="W")
         self.resultC.grid(column=0, row=2, sticky="W")
@@ -6990,7 +6461,6 @@ class mmF(tk.Frame):
         self.advancedResultsButton.grid(column=0, row=5, pady=3, sticky="W")
         self.resultsView.bind("<Button-1>", handle_click)
         self.resultsView.bind("<Motion>", handle_motion)
-        #self.results.grid(column=0, row=4, sticky="W") 
         copy_ttp = CreateToolTip(self.copyButton, 'Copy fitted values and standard deviations in a format that can be opened in a spreadsheet')
         advancedResults_ttp = CreateToolTip(self.advancedResultsButton, 'Open popup with detailed output')
         resultAlert_ttp = CreateToolTip(self.resultAlert, 'At least one 95% confidence interval is nan or greater than 100%')
@@ -6999,7 +6469,6 @@ class mmF(tk.Frame):
         self.graphFrame = tk.Frame(self, bg=self.backgroundColor)
         self.simpleButton = ttk.Button(self.graphFrame, text="Evaluate Simple Parameters", command=simpleParams)
         self.includeFrame = tk.Frame(self.graphFrame, bg=self.backgroundColor)
-#        self.includeLabel = tk.Label(self.includeFrame, text="Include: ", bg=self.backgroundColor, fg=self.foregroundColor)
         self.confidenceIntervalCheckboxVariable = tk.IntVar(self, 0)
         self.confidenceIntervalCheckbox = ttk.Checkbutton(self.includeFrame, text="Include CI", variable=self.confidenceIntervalCheckboxVariable)
         self.mouseOverCheckboxVariable = tk.IntVar(self, 1)
@@ -7010,15 +6479,11 @@ class mmF(tk.Frame):
         self.plotButton = ttk.Button(self.graphFrame, text="Plot", command=plotResults)
         self.simpleButton.grid(column=0, row=0, sticky="W", columnspan=2, pady=(8, 5))
         self.plotButton.grid(column=0, row=1, sticky="W", pady=(5,5))
-#        self.includeLabel.grid(column=0, row=0, sticky="W")
         self.confidenceIntervalCheckbox.grid(column=1, row=1, sticky="W", padx=10)
         self.errorStructureCheckbox.grid(column=2, row=1, sticky="W")
         self.mouseOverCheckbox.grid(column=3, row=1, sticky="W", padx=10)
-#        self.editReLabel.grid(column=2, row=0, sticky="E")
-#        self.editRe.grid(column=3, row=0, sticky="E")
         self.editReButton.grid(column=4, row=1, sticky="E", padx=(20,0))
         self.includeFrame.grid(column=1, row=1, sticky="W")
-#        self.errorStructureCheckbox.grid(column=3, row=0)
         plot_ttp = CreateToolTip(self.plotButton, 'Opens a window with plots using data and fitted parameters')
         editRe_ttp = CreateToolTip(self.editReButton, 'Opens a window to change ohmic resistance')
         include_ttp = CreateToolTip(self.confidenceIntervalCheckbox, 'Include confidence interval ellipses and bars when plotting')
@@ -7078,7 +6543,6 @@ class mmF(tk.Frame):
         self.resultsParamFrame.configure(background="#FFFFFF")
         self.graphFrame.configure(background="#FFFFFF")
         self.includeFrame.configure(background="#FFFFFF")
-#        self.includeLabel.configure(background="#FFFFFF", foreground="#000000")
         self.saveFrame.configure(background="#FFFFFF")
         self.errorStructureFrame.configure(background="#FFFFFF")
         self.freqWindow.configure(background="#FFFFFF")
@@ -7086,8 +6550,6 @@ class mmF(tk.Frame):
         self.advancedOptionsPopup.configure(background="#FFFFFF")
         self.paramListbox.configure(background="#FFFFFF", foreground="#000000")
         self.advancedChoiceLabel.configure(background="#FFFFFF", foreground="#000000")
-        #self.rs.configure(background="#FFFFFF")
-        #self.rs.configure(tickColor="#000000")
         self.autoFitWindow.configure(bg="#FFFFFF")
         try:
             self.figFreq.clear()
@@ -7129,22 +6591,13 @@ class mmF(tk.Frame):
         except:
             pass
         try:
-            #self.undeletedFrame.configure(background="#FFFFFF")
             self.lowestUndeleted.configure(background="#FFFFFF", foreground="#000000")
             self.highestUndeleted.configure(background="#FFFFFF", foreground="#000000")
         except:
             pass
-        #try:
-        #    self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
-        #    self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
-        #    self.rs.setLower(np.log10(min(self.wdata)))
-        #    self.rs.setUpper(np.log10(max(self.wdata)))
-        #except:
-        #    pass
         try:
             self.upperLabel.configure(background="#FFFFFF", foreground="#000000")
             self.lowerLabel.configure(background="#FFFFFF", foreground="#000000")
-            #self.rangeLabel.configure(background="#FFFFFF", foreground="#000000")
         except:
             pass
         try:
@@ -7229,7 +6682,6 @@ class mmF(tk.Frame):
         self.resultsParamFrame.configure(background="#424242")
         self.graphFrame.configure(background="#424242")
         self.includeFrame.configure(background="#424242")
-#        self.includeLabel.configure(background="#424242", foreground="#FFFFFF")
         self.saveFrame.configure(background="#424242")
         self.errorStructureFrame.configure(background="#424242")
         self.freqWindow.configure(background="#424242")
@@ -7237,8 +6689,6 @@ class mmF(tk.Frame):
         self.advancedOptionsPopup.configure(background="#424242")
         self.paramListbox.configure(background="#424242", foreground="#FFFFFF")
         self.advancedChoiceLabel.configure(background="#424242", foreground="#FFFFFF")
-        #self.rs.configure(background="#424242")
-        #self.rs.configure(tickColor="#FFFFFF")
         self.autoFitWindow.configure(background="#424242")
         try:
             self.figFreq.clear()
@@ -7280,22 +6730,13 @@ class mmF(tk.Frame):
         except:
             pass
         try:
-            #self.undeletedFrame.configure(background="#424242")
             self.lowestUndeleted.configure(background="#424242", foreground="#FFFFFF")
             self.highestUndeleted.configure(background="#424242", foreground="#FFFFFF")
         except:
             pass
-#        try:
-#            self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
-#            self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
-#            self.rs.setLower(np.log10(min(self.wdata)))
-#            self.rs.setUpper(np.log10(max(self.wdata)))
-#        except:
-#            pass
         try:
             self.upperLabel.configure(background="#424242", foreground="#FFFFFF")
             self.lowerLabel.configure(background="#424242", foreground="#FFFFFF")
-            #self.rangeLabel.configure(background="#424242", foreground="#FFFFFF")
         except:
             pass
         try:
@@ -7345,7 +6786,6 @@ class mmF(tk.Frame):
         s = ttk.Style()
         s.configure('TCheckbutton', background='#424242', foreground="#FFFFFF")
         s.configure('TRadiobutton', background='#424242', foreground='#FFFFFF')
-        #s.configure('Treeview', background='#424242', foreground='#FFFFFF', fieldbackground='#424242')
         
         try:
             if (tk.Toplevel.winfo_exists(self.resultsWindow)):
@@ -7354,7 +6794,6 @@ class mmF(tk.Frame):
             pass
     
     def browseEnter(self, n):
-#        if (self.browseEntry.get() == ""):
         try:
             with open(n,'r') as UseFile:
                 filetext = UseFile.read()
@@ -7366,9 +6805,6 @@ class mmF(tk.Frame):
             w_in = data[:,0]
             r_in = data[:,1]
             j_in = data[:,2]
-#            self.wdata = w_in
-#            self.rdata = r_in
-#            self.jdata = j_in
             self.wdataRaw = w_in
             self.rdataRaw = r_in
             self.jdataRaw = j_in
@@ -7412,27 +6848,14 @@ class mmF(tk.Frame):
                     self.wdata = self.wdataRaw.copy()
                     self.rdata = self.rdataRaw.copy()
                     self.jdata = self.jdataRaw.copy()
-                #self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
-                #self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
-                #self.rs.setMajorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
-                #self.rs.setNumberOfMajorTicks(10)
-                #self.rs.showMinorTicks(False)
-                #self.rs.setMinorTickSpacing((abs(np.log10(max(self.wdata))) + abs(np.log10(min(self.wdata))))/10)
-                #self.rs.setLower(np.log10(min(self.wdata)))
-                #self.rs.setUpper(np.log10(max(self.wdata)))
                 self.lowestUndeleted.configure(state="normal")
                 self.lowestUndeleted.delete(1.0, tk.END)
                 self.lowestUndeleted.insert(1.0, "Lowest remaining frequency: {:.4e}".format(min(self.wdata)))
                 self.lowestUndeleted.configure(state="disabled")
-                #self.lowestUndeleted.configure(text="Lowest remaining frequency: {:.4e}".format(min(self.wdata))) #%f" % round_to_n(min(self.wdata), 6)).strip("0"))
                 self.highestUndeleted.configure(state="normal")
                 self.highestUndeleted.delete(1.0, tk.END)
                 self.highestUndeleted.insert(1.0, "Highest remaining frequency: {:.4e}".format(max(self.wdata)))
                 self.highestUndeleted.configure(state="disabled")
-                #self.highestUndeleted.configure(text="Highest remaining frequency: {:.4e}".format(max(self.wdata))) #%f" % round_to_n(max(self.wdata), 6)).strip("0"))
-                #self.wdata = self.wdataRaw.copy()
-                #self.rdata = self.rdataRaw.copy()
-                #self.jdata = self.jdataRaw.copy()
             else:
                 self.upDelete = 0
                 self.lowDelete = 0
@@ -7441,22 +6864,14 @@ class mmF(tk.Frame):
                 self.wdata = self.wdataRaw.copy()
                 self.rdata = self.rdataRaw.copy()
                 self.jdata = self.jdataRaw.copy()
-                #self.rs.setLowerBound((np.log10(min(self.wdataRaw))))
-                #self.rs.setUpperBound((np.log10(max(self.wdataRaw))))
-                #self.rs.setNumberOfMajorTicks(10)
-                #self.rs.showMinorTicks(False)
-                #self.rs.setLower(np.log10(min(self.wdata)))
-                #self.rs.setUpper(np.log10(max(self.wdata)))
                 self.lowestUndeleted.configure(state="normal")
                 self.lowestUndeleted.delete(1.0, tk.END)
                 self.lowestUndeleted.insert(1.0, "Lowest remaining frequency: {:.4e}".format(min(self.wdata)))
                 self.lowestUndeleted.configure(state="disabled")
-                #self.lowestUndeleted.configure(text="Lowest remaining frequency: {:.4e}".format(min(self.wdata))) #%f" % round_to_n(min(self.wdata), 6)).strip("0"))
                 self.highestUndeleted.configure(state="normal")
                 self.highestUndeleted.delete(1.0, tk.END)
                 self.highestUndeleted.insert(1.0, "Highest remaining frequency: {:.4e}".format(max(self.wdata)))
                 self.highestUndeleted.configure(state="disabled")
-                #self.highestUndeleted.configure(text="Highest remaining frequency: {:.4e}".format(max(self.wdata))) #%f" % round_to_n(max(self.wdata), 6)).strip("0"))
             try:
                 self.figFreq.clear()
                 dataColor = "tab:blue"
@@ -7498,9 +6913,7 @@ class mmF(tk.Frame):
             self.freqRangeButton.configure(state="normal")
             self.parametersLoadButton.configure(state="normal")
             self.measureModelButton.configure(state="normal")
-            #self.trfButton.configure(state="normal")
             self.magicButton.configure(state="normal")
-            #self.saveCurrent.configure(state="normal")
             self.numVoigtSpinbox.configure(state="readonly")
             self.numVoigtMinus.bind("<Enter>", lambda e: self.numVoigtMinus.configure(bg="DodgerBlue1", fg="white"))
             self.numVoigtMinus.bind("<Leave>", lambda e: self.numVoigtMinus.configure(bg="DodgerBlue3", fg="white"))
@@ -7661,10 +7074,8 @@ class mmF(tk.Frame):
             self.paramLabels = []
             self.paramEntries = []
             self.paramEntryVariables = []
-            #self.paramEntryVariables.append(tk.StringVar(self, ""))
             self.paramComboboxes = []
             self.paramComboboxVariables = []
-            #self.paramComboboxVariables.append(tk.StringVar(self, "+"))
             self.tauComboboxes = []
             self.tauComboboxVariables = []
             toLoad = open(n)
@@ -7771,9 +7182,6 @@ class mmF(tk.Frame):
             w_in = data[:,0]
             r_in = data[:,1]
             j_in = data[:,2]
-    #            self.wdata = w_in
-    #            self.rdata = r_in
-    #            self.jdata = j_in
             self.wdataRaw = w_in
             self.rdataRaw = r_in
             self.jdataRaw = j_in
@@ -7814,9 +7222,7 @@ class mmF(tk.Frame):
             self.freqRangeButton.configure(state="normal")
             self.parametersLoadButton.configure(state="normal")
             self.measureModelButton.configure(state="normal")
-            #self.trfButton.configure(state="normal")
             self.magicButton.configure(state="normal")
-            #self.saveCurrent.configure(state="normal")
             self.numMonteVariable.set(str(numberOfSimulations))
             self.alphaVariable.set(str(alphaValue))
             self.fitTypeVariable.set(fitType)

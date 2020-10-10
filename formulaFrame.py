@@ -2098,7 +2098,7 @@ class fF(tk.Frame):
                     weight = 4
                 assumed_noise = float(self.noiseEntryValue.get())
                 param_limits = []
-                for i in range(len(self.paramComboboxValues)): #pL in self.paramComboboxValues:
+                for i in range(len(self.paramComboboxValues)):
                     pL = self.paramComboboxValues[i]
                     if (pL.get() == "+"):
                         param_limits.append("+")
@@ -4078,11 +4078,13 @@ class fF(tk.Frame):
                 messagebox.showwarning("Value error", "Error 65: \nThe total number of points must be positive (i.e. the points per decade must be positive and the upper frequency must be greater than the lower frequency)", parent = self.simulationWindow)
                 return
             self.sim_freqs = np.logspace(np.log10(float(self.simulationLowerFreq.get())), np.log10(float(self.simulationUpperFreq.get())), num_points)
+            
             #---Check if a formula has been entered----
             formula = self.customFormula.get("1.0", tk.END)
             if ("".join(formula.split()) == ""):
                 messagebox.showwarning("Error", "Error 44: \nFormula is empty", parent=self.simulationWindow)
                 return
+            
             #---Check that none of the variable names are repeated, and that none are Python reserved words or variables used in this code
             for i in range(len(self.paramNameValues)):
                 name = self.paramNameValues[i].get()
@@ -4102,7 +4104,7 @@ class fF(tk.Frame):
             try:
                 prebuiltFormulas = ['PI', 'ARCSINH', 'ARCCOSH', 'ARCTANH', 'ARCSIN', 'ARCCOS', 'ARCTAN', 'COSH', 'SINH', 'TANH', 'SIN', 'COS', 'TAN', 'SQRT', 'EXP', 'ABS', 'DEG2RAD', 'RAD2DEG']
                 formula = formula.replace("^", "**")    #Replace ^ with ** for exponentiation (this could prevent some features like regex from being used effectively)
-                formula = formula.replace("LN", "np.emath.log")#, "cmath.log")
+                formula = formula.replace("LN", "np.emath.log")
                 formula = formula.replace("LOG", "np.emath.log10")
                 for pf in prebuiltFormulas:
                     toReplace = "np." + pf.lower()
@@ -4115,6 +4117,7 @@ class fF(tk.Frame):
             except:
                 messagebox.showwarning("Compile error", "There was an issue compiling the code", parent=self.simulationWindow)
                 return
+            
             #---Check if the variable "freq" appears in the code, as it's likely a mistake if it doesn't---
             textToSearch = self.customFormula.get("1.0", tk.END)
             whereFreq = [m.start() for m in re.finditer(r'\bfreq\b', textToSearch)]
@@ -6489,7 +6492,6 @@ class fF(tk.Frame):
                 self.formulaDescriptionEntry.insert("1.0", descriptionIn.rstrip())
                 self.formulaDescriptionLatexEntry.delete("1.0", tk.END)
                 self.formulaDescriptionLatexEntry.insert("1.0", latexIn.rstrip())
-                #self.formulaDescriptionLatexVariable.set(latexIn.rstrip())
                 self.latexAx.clear()
                 self.latexAx.axis("off")
                 self.latexCanvas.draw()

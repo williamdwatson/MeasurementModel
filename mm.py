@@ -342,7 +342,6 @@ class myGUI:
             self.helpLabel.bind("<MouseWheel>", lambda e: self.on_mouse_wheel(e, 5))
         
         self.input_frame = inputFrame.iF(root, self)
-        #input_frame.grid(row = 0, column=1, sticky="N", padx=20, pady=20)
         self.help_frame = helpFrame.hF(root, self)
         self.model_frame = modelFrame.mmF(root, self)
         self.error_file_frame = errorFileFrame.eFF(root, self)
@@ -384,27 +383,19 @@ class myGUI:
         self.helpCanvas = tk.Canvas(self.canvasFrame, background=self.backgroundColor, bd=0, highlightthickness=0, relief='ridge', width=self.canvasWidth, height=self.helpLabel.winfo_height())
         
         if (self.defaultTab == 0):
-            #self.fileOpen.configure(background="SlateGray3")
             self.inputCanvas.configure(background="#0066FF")
-            #self.inputCanvas.create_polygon([self.canvasWidth, self.fileOpen.winfo_height()*0.6, self.canvasWidth, self.fileOpen.winfo_height()*0.4, 0, self.fileOpen.winfo_height()/2], fill="white")
         elif (self.defaultTab == 1):
             self.runCanvas.configure(background="#0066FF")
-            #self.runCanvas.create_polygon([self.canvasWidth, self.runModel.winfo_height()*0.6, self.canvasWidth, self.runModel.winfo_height()*0.4, 0, self.runModel.winfo_height()/2], fill="white")
         elif (self.defaultTab == 2):
             self.errorFileCanvas.configure(background="#0066FF")
-            #self.errorFileCanvas.create_polygon([self.canvasWidth, self.errorFileLabel.winfo_height()*0.6, self.canvasWidth, self.errorFileLabel.winfo_height()*0.4, 0, self.errorFileLabel.winfo_height()/2], fill="white")
         elif (self.defaultTab == 3):
             self.errorCanvas.configure(background="#0066FF")
-            #self.errorCanvas.create_polygon([self.canvasWidth, self.errorLabel.winfo_height()*0.6, self.canvasWidth, self.errorLabel.winfo_height()*0.4, 0, self.errorLabel.winfo_height()/2], fill="white")
         elif (self.defaultTab == 4):
             self.formulaCanvas.configure(background="#0066FF")
-            #self.formulaCanvas.create_polygon([self.canvasWidth, self.formulaLabel.winfo_height()*0.6, self.canvasWidth, self.formulaLabel.winfo_height()*0.4, 0, self.formulaLabel.winfo_height()/2], fill="white")
         elif (self.defaultTab == 5):
             self.settingsCanvas.configure(background="#0066FF")
-            #self.settingsCanvas.create_polygon([self.canvasWidth, self.settingsLabel.winfo_height()*0.6, self.canvasWidth, self.settingsLabel.winfo_height()*0.4, 0, self.settingsLabel.winfo_height()/2], fill="white")
         elif (self.defaultTab == 6):
             self.helpCanvas.configure(background="#0066FF")
-            #self.helpCanvas.create_polygon([self.canvasWidth, self.helpLabel.winfo_height()*0.6, self.canvasWidth, self.helpLabel.winfo_height()*0.4, 0, self.helpLabel.winfo_height()/2], fill="white")
         
         self.canvasFrame.grid(column=0, row=1, sticky="NS")
         self.inputCanvas.grid(column=0, row=0)
@@ -432,7 +423,6 @@ class myGUI:
                 self.enterFormula(self.argFile)
             else:
                 self.enterInput(self.argFile)
-                #messagebox.showerror("File error", "Error: 4\nThe file has an unknown extension. Opened files must be either .mmfile, .mmfitting, .mmresiduals, or .mmerrors")
         elif (len(self.residualsFileList) > 0):
             self.enterResiduals(self.residualsFileList)
         elif (len(self.errorsFileList) > 0):
@@ -444,6 +434,7 @@ class myGUI:
             try:
                 config = configparser.ConfigParser()                                        #Begin the config parser to read settings.ini
                 config.read(os.getenv('LOCALAPPDATA')+r"\MeasurementModel\settings.ini")    #Read the file
+                
                 #---Check the theme---
                 if (config['settings']['theme'] == 'light'):
                     self.theme = "light"
@@ -457,7 +448,7 @@ class myGUI:
                     self.backgroundColor = config['settings']['bar']
                 else:
                     raise Exception
-                    
+                
                 if (re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', config['settings']['highlight'])):   #Check if the default color is a hex value
                     self.highlightColor = config['settings']['highlight']
                 else:
@@ -468,6 +459,7 @@ class myGUI:
                 else:
                     raise Exception
                 
+                #---Default directories---
                 self.defaultDirectory = config['settings']['dir']
                 self.currentDirectory = self.defaultDirectory
                 
@@ -489,6 +481,7 @@ class myGUI:
                     self.defaultTab = 0
                     raise Exception
                 
+                #---Check if changing tab with scrolling is allowed---
                 self.defaultScroll = int(config['settings']['scroll'])
                 if (self.defaultScroll != 0 and self.defaultScroll != 1):
                     self.defaultScroll = 1
@@ -496,57 +489,68 @@ class myGUI:
                 
                 self.defaultFormulaDirectory = config['settings']['formulaDir']
                 
+                #---Check if number of comment lines should be detected---
                 self.detectCommentsDefault = int(config['input']['detect'])
                 if (self.detectCommentsDefault != 0 and self.detectCommentsDefault != 1):       #Value must be true or false
                     self.detectCommentsDefault = 1
                     raise Exception
                 
+                #---Default number of comment lines---
                 self.commentsDefault = int(config['input']['comments'])
                 if (self.commentsDefault < 0):      #If the number of comments is negative, that's bad
                     self.commentsDefault = 1
                     raise Exception
-                    
+                
+                #---Default delimiter---
                 if (config['input']['delimiter'] == "Tab" or config['input']['delimiter'] == "Space" or config['input']['delimiter'] == ";" or config['input']['delimiter'] == "," or config['input']['delimiter'] == "|" or config['input']['delimiter'] == ":"):
                     self.delimiterDefault = config['input']['delimiter']
                 else:
                     raise Exception
                 
+                #---Whether to ask on exit from the input tab---
                 iEA = int(config['input']['askInputExit'])
-                if (iEA != 0 and iEA != 1): #Value must be true or false
+                if (iEA != 0 and iEA != 1):     #Value must be true or false
                     self.inputExitAlert = 0
                     raise Exception
                 self.inputExitAlert = iEA
                 
+                #---Number of Monte Carlo simulations---
                 self.MCDefault = int(config['model']['mc'])
-                if (self.MCDefault < 1):    #If the number of Monte Carlo simulations is negative, that's bad
+                if (self.MCDefault < 1):        #If the number of Monte Carlo simulations is negative, that's bad
                     self.MCDefault = 1000
                     raise Exception
                 
+                #---Default fit type
                 if (config['model']['fit'] == "Complex" or config['model']['fit'] == "Real" or config['model']['fit'] == "Imaginary"):
                     self.fitDefault = config['model']['fit']
                 else:
                     raise Exception
                 
+                #---Default weighting---
                 if (config['model']['weight'] == "None" or config['model']['weight'] == "Modulus" or config['model']['weight'] == "Proportional" or config['model']['weight'] == "Error model"):
                     self.weightDefault = config['model']['weight']
                 else:
                     raise Exception
                 
+                #---Default ellipse color---
                 if (re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', config['model']['ellipse'])):   #Check if the default color is a hex value
                     self.ellipseColor = config['model']['ellipse']
                 else:
                     raise Exception
                 
+                #---Whether frequency range should be kept on loading a new file
                 self.freqLoad = int(config['model']['freqLoad'])
                 if (self.freqLoad != 0 and self.freqLoad != 1):
                     self.freqLoad = 0
                     raise Exception
                 
+                #---Whether "undo" should undo a change in frequency range
                 self.freqUndo = int(config['model']['freqUndo'])
                 if (self.freqUndo != 0 and self.freqUndo != 1):
                     self.freqUndo = 0
                     raise Exception
                 
+                #---Whether detrending should be used
                 self.detrendDefault = config['error']['detrend']
                 if (self.detrendDefault != "Off" and self.detrendDefault != "On"):
                     self.detrendDefault = "Off"
@@ -573,22 +577,26 @@ class myGUI:
                 if (self.errorDeltaDefault != 0 and self.errorDeltaDefault != 1):
                     self.errorDeltaDefault = 1
                     raise Exception
-                                    
+                
+                #---The default error weighting---
                 if (config['error']['errorWeighting'] == "None" or config['error']['errorWeighting'] == "Variance"):
                     self.errorWeightingDefault = config['error']['errorWeighting']
                 else:
                     raise Exception
                 
+                #---The default moving average for error---
                 if (config['error']['errorMA'] == "None" or config['error']['errorMA'] == "3 point" or config['error']['errorMA'] == "5 point"):
                     self.errorMADefault = config['error']['errorMA']
                 else:
                     raise Exception
                 
+                #---Default noise---
                 self.alphaDefault = float(config['model']['alpha'])
                 if (self.alphaDefault < 0):     #If the default assumed noise is negative, that's bad
                     self.alphaDefault = 1
                     raise Exception
                 
+                #---Whether to ask on exiting from the custom formula tab if the formula is unsaved---
                 aCE = int(config['custom']['askCustomExit'])
                 if (aCE != 0 and aCE != 1):
                     raise Exception
@@ -599,11 +607,11 @@ class myGUI:
                     self.freqLoadCustom = 0
                     raise Exception
                 
+                #---The default import path list---
                 self.defaultImports = config['custom']['imports'].split("*")
                 
             except:     #If there's an error loading settings
-                pass    #Ignore the error  
-                #messagebox.showwarning("Settings error", "Error: 1\nError loading settings")
+                pass    #Ignore the error
     
     def interpretArgs(self, args):
         if (len(args) > 1):         #If there's an argument coming in (the first argument is always the file name)
@@ -613,13 +621,13 @@ class myGUI:
                     for i in range(1, len(args)):
                         if (not os.path.exists(args[i])):
                             raise Exception
-                        fname, fext = os.path.splitext(args[i])     #Split the argument into its name and extension
+                        fname, fext = os.path.splitext(args[i])                 #Split the argument into its name and extension
                         if (fext != ".mmresiduals" and fext != ".mmerrors"):    #Check if an input file isn't a residual or error file
                             messagebox.showerror("File error", "Error: 2\nTo open multiple files, all of them must be either .mmresiduals or .mmerrors.")
                             self.residualsFileList.clear()
                             self.errorsFileList.clear()
                             break
-                        elif (whatExt != "" and whatExt != fext):   #Check if the extra files don't match the previous files' extensions
+                        elif (whatExt != "" and whatExt != fext):                  #Check if the extra files don't match the previous files' extensions
                             messagebox.showerror("File error", "Error: 2\nTo open multiple files, all of them must be either .mmresiduals or .mmerrors.")  
                             self.residualsFileList.clear()
                             self.errorsFileList.clear()
@@ -632,7 +640,7 @@ class myGUI:
                             whatExt = fext
                 except:
                     messagebox.showerror("File error", "Error: 3\nError opening files")
-            else:   #If there's only one input file
+            else:       #If there's only one input file
                 try:    #Check if the file exists
                     if (not os.path.exists(args[1])):
                         raise Exception
@@ -694,7 +702,6 @@ class myGUI:
         self.currentTab = 0                                         #Set the current tab to keep track of which one is open
         self.fileOpen.configure(image=self.imgFile3)                #Change the color of the tab being clicked on
         self.inputCanvas.configure(background="#0066FF")
-        #self.inputCanvas.create_polygon([self.canvasWidth, self.fileOpen.winfo_height()*0.6, self.canvasWidth, self.fileOpen.winfo_height()*0.4, 0, self.fileOpen.winfo_height()/2], fill="white")  #Create triangle to indicate chosen tab
         self.runModel.configure(image=self.imgModel)                #Set all the other tabs to have the standard background
         self.errorFileLabel.configure(image=self.imgErrorFile)
         self.helpLabel.configure(image=self.imgHelp)
@@ -728,7 +735,6 @@ class myGUI:
         self.fileOpen.configure(image=self.imgFile)
         self.runModel.configure(image=self.imgModel3)
         self.runCanvas.configure(background="#0066FF")
-        #self.runCanvas.create_polygon([self.canvasWidth, self.runModel.winfo_height()*0.6, self.canvasWidth, self.runModel.winfo_height()*0.4, 0, self.runModel.winfo_height()/2], fill="white")
         self.errorFileLabel.configure(image=self.imgErrorFile)
         self.helpLabel.configure(image=self.imgHelp)
         self.errorLabel.configure(image=self.imgError)
@@ -762,7 +768,6 @@ class myGUI:
         self.runModel.configure(image=self.imgModel)
         self.errorFileLabel.configure(image=self.imgErrorFile3)
         self.errorFileCanvas.configure(background="#0066FF")
-       #self.errorFileCanvas.create_polygon([self.canvasWidth, self.fileOpen.winfo_height()*0.6, self.canvasWidth, self.fileOpen.winfo_height()*0.4, 0, self.fileOpen.winfo_height()/2], fill="white")
         self.helpLabel.configure(image=self.imgHelp)
         self.errorLabel.configure(image=self.imgError)
         self.settingsLabel.configure(image=self.imgSettings)
@@ -797,7 +802,6 @@ class myGUI:
         self.helpLabel.configure(image=self.imgHelp)
         self.errorLabel.configure(image=self.imgError3)
         self.errorCanvas.configure(background="#0066FF")
-        #self.errorCanvas.create_polygon([self.canvasWidth, self.fileOpen.winfo_height()*0.6, self.canvasWidth, self.fileOpen.winfo_height()*0.4, 0, self.fileOpen.winfo_height()/2], fill="white")
         self.settingsLabel.configure(image=self.imgSettings)
         self.formulaLabel.configure(image=self.imgFormula)
         self.runCanvas.configure(background=self.backgroundColor)
@@ -831,7 +835,6 @@ class myGUI:
         self.settingsLabel.configure(image=self.imgSettings)
         self.formulaLabel.configure(image=self.imgFormula3)
         self.formulaCanvas.configure(background="#0066FF")
-        #self.formulaCanvas.create_polygon([self.canvasWidth, self.fileOpen.winfo_height()*0.6, self.canvasWidth, self.fileOpen.winfo_height()*0.4, 0, self.fileOpen.winfo_height()/2], fill="white")
         self.runCanvas.configure(background=self.backgroundColor)
         self.errorFileCanvas.configure(background=self.backgroundColor)
         self.errorCanvas.configure(background=self.backgroundColor)
@@ -863,7 +866,6 @@ class myGUI:
         self.errorLabel.configure(image=self.imgError)
         self.settingsLabel.configure(image=self.imgSettings3)
         self.settingsCanvas.configure(background="#0066FF")
-        #self.settingsCanvas.create_polygon([self.canvasWidth, self.fileOpen.winfo_height()*0.6, self.canvasWidth, self.fileOpen.winfo_height()*0.4, 0, self.fileOpen.winfo_height()/2], fill="white")
         self.formulaLabel.configure(image=self.imgFormula)
         self.runCanvas.configure(background=self.backgroundColor)
         self.errorFileCanvas.configure(background=self.backgroundColor)
@@ -893,7 +895,6 @@ class myGUI:
         self.errorFileLabel.configure(image=self.imgErrorFile)
         self.helpLabel.configure(image=self.imgHelp3)
         self.helpCanvas.configure(background="#0066FF")
-        #self.helpCanvas.create_polygon([self.canvasWidth, self.helpLabel.winfo_height()*0.6, self.canvasWidth, self.helpLabel.winfo_height()*0.4, 0, self.helpLabel.winfo_height()/2], fill="white")
         self.errorLabel.configure(image=self.imgError)
         self.settingsLabel.configure(image=self.imgSettings)
         self.formulaLabel.configure(image=self.imgFormula)
@@ -967,7 +968,6 @@ class myGUI:
         self.currentTab = 0
         self.fileOpen.configure(image=self.imgFile3)
         self.inputCanvas.configure(background="#0066FF")
-        #self.inputCanvas.create_polygon([self.canvasWidth, self.fileOpen.winfo_height()*0.6, self.canvasWidth, self.fileOpen.winfo_height()*0.4, 0, self.fileOpen.winfo_height()/2], fill="white")  #Create triangle to indicate chosen tab
         self.runModel.configure(image=self.imgModel)
         self.errorFileLabel.configure(image=self.imgErrorFile)
         self.helpLabel.configure(image=self.imgHelp)
@@ -1001,7 +1001,6 @@ class myGUI:
         self.settingsLabel.configure(image=self.imgSettings)
         self.formulaLabel.configure(image=self.imgFormula)
         self.runCanvas.configure(background="#0066FF")
-        #self.runCanvas.create_polygon([self.canvasWidth, self.runCanvas.winfo_height()*0.6, self.canvasWidth, self.runCanvas.winfo_height()*0.4, 0, self.runCanvas.winfo_height()/2], fill="white")
         self.helpCanvas.configure(background=self.backgroundColor)
         self.errorFileCanvas.configure(background=self.backgroundColor)
         self.errorCanvas.configure(background=self.backgroundColor)
@@ -1029,7 +1028,6 @@ class myGUI:
         self.settingsLabel.configure(image=self.imgSettings)
         self.formulaLabel.configure(image=self.imgFormula)
         self.runCanvas.configure(background="#0066FF")
-        #self.runCanvas.create_polygon([self.canvasWidth, self.runCanvas.winfo_height()*0.6, self.canvasWidth, self.runCanvas.winfo_height()*0.4, 0, self.runCanvas.winfo_height()/2], fill="white")
         self.helpCanvas.configure(background=self.backgroundColor)
         self.errorFileCanvas.configure(background=self.backgroundColor)
         self.errorCanvas.configure(background=self.backgroundColor)
@@ -1054,7 +1052,6 @@ class myGUI:
         self.runModel.configure(image=self.imgModel)
         self.errorFileLabel.configure(image=self.imgErrorFile3)
         self.errorFileCanvas.configure(background="#0066FF")
-        #self.errorFileCanvas.create_polygon([self.canvasWidth, self.fileOpen.winfo_height()*0.6, self.canvasWidth, self.fileOpen.winfo_height()*0.4, 0, self.fileOpen.winfo_height()/2], fill="white")
         self.helpLabel.configure(image=self.imgHelp)
         self.errorLabel.configure(image=self.imgError)
         self.settingsLabel.configure(image=self.imgSettings)
@@ -1082,7 +1079,6 @@ class myGUI:
         self.runModel.configure(image=self.imgModel)
         self.errorFileLabel.configure(image=self.imgErrorFile3)
         self.errorFileCanvas.configure(background="#0066FF")
-        #self.errorFileCanvas.create_polygon([self.canvasWidth, self.fileOpen.winfo_height()*0.6, self.canvasWidth, self.fileOpen.winfo_height()*0.4, 0, self.fileOpen.winfo_height()/2], fill="white")
         self.helpLabel.configure(image=self.imgHelp)
         self.errorLabel.configure(image=self.imgError)
         self.settingsLabel.configure(image=self.imgSettings)
@@ -1112,7 +1108,6 @@ class myGUI:
         self.helpLabel.configure(image=self.imgHelp)
         self.errorLabel.configure(image=self.imgError3)
         self.errorCanvas.configure(background="#0066FF")
-        #self.errorCanvas.create_polygon([self.canvasWidth, self.fileOpen.winfo_height()*0.6, self.canvasWidth, self.fileOpen.winfo_height()*0.4, 0, self.fileOpen.winfo_height()/2], fill="white")
         self.settingsLabel.configure(image=self.imgSettings)
         self.formulaLabel.configure(image=self.imgFormula)
         self.runCanvas.configure(background=self.backgroundColor)
@@ -1140,7 +1135,6 @@ class myGUI:
         self.helpLabel.configure(image=self.imgHelp)
         self.errorLabel.configure(image=self.imgError3)
         self.errorCanvas.configure(background="#0066FF")
-        #self.errorCanvas.create_polygon([self.canvasWidth, self.fileOpen.winfo_height()*0.6, self.canvasWidth, self.fileOpen.winfo_height()*0.4, 0, self.fileOpen.winfo_height()/2], fill="white")
         self.settingsLabel.configure(image=self.imgSettings)
         self.formulaLabel.configure(image=self.imgFormula)
         self.runCanvas.configure(background=self.backgroundColor)
@@ -1170,7 +1164,6 @@ class myGUI:
         self.settingsLabel.configure(image=self.imgSettings)
         self.formulaLabel.configure(image=self.imgFormula3)
         self.formulaCanvas.configure(background="#0066FF")
-        #self.formulaCanvas.create_polygon([self.canvasWidth, self.fileOpen.winfo_height()*0.6, self.canvasWidth, self.fileOpen.winfo_height()*0.4, 0, self.fileOpen.winfo_height()/2], fill="white")
         self.runCanvas.configure(background=self.backgroundColor)
         self.errorFileCanvas.configure(background=self.backgroundColor)
         self.errorCanvas.configure(background=self.backgroundColor)
@@ -1197,7 +1190,6 @@ class myGUI:
         self.settingsLabel.configure(image=self.imgSettings)
         self.formulaLabel.configure(image=self.imgFormula3)
         self.formulaCanvas.configure(background="#0066FF")
-        #self.formulaCanvas.create_polygon([self.canvasWidth, self.fileOpen.winfo_height()*0.6, self.canvasWidth, self.fileOpen.winfo_height()*0.4, 0, self.fileOpen.winfo_height()/2], fill="white")
         self.runCanvas.configure(background=self.backgroundColor)
         self.errorFileCanvas.configure(background=self.backgroundColor)
         self.errorCanvas.configure(background=self.backgroundColor)
@@ -1219,7 +1211,7 @@ class myGUI:
         if (self.currentTab != 0):  #If the current tab isn't the input tab, don't ask
             return True
         else:
-            if (self.input_frame.needToSave() and self.inputExitAlert): #If there is a need to save and alerting is turned on
+            if (self.input_frame.needToSave() and self.inputExitAlert):             #If there is a need to save and alerting is turned on
                 return False
             else:
                 return True
@@ -1408,7 +1400,6 @@ class myGUI:
     
     def setActiveColor(self, color):
         self.activeColor = color
-        #self.settingsLabel.configure(background=self.activeColor)
         
     def setEllipseColor(self, color):
         self.ellipseColor = color
@@ -1445,7 +1436,7 @@ class myGUI:
 if (__name__ == "__main__"):            #If the code is being run as the main module
     multiprocessing.freeze_support()    #Allows multiprocessing to work on Windows
     try:
-        if 'win' in sys.platform:   #Makes the program sharper on Windows
+        if 'win' in sys.platform:       #Makes the program sharper on Windows
             ctypes.windll.shcore.SetProcessDpiAwareness(1)
     except Exception:
         pass
@@ -1505,7 +1496,7 @@ You should have received a copy of the GNU General Public License along with thi
     okButton.focus_set()
     splashScreen.resizable(False, False)
     
-    def on_closing():               #Check what's happening on closing
+    def on_closing():                               #Check what's happening on closing
         if (not gui.canCloseInput() or not gui.canCloseCustom()):   #If there is a need to save and alerting is turned on, ask before closing
             if (messagebox.askokcancel("Exit?", "You have not saved. Do you still wish to exit?")):
                 gui.model_frame.cancelThreads()     #Close running threads before exit
