@@ -149,7 +149,7 @@ def mp_real(guesses, sharedList, index, parameters, numVoigtElements, Zr, V, w, 
     sharedList[index] = [mp_current_min, mp_current_best]
 
 class fitter:
-    def __init__(self):#, w, Zr, Zj, numVoigtElements, numMonteCarlo, choice, assumed_noise, Rm, fitType, lowerBounds, initialGuesses, constants, upperBounds, *error_params):
+    def __init__(self):
         self.processes = []
         self.keepGoing = True
     
@@ -164,11 +164,11 @@ class fitter:
         Z_append = np.append(Zr, Zj)
         numParams = numVoigtElements*2 + 1
 
-        V = np.ones(len(w))     #Default no weighting (all weights are 1) if choice==0
-        if (choice == 1):       #Modulus weighting
+        V = np.ones(len(w))                 #Default no weighting (all weights are 1) if choice==0
+        if (choice == 1):                   #Modulus weighting
             for i in range(len(V)):
                 V[i] = assumed_noise*np.sqrt(Zr[i]**2 + Zj[i]**2)
-        elif (choice == 2):     #Proportional weighting
+        elif (choice == 2):                 #Proportional weighting
             Vj = np.ones(len(w))
             for i in range(len(V)):
                 if (fitType != 1):          #If the fit type isn't imaginary use both Zr and Zj
@@ -176,7 +176,7 @@ class fitter:
                 else:                       #If the fit is imaginary use only Zj in weighting
                     V[i] = assumed_noise*Zj[i]
                 Vj[i] = assumed_noise*Zj[i]
-        elif (choice == 3):     #Error model weighting
+        elif (choice == 3):                 #Error model weighting
             alpha = error_params[0]
             beta = error_params[1]
             betaRe = error_params[2]
@@ -556,11 +556,6 @@ class fitter:
             Zpolar += result[i]
             ZpolarSigma += sigma[i]**2
         ZpolarSigma = np.sqrt(ZpolarSigma)
-        
-    #    #---Replace "fitted" values for fixed parameters with their initial guesses---
-    #    if (constants[0] != -1):
-    #        for constant in constants:
-    #            result[constant] = initialGuesses[constant]
                 
         #---Return everything---
         return result, sigma, standardDevsReal, standardDevsImag, Zzero, ZzeroSigma, Zpolar, ZpolarSigma, minimized.chisqr, cor, minimized.aic

@@ -702,7 +702,7 @@ class iF(tk.Frame):
                         annot.xy = (xval, yval)
                         text = "Zr=%.3g"%xval + "\nZj=-%.3g"%yval + "\nf=%.5g"%self.freq_data[np.where(x == xval)[0][0]]
                         annot.set_text(text)
-                        #---Check if we're within 5% of the right or top edges, and adjust label positions accordingly
+                        #---Check if we're within 5% of the right or top edges, and adjust label positions accordingly---
                         if (rightPoint != 0):
                             if (abs(xval - rightPoint)/rightPoint <= 0.2):
                                 annot.set_position((-90, -10))
@@ -785,42 +785,30 @@ class iF(tk.Frame):
                                 data = np.loadtxt(self.inputFileText.get(), skiprows=numComments, delimiter = self.delimiterVariable.get(), max_rows=endHere-numComments, encoding="utf8")
                             else:    
                                 data = np.loadtxt(self.inputFileText.get(), skiprows=numComments, delimiter = self.delimiterVariable.get(), max_rows=endHere-numComments)
-                    #if (self.inputFileText.get().lower().endswith("mpr")):
-                    #    freq_read = data[:][int(self.freqCol.get())-1]
-                    #else:
-                    #    freq_read = data[:, int(self.freqCol.get())-1]
                     freq_read = []
                     for i in range(len(data)):
                         freq_read.append(data[i][int(self.freqCol.get())-1])
                     if (self.freqUnitVariable.get() != "" and self.freqUnitVariable.get() != "-"):
-                        freq_read = [x * float(self.freqUnitVariable.get()) for x in freq_read] #freq_read *= float(self.freqUnitVariable.get())
+                        freq_read = [x * float(self.freqUnitVariable.get()) for x in freq_read]
                     elif (self.freqUnitVariable.get() == "-"):
-                        freq_read = [x * -1 for x in freq_read] #freq_read *= -1
-                    #if (self.inputFileText.get().lower().endswith("mpr")):
-                    #    real_read = data[:][int(self.realCol.get())-1]
-                    #else:
-                    #    real_read = data[:, int(self.realCol.get())-1]
+                        freq_read = [x * -1 for x in freq_read]
                     real_read = []
                     for i in range(len(data)):
                         real_read.append(data[i][int(self.realCol.get())-1])
                     if (self.realUnitVariable.get() != "" and self.realUnitVariable.get() != "-"):
-                        real_read = [x * float(self.realUnitVariable.get()) for x in real_read] #real_read *= float(self.realUnitVariable.get())
+                        real_read = [x * float(self.realUnitVariable.get()) for x in real_read]
                     elif (self.realUnitVariable.get() == "-"):
-                        real_read = [x * -1 for x in real_read] #real_read *= -1
-                    #if (self.inputFileText.get().lower().endswith("mpr")):
-                    #    imag_read = data[:][int(self.imagCol.get())-1]
-                    #else:
-                    #    imag_read = data[:, int(self.imagCol.get())-1]
+                        real_read = [x * -1 for x in real_read]
                     imag_read = []
                     for i in range(len(data)):
                         imag_read.append(data[i][int(self.imagCol.get())-1])
                     if (self.imagUnitVariable.get() != "" and self.imagUnitVariable.get() != "-"):
-                        imag_read = [x * float(self.imagUnitVariable.get()) for x in imag_read] #imag_read *= float(self.imagUnitVariable.get())
+                        imag_read = [x * float(self.imagUnitVariable.get()) for x in imag_read]
                     elif (self.imagUnitVariable.get() == "-"):
-                        imag_read = [x * -1 for x in imag_read] #imag_read *= -1)
-                    freq_in = freq_read #.tolist()
-                    real_in = real_read #.tolist()
-                    imag_in = imag_read #.tolist()
+                        imag_read = [x * -1 for x in imag_read]
+                    freq_in = freq_read
+                    real_in = real_read
+                    imag_in = imag_read
                     if (not (len(freq_in) == len(real_in) and len(real_in) == len(imag_in))):
                         raise IndexError
                     if (self.lineFrequencyCheckboxVariable.get() != 0):
@@ -1028,23 +1016,14 @@ class iF(tk.Frame):
         self.inputFileText = ttk.Entry(self.browseFrame, state="readonly", width=40)
         self.clearBtn = tk.Label(self.browseFrame, text="⨯", bg=self.backgroundColor, fg=self.foregroundColor, font=("Times New Roman", 14), cursor="hand2")
         self.clearBtn.bind("<Button-1>", clearBrowse)
-#        self.clearBtn.bind("<Enter>", lambda e: self.clearBtn.configure(foreground="red"))
-#        self.clearBtn.bind("<Leave>", lambda e: self.clearBtn.configure(foreground=self.foregroundColor))
         self.browseTextBtn = ttk.Button(self.browseFrame, text="View file", state="disabled", command=browseText)
         self.browseBtn.grid(column=0, row=0)
         self.inputFileText.grid(column=1, row=0, padx=5)
-        #self.clearBtn.grid(column=2, row=0)
         self.browseTextBtn.grid(column=0, row=2, pady=4, sticky="W")
         self.browseFrame.grid(column = 0, row=0, pady=(0,3), sticky="W")
         browse_ttp = CreateToolTip(self.browseBtn, 'Browse for an input file')
         browse_text_ttp = CreateToolTip(self.browseTextBtn, 'View file contents')
         clear_ttp = CreateToolTipX(self.clearBtn, self.foregroundColor, 'Clear file')
-        
-        #---Popup menu on the browse entry---
-#        self.popup_menu = tk.Menu(self.inputFileText, tearoff=0)
-#        self.popup_menu.add_command(bitmap="@copy.xbm", compound=tk.LEFT, label="Copy", command=copyInputFileText)
-#        self.popup_menu.add_command(label="Select text", command=select_inputFileText)
-#        self.inputFileText.bind("<Button-3>", popup_inputFileText)
         
         #---Number of comment lines---
         self.commentFrame = tk.Frame(self, bg=self.backgroundColor)
@@ -1088,10 +1067,6 @@ class iF(tk.Frame):
         self.imagUnitVariable = tk.StringVar(self, "1")
         self.imagUnitCombobox = ttk.Combobox(self.columnsFrame, textvariable=self.imagUnitVariable, values=("-1", "0.01", "0.1", "1", "1000", "1000000"), validate="all", validatecommand=valUnit, width=8)
         self.imagUnitLabel = tk.Label(self.columnsFrame, text=" Scaling:  ", bg=self.backgroundColor, fg=self.foregroundColor)
-#        self.rmCheckboxVariable = tk.IntVar(self, 0)
-#        self.rmCheckbox = ttk.Checkbutton(self.columnsFrame, text="Rm", variable=self.rmCheckboxVariable)
-#        self.rmColLabel = tk.Label(self.columnsFrame, text=":     Column", bg=self.backgroundColor, fg=self.foregroundColor)
-#        self.rmCol = ttk.Entry(self.columnsFrame, exportselection=0, textvariable=self.rmColVariable, width=2, validate="all", validatecommand=valCol)
         self.freqColLabel.grid(column=0, row=0, sticky="W")
         self.freqCol.grid(column=1, row=0)
         self.freqUnitLabel.grid(column=2, row=0)
@@ -1104,7 +1079,6 @@ class iF(tk.Frame):
         self.imagCol.grid(column=1, row=2)
         self.imagUnitLabel.grid(column=2, row=2)
         self.imagUnitCombobox.grid(column=3, row=2, padx=2)
-        #self.rmCheckbox.grid(column=0, row=3, sticky="W")
         self.columnsFrame.grid(column=0, row=2, pady=5, sticky="W")
         freqCol_ttp = CreateToolTip(self.freqCol, 'Which column holds the frequency data')
         freqCombobox_ttp = CreateToolTip(self.freqUnitCombobox, 'Multiplier for the frequency data')
@@ -1366,7 +1340,6 @@ class iF(tk.Frame):
             whatDelimiter = "no"
             for line in filetext.splitlines():
                 lineNew = ''.join(line.split())
-                #print(line)
                 if (len(lineNew)<5):
                     numLinesOfComments += 1
                     continue

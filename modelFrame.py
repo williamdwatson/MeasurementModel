@@ -101,7 +101,6 @@ class ThreadedTaskAuto(threading.Thread):
         res = ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, ctypes.py_object(SystemExit))
         if res > 1: 
             ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, 0) 
-            #print('Exception raise failure')
         
 #---Calls the fitting module; threaded to prevent the GUI from freezing---
 class ThreadedTask(threading.Thread):
@@ -150,7 +149,6 @@ class ThreadedTask(threading.Thread):
         res = ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, ctypes.py_object(SystemExit))
         if res > 1: 
             ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, 0) 
-            #print('Exception raise failure')
 
 class ThreadedTaskCap(threading.Thread):
     def __init__(self, queue, w, r, j, nVE, nMC, c, an, rm, fT, bL, g, cnst, bU, per, errA, errB, errBRe, errG, errD, cG, bLC, bUC, fC):
@@ -203,7 +201,6 @@ class ThreadedTaskCap(threading.Thread):
         res = ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, ctypes.py_object(SystemExit))
         if res > 1: 
             ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, 0) 
-            #print('Exception raise failure')
 
 class CreateToolTip(object):
     """
@@ -257,7 +254,7 @@ class CreateToolTip(object):
         x, y, cx, cy = self.widget.bbox("insert")
         x += self.widget.winfo_rootx() + 25
         y += self.widget.winfo_rooty() + 20
-        # creates a toplevel window
+        # Creates a toplevel window
         self.tw = tk.Toplevel(self.widget)
         # Leaves only the label and removes the app window
         self.tw.wm_overrideredirect(True)

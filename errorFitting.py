@@ -23,62 +23,62 @@ import numpy as np
 from scipy.optimize import least_squares
 
 def findErrorFit(weighting, choices, stdr, stdj, r, j, modz, sigmaIn, guesses, reChoice, re, detrendChoice):
-    stddev = []    #np.zeros(2*len(stdr)*wlength)
-    impedReal = []     #np.zeros(2*len(stdr)*wlength)
+    stddev = []
+    impedReal = []
     impedRealRe = []
     impedImag = []
     impedMod = []
-    sigma = []     #np.zeros(len(stdr)*wlength)
+    sigma = []
     res = []
-    stddev2 = []    #np.zeros(2*len(stdr)*wlength)
-    impedReal2 = []     #np.zeros(2*len(stdr)*wlength)
+    stddev2 = []
+    impedReal2 = []
     impedRealRe2 = []
     impedImag2 = []
     impedMod2 = []
-    sigmaDetrend = []     #np.zeros(len(stdr)*wlength)
+    sigmaDetrend = []
     res2 = []
     sigma2 = []
     if (len(stdr) > 1 and detrendChoice == 3):      #If detrending with multiple files
         sigmaDetrend = []
         for i in range(len(stdr)):
-            if (weighting == 0):        #No weighting
+            if (weighting == 0):                    #No weighting
                 sigma.extend(np.ones(2*len(stdr[i])))
                 sigmaDetrend.extend(np.ones(len(stdr[i])))
-            elif (weighting == 1):      #Variance weighting
+            elif (weighting == 1):                  #Variance weighting
                 sigma.extend(sigmaIn[i])
                 sigma.extend(sigmaIn[i])
                 sigmaDetrend.extend(sigmaIn[i])
             else:
                 sigmaTemp = []
                 for k in range(len(stdr[i])):
-                    if (weighting == 2):  #Variance weighting with 3-point moving averages
-                        if (k == 0):        #Initial point takes average of following points
+                    if (weighting == 2):            #Variance weighting with 3-point moving averages
+                        if (k == 0):                #Initial point takes average of following points
                             sigmaTemp.append((sigmaIn[i][k]+sigmaIn[i][k+1]+sigmaIn[i][k+2])/3)
                         elif (k == len(stdr[i])-1):  #Final point takes average of preceding point
                             sigmaTemp.append((sigmaIn[i][k]+sigmaIn[i][k-1]+sigmaIn[i][k-2])/3)
                         else:
                             sigmaTemp.append((sigmaIn[i][k-1]+sigmaIn[i][k]+sigmaIn[i][k+1])/3)
-                    elif (weighting == 3):  #Variance weighting with 5-point moving averages
-                        if (k == 0):        #Initial point takes average of following points
+                    elif (weighting == 3):          #Variance weighting with 5-point moving averages
+                        if (k == 0):                #Initial point takes average of following points
                             sigmaTemp.append((sigmaIn[i][k]+sigmaIn[i][k+1]+sigmaIn[i][k+2]+sigmaIn[i][k+3]+sigmaIn[i][k+4])/5)
-                        elif (k == 1):      #Second point takes average of initial and following points
+                        elif (k == 1):              #Second point takes average of initial and following points
                             sigmaTemp.append((sigmaIn[i][k-1]+sigmaIn[i][k]+sigmaIn[i][k+1]+sigmaIn[i][k+2]+sigmaIn[i][k+3])/5)
-                        elif (k == len(stdr[i])-2):  #Second from last point takes average of final point and preceding points
+                        elif (k == len(stdr[i])-2): #Second from last point takes average of final point and preceding points
                             sigmaTemp.append((sigmaIn[i][k-3]+sigmaIn[i][k-2]+sigmaIn[i][k-1]+sigmaIn[i][k]+sigmaIn[i][k+1])/5)
-                        elif (k == len(stdr[i])-1):  #Final point takes average of preceding points
+                        elif (k == len(stdr[i])-1): #Final point takes average of preceding points
                             sigmaTemp.append((sigmaIn[i][k-4]+sigmaIn[i][k-3]+sigmaIn[i][k-2]+sigmaIn[i][k-1]+sigmaIn[i][k])/5)
                         else:
                             sigmaTemp.append((sigmaIn[i][k-2]+sigmaIn[i][k-1]+sigmaIn[i][k]+sigmaIn[i][k+1]+sigmaIn[i][k+2])/5)
                 sigma.extend(sigmaTemp)
                 sigma.extend(sigmaTemp)
                 sigmaDetrend.extend(sigmaTemp)
-            stddev.extend(np.array(stdr[i]))#/np.array(sigmaDetrend))
-            stddev.extend(np.array(stdj[i]))#/np.array(sigmaDetrend))
-            impedReal.extend(abs(r[i]))#/np.array(sigmaDetrend)))
-            impedImag.extend(abs(j[i]))#/np.array(sigmaDetrend)))
-            impedMod.extend((abs(modz[i]**2)))#/np.array(sigmaDetrend)))
+            stddev.extend(np.array(stdr[i]))
+            stddev.extend(np.array(stdj[i]))
+            impedReal.extend(abs(r[i]))
+            impedImag.extend(abs(j[i]))
+            impedMod.extend((abs(modz[i]**2)))
             res.extend(np.full(len(r[i]),re[i]))
-            impedRealRe.extend((abs(r[i])-res[i]))#/np.array(sigmaDetrend))
+            impedRealRe.extend((abs(r[i])-res[i]))
             stddev2.extend(abs(stdr[i]))
             stddev2.extend(abs(stdj[i]))
             impedReal2.extend(abs(r[i]))
@@ -109,17 +109,17 @@ def findErrorFit(weighting, choices, stdr, stdj, r, j, modz, sigmaIn, guesses, r
             start = stop
     else:
         for i in range(len(stdr)):
-            if (weighting == 0):        #No weighting
+            if (weighting == 0):            #No weighting
                 sigma.extend(np.ones(2*len(stdr[i])))
                 sigmaDetrend.extend(np.ones(len(stdr[i])))
-            elif (weighting == 1):      #Variance weighting
+            elif (weighting == 1):          #Variance weighting
                 sigma.extend(sigmaIn[i])
                 sigma.extend(sigmaIn[i])
                 sigmaDetrend.extend(sigmaIn[i])
             else:
                 sigmaTemp = []
                 for k in range(len(stdr[i])):
-                    if (weighting == 2):  #Variance weighting with 3-point moving averages
+                    if (weighting == 2):    #Variance weighting with 3-point moving averages
                         if (k == 0):        #Initial point takes average of following points
                             sigmaTemp.append((sigmaIn[i][k]+sigmaIn[i][k+1]+sigmaIn[i][k+2])/3)
                         elif (k == len(stdr[i])-1):  #Final point takes average of preceding point
@@ -152,13 +152,13 @@ def findErrorFit(weighting, choices, stdr, stdj, r, j, modz, sigmaIn, guesses, r
             #detrendChoice == 2 was for linear detrending, which was removed
             elif (detrendChoice == 3):  #Average detrending
                 for i in range(len(stdr)):
-                    stddev.extend(np.array(stdr[i]))#/np.array(sigmaDetrend))
-                    stddev.extend(np.array(stdj[i]))#/np.array(sigmaDetrend))
-                    impedReal.extend(abs(r[i]))#/np.array(sigmaDetrend)))
-                    impedImag.extend(abs(j[i]))#/np.array(sigmaDetrend)))
-                    impedMod.extend((abs(modz[i]**2)))#/np.array(sigmaDetrend)))
+                    stddev.extend(np.array(stdr[i]))
+                    stddev.extend(np.array(stdj[i]))
+                    impedReal.extend(abs(r[i]))
+                    impedImag.extend(abs(j[i]))
+                    impedMod.extend((abs(modz[i]**2)))
                     res.extend(np.full(len(r[i]),re[i]))
-                    impedRealRe.extend((abs(r[i])-res[i]))#/np.array(sigmaDetrend))
+                    impedRealRe.extend((abs(r[i])-res[i]))
                     stddev2.extend(abs(stdr[i]))
                     stddev2.extend(abs(stdj[i]))
                     impedReal2.extend(abs(r[i]))
@@ -208,7 +208,7 @@ def findErrorFit(weighting, choices, stdr, stdj, r, j, modz, sigmaIn, guesses, r
                     if (not reChoice):
                         toAdd += p[1]*impedReal[k]
                     else:
-                        toAdd += p[1]*impedRealRe[k]   #p[1]*abs(impedReal[k]-res[k])
+                        toAdd += p[1]*impedRealRe[k]
                 if (choices[2]):
                     toAdd += p[2]*impedMod[k]
                 if (choices[3] and detrendChoice != 3):
@@ -228,7 +228,7 @@ def findErrorFit(weighting, choices, stdr, stdj, r, j, modz, sigmaIn, guesses, r
                 J = np.delete(J, i-deletionCorrector, axis=1)
                 deletionCorrector += 1
         cov = np.linalg.pinv(J.T.dot(J)) * (minimized.fun**2).mean()     #Hessian = J . J^T ; covariance = Hessian^-1 
-        if (not all(choices)):        #Add covariances of 0 for parameters not fit
+        if (not all(choices)):                                           #Add covariances of 0 for parameters not fit
             toMerge = np.zeros((4, 4))
             rowCorrector = 0
             for i in range(4):
@@ -269,7 +269,7 @@ def findErrorFit(weighting, choices, stdr, stdj, r, j, modz, sigmaIn, guesses, r
                     if (not reChoice):
                         toAdd += b*impedReal2[k]
                     else:
-                        toAdd += b*impedRealRe2[k]   #p[1]*abs(impedReal[k]-res[k])
+                        toAdd += b*impedRealRe2[k]
                 if (choices[2]):
                     toAdd += g*impedMod2[k]
                 if (choices[3]):

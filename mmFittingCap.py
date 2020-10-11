@@ -153,7 +153,7 @@ def mp_real(guesses, sharedList, index, parameters, numVoigtElements, Zr, V, w, 
     sharedList[index] = [mp_current_min, mp_current_best]
 
 class fitter:
-    def __init__(self):#, w, Zr, Zj, numVoigtElements, numMonteCarlo, choice, assumed_noise, Rm, fitType, lowerBounds, initialGuesses, constants, upperBounds, *error_params):
+    def __init__(self):
         self.processes = []
         self.keepGoing = True
     
@@ -163,8 +163,7 @@ class fitter:
 
     def findFit(self, w, Zr, Zj, numVoigtElements, numMonteCarlo, choice, assumed_noise, Rm, fitType, lowerBounds, initialGuesses, constants, upperBounds, listPercent, capGuess, lowerBoundCap, upperBoundCap, fixedCap, *error_params):
         constants = np.sort(constants)
-        Z_append = np.append(Zr, Zj)
-    #    w_append = np.append(w, w)    
+        Z_append = np.append(Zr, Zj)  
         numParams = numVoigtElements*2 + 1
     
         V = np.ones(len(w))     #Default no weighting (all weights are 1) if choice==0
@@ -326,7 +325,7 @@ class fitter:
         numCores = mp.cpu_count()
         for g in initialGuesses:
             numCombos *= len(g)
-        if (numVoigtElements * numCombos > 1000):   #(numVoigtElements < 8 and numCombos > 200) or (numVoigtElements >= 8 and numCombos > 100)):
+        if (numVoigtElements * numCombos > 1000):
             longestIndex = initialGuesses.index(max(initialGuesses, key=len))       #Find largest set of initial guesses
             splitArray = np.array_split(initialGuesses[longestIndex], numCores)     #Split the array at the index of the longest set of initial Guesses
             toRun = []                                                              #Initialize the array that will be used for multi-core processing
@@ -570,11 +569,6 @@ class fitter:
             Zpolar += result[i]
             ZpolarSigma += sigma[i]**2
         ZpolarSigma = np.sqrt(ZpolarSigma)
-        
-    #    #---Replace "fitted" values for fixed parameters with their initial guesses---
-    #    if (constants[0] != -1):
-    #        for constant in constants:
-    #            result[constant] = initialGuesses[constant]
                 
         #---Return everything---
         return result, sigma, standardDevsReal, standardDevsImag, Zzero, ZzeroSigma, Zpolar, ZpolarSigma, minimized.chisqr, cor, minimized.aic, resultCap, sigmaCap, corCap

@@ -151,16 +151,12 @@ class eF(tk.Frame):
         self.zj = []
         self.modz = []
         self.sigma = []
-        #self.wdataLength = 0
         self.numFiles = 0
         self.fileNames = []
         self.copyDetrend = "Off"
         self.copyWeighting = "Variance"
         self.copyMA = "5 point"
         self.covar = []
-        #self.fileWeightsIn = []
-#        self.standardDevsI = []
-#        self.standardDevsR = []
         
         def addFile():
             n = askopenfilenames(initialdir=self.topGUI.getCurrentDirectory(), filetypes =[("Residual Error File (*.mmerrors)", "*.mmerrors")],title = "Choose a file")
@@ -180,7 +176,6 @@ class eF(tk.Frame):
                             data = np.loadtxt(name, skiprows=3)
                         else:
                             data = np.loadtxt(name)
-                        #fileWeightIn = data[0,0]
                         re_in = data[1,0]
                         w_in = data[2:,0]
                         rstddev_in = data[2:,1]
@@ -192,7 +187,6 @@ class eF(tk.Frame):
                         if (not (len(w_in) == len(rstddev_in) and len(rstddev_in) == len(jstddev_in) and len(jstddev_in) == len(r_in) and len(r_in) == len(j_in) and len(j_in) == len(z_in) and len(z_in) == len(sigma_in))):
                             raise FileLengthError
                         for i in range(len(w_in)):
-                            #int(fileWeightIn)
                             float(re_in)
                             float(w_in[i])
                             float(rstddev_in[i])
@@ -210,7 +204,6 @@ class eF(tk.Frame):
                         self.fileListbox.insert(tk.END, name)
                         if (self.noneLoaded):
                             self.noneLoaded = False
-                        #self.fileWeightsIn.append(fileWeightIn)
                         self.wdata.append(w_in)
                         self.avgRe.append(re_in)
                         self.rres.append(rstddev_in)
@@ -241,7 +234,6 @@ class eF(tk.Frame):
                 self.sigma = []
                 self.avgRe = []
                 self.fileNames = []
-                #self.fileWeightsIn = []
                 self.numFiles = 0
                 self.regressButton.configure(state="disabled")
                 self.plotButton.grid_remove()
@@ -257,7 +249,6 @@ class eF(tk.Frame):
                     del self.sigma[items[0]]
                     del self.avgRe[items[0]]
                     del self.fileNames[items[0]]
-                    #del self.fileWeightsIn[items[0]]
                     self.fileListbox.delete(tk.ANCHOR)
                     self.numFiles -= 1
                     if (self.numFiles < 1):
@@ -274,7 +265,6 @@ class eF(tk.Frame):
                     self.modz = []
                     self.sigma = []
                     self.fileNames = []
-                    #self.fileWeightsIn = []
                     self.numFiles = 0
         
         def popup_inputFiles(event):
@@ -296,29 +286,24 @@ class eF(tk.Frame):
                     else:
                         self.resultsView.insert("", tk.END, text="", values=("\u03B1", "%.7g"%self.alpha, "%.4g"%self.sigmaAlpha, "%.3g"%abs(self.sigmaAlpha*2*100/self.alpha)+"%"))
                     self.alphaEntryVariable.set("%.4g"%self.alpha)
-#                    resultsString += "\u03B1 = %.7g"%self.alpha + "  \u00B1  %.4g"%self.sigmaAlpha + "\n"
                 if (self.chosenParams[1]):
                     if (abs(self.sigmaBeta*2*100/self.beta) >= 100):
                         self.resultsView.insert("", tk.END, text="", values=("\u03B2", "%.7g"%self.beta, "%.4g"%self.sigmaBeta, "%.3g"%abs(self.sigmaBeta*2*100/self.beta)+"%"), tags=("bad",))
                     else:
                         self.resultsView.insert("", tk.END, text="", values=("\u03B2", "%.7g"%self.beta, "%.4g"%self.sigmaBeta, "%.3g"%abs(self.sigmaBeta*2*100/self.beta)+"%"))
                     self.betaEntryVariable.set("%.4g"%self.beta)
-#                    resultsString += "\u03B2 = %.7g"%self.beta + "  \u00B1  %.4g"%self.sigmaBeta + "\n"
                 if (self.chosenParams[2]):
                     if (abs(self.sigmaGamma*2*100/self.gamma) >= 100):
                         self.resultsView.insert("", tk.END, text="", values=("\u03B3", "%.7g"%self.gamma, "%.4g"%self.sigmaGamma, "%.3g"%abs(self.sigmaGamma*2*100/self.gamma)+"%"), tags=("bad",))
                     else:
                         self.resultsView.insert("", tk.END, text="", values=("\u03B3", "%.7g"%self.gamma, "%.4g"%self.sigmaGamma, "%.3g"%abs(self.sigmaGamma*2*100/self.gamma)+"%"))
                     self.gammaEntryVariable.set("%.4g"%self.gamma)
-#                    resultsString += "\u03B3 = %.7g"%self.gamma + "  \u00B1  %.4g"%self.sigmaGamma + "\n"
                 if (self.chosenParams[3]):
                     if (abs(self.sigmaDelta*2*100/self.delta) >= 100):
                         self.resultsView.insert("", tk.END, text="", values=("\u03B4", "%.7g"%self.delta, "%.4g"%self.sigmaDelta, "%.3g"%abs(self.sigmaDelta*2*100/self.delta)+"%"), tags=("bad",))
                     else:
                         self.resultsView.insert("", tk.END, text="", values=("\u03B4", "%.7g"%self.delta, "%.4g"%self.sigmaDelta, "%.3g"%abs(self.sigmaDelta*2*100/self.delta)+"%"))
                     self.deltaEntryVariable.set("%.4g"%self.delta)
-#                    resultsString += "\u03B4 = %.7g"%self.delta + "  \u00B1  %.4g"%self.sigmaDelta
-#                self.resultsLabel.configure(text=resultsString)
                 self.resultsView.tag_configure("bad", background="yellow")
                 self.resultsChi.configure(text="Mean absolute %% error = %.4g%%"%abs(mape))
                 self.resultsFrame.grid(column=0, row=5, pady=5, sticky="W")
@@ -330,61 +315,7 @@ class eF(tk.Frame):
             except queue.Empty:
                 self.after(100, process_queue)
         
-        def regressErrors():
-#            meansReal = np.zeros(self.wdataLength)
-#            for i in range(self.wdataLength):
-#                for j in range(len(self.rres)):
-#                    meansReal[i] += self.rres[j][i]
-#                meansReal[i] /= len(self.rres)
-#
-#            meansImag = np.zeros(self.wdataLength)
-#            for i in range(self.wdataLength):
-#                for j in range(len(self.jres)):
-#                    meansImag[i] += self.jres[j][i]
-#                meansImag[i] /= len(self.jres)
-#            
-#            standardDevsReal = np.zeros(self.wdataLength)
-#            for i in range(self.wdataLength):
-#                for j in range(len(self.rres)):
-#                    standardDevsReal[i] += (self.rres[j][i] - meansReal[i])**2
-#                standardDevsReal[i] /= len(self.rres)-1
-#                standardDevsReal[i] = np.sqrt(standardDevsReal[i])
-#            
-#            standardDevsImag = np.zeros(self.wdataLength)
-#            for i in range(self.wdataLength):
-#                for j in range(len(self.jres)):
-#                    standardDevsImag[i] += (self.jres[j][i] - meansImag[i])**2
-#                standardDevsImag[i] /= len(self.jres)-1
-#                standardDevsImag[i] = np.sqrt(standardDevsImag[i])
-#           
-#            totalFileWeights = 0
-#            for i in range(self.numFiles):
-#                totalFileWeights += self.fileWeightsIn[i]
-#                
-#            self.avgStdDevReal = np.zeros(self.wdataLength)
-#            self.avgStdDevImag = np.zeros(self.wdataLength)
-#            for k in range(self.numFiles):
-#                for i in range(self.wdataLength):
-#                    self.avgStdDevReal += self.rres[k][i]*(self.fileWeightsIn[k]/totalFileWeights)
-#                    self.avgStdDevImag += self.jres[k][i]*(self.fileWeightsIn[k]/totalFileWeights)
-#            self.avgStdDevReal /= totalFileWeights
-#            self.avgStdDevImag /= totalFileWeights
-#                    
-#            self.avgR = np.zeros(self.wdataLength)
-#            self.avgJ = np.zeros(self.wdataLength)
-#            for k in range(self.numFiles):
-#                for i in range(self.wdataLength):
-#                    self.avgR[i] += self.zr[k][i]
-#                    self.avgJ[i] += self.zj[k][i]
-#            self.avgR /= len(self.zr)
-#            self.avgJ /= len(self.zr)
-#                    
-#            self.statsView.delete(*self.statsView.get_children())
-#            for i in range(self.wdataLength):
-#                self.statsView.insert("", tk.END, text="", values=(str(self.wdata[0][i]), "%.6g"%self.avgR[i], "%.6g"%self.avgStdDevReal[i], "%.6g"%self.avgJ[i], "%.6g"%self.avgStdDevImag[i]))
-            
-            
-            
+        def regressErrors():        
             choices = [False, False, False, False]
             fittingGuesses = [.1, .1, .1, .1]
             reChoice = False
@@ -456,33 +387,12 @@ class eF(tk.Frame):
             self.chosenParams = choices
             
             detrendChoice = 1
-            #if (self.detrendComboboxVariable.get() == "Linear"):
-            #    detrendChoice = 2
             if (self.detrendComboboxVariable.get() == "On"):
                 detrendChoice = 3
-            
-            #print(self.rres)
+
             self.queue = queue.Queue()
             ThreadedTask(self.queue, weight, choices, self.rres, self.jres, self.zr, self.zj, self.modz, self.sigma, fittingGuesses, reChoice, self.avgRe, detrendChoice).start()
             self.after(100, process_queue)
-            
-#            plt.plot(self.zr[0], -1*self.zj[0])
-#            plt.plot(self.zr[1], -1*self.zj[1])
-#            plt.plot(self.zr[2], -1*self.zj[2])
-#            plt.xscale('log')
-#            plt.plot(self.wdata[0], self.rres[0])
-#            plt.plot(self.wdata[0], self.rres[1])
-#            plt.plot(self.wdata[0], self.rres[2])
-#            plt.xscale('log')
-#            plt.scatter(self.wdata[0], standardDevsReal/standardDevsImag)
-#            plt.xscale("log")
-#            plt.yscale("log")
-            #scipy.stats.f.ppf(0.95, dfn, dfd)
-        
-        def checkFunction(event):
-            pass
-#            if (self.regressFunctionVariable.get() == "Solartron"):
-#                self.regressFunction.configure(text="\u03B1|Z\u2C7C| + \u03B2|Z\u1D63| + \u03B3|Z|\u00B2/R\u2098 + \u03B4")
         
         def plotResiduals():
             for i in range(self.numFiles):
@@ -538,41 +448,6 @@ class eF(tk.Frame):
                     toolbar = NavigationToolbar2Tk(errorCanvasInput, resPlot)    #Enables the zoom and move toolbar for the plot
                     toolbar.update()
                 errorCanvasInput._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-                #def on_closing():   #Clear the figure before closing the popup
-                #    figError.clear()
-               #     resPlot.destroy()
-                
-               # resPlot.protocol("WM_DELETE_WINDOW", on_closing)
-            
-#            fPlot = tk.Toplevel()
-#            fPlot.title("F test plot")
-#            fPlot.iconbitmap("favicon.ico")
-#            figf = Figure(figsize=(5,4), dpi=100)
-#            b = figf.add_subplot(111)
-#            
-#            b.yaxis.set_ticks_position("both")
-#            b.yaxis.set_tick_params(direction="in")     #Make the ticks point inwards
-#            b.xaxis.set_ticks_position("both")
-#            b.xaxis.set_tick_params(direction="in")     #Make the ticks point inwards
-#            b.plot(self.wdata[0], (self.standardDevsR/self.standardDevsI)**2, "o", markerfacecolor="None")
-#            b.axhline(1, color="black", linewidth=1.0)
-#            b.set_xscale("log")
-#            b.set_yscale("log")
-#            b.set_title("F Test")
-#            b.set_xlabel("Frequency / Hz")
-#            b.set_ylabel(r'$\left (\frac{\sigma _{r}}{\sigma _{j}}  \right )^{2}$')
-#            figf.subplots_adjust(left=0.18)   #Allows the y axis label to be more easily seen
-#            fCanvasInput = FigureCanvasTkAgg(figf, fPlot)
-#            fCanvasInput.draw()
-#            fCanvasInput.get_tk_widget().pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
-#            toolbarF = NavigationToolbar2Tk(fCanvasInput, fPlot)    #Enables the zoom and move toolbar for the plot
-#            toolbarF.update()
-#            fCanvasInput._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-#            def on_closingF():   #Clear the figure before closing the popup
-#                figf.clear()
-#                fPlot.destroy()
-#                
-#            fPlot.protocol("WM_DELETE_WINDOW", on_closingF)
         
         def checkboxCommand():  #This logic was bothering me so I hard-coded it
             a = self.alphaCheckboxVariable.get() == 1
@@ -658,7 +533,7 @@ class eF(tk.Frame):
                 self.regressText = "\u03B3<|Z|>\u00B2"
             elif (d and not (a or b or g)):
                 self.regressText = "\u03B4"
-            #---No checkboxes
+            #---No checkboxes---
             else:
                 self.regressText = ""
             
@@ -709,7 +584,6 @@ class eF(tk.Frame):
             stringToCopy += "\nDetrend option:\t" + self.copyDetrend + "\nWeighting:\t" + self.copyWeighting
             if (self.copyWeighting == "Variance"):
                 stringToCopy += "\n" + self.copyMA + " moving average"
-            #stringToCopy = stringToCopy[:-1]
             pyperclip.copy(stringToCopy)
             self.after(500, lambda : self.copyResultsButton.configure(text="Copy values and std. devs."))
         
@@ -738,13 +612,9 @@ class eF(tk.Frame):
         
         self.regressFunctionFrame = tk.Frame(self, bg=self.backgroundColor)
         self.regressFunctionLabel = tk.Label(self.regressFunctionFrame, text="Error structure model: ", bg=self.backgroundColor, fg=self.foregroundColor)
-        #self.regressFunctionVariable = tk.StringVar(self, "Solartron")
-        #self.regressFunctionCombobox = ttk.Combobox(self.regressFunctionFrame, textvariable=self.regressFunctionVariable, value=("Solartron"), state="readonly", exportselection=0, width=13)
-        #self.regressFunctionCombobox.bind("<<ComboboxSelected>>", checkFunction)
         self.regressText = "\u03B3<|Z|>\u00B2 + \u03B4"
         self.regressFunction = tk.Label(self.regressFunctionFrame, text=self.regressText, bg=self.backgroundColor, fg=self.foregroundColor)
         self.regressFunctionLabel.grid(column=0, row=0, sticky="W")
-        #self.regressFunctionCombobox.grid(column=1, row=0, padx=5)
         self.regressFunction.grid(column=1, row=0, padx=2)
         self.regressFunctionFrame.grid(column=0, row=2, pady=5, sticky="W")
         
@@ -889,12 +759,7 @@ class eF(tk.Frame):
         self.detrendLabel.grid(column=0, row=2, pady=(0,2), sticky="W")
         self.detrendCombobox.grid(column=1, row=2)
         self.alphaCheckbox.grid(column=0, row=0, sticky="W")
-        #self.alphaEqual.grid(column=1, row=0, sticky="W")
-        #self.alphaEntry.grid(column=2, row=0, sticky="W")
         self.betaCheckbox.grid(column=0, row=1, pady=2, sticky="W")
-        #self.betaEqual.grid(column=1, row=1, sticky="W")
-        #self.betaEntry.grid(column=2, row=1, sticky="W")
-        #self.reCheckbox.grid(column=0, row=2, sticky="W")
         self.gammaCheckbox.grid(column=0, row=3, pady=2, sticky="W")
         self.gammaEqual.grid(column=1, row=3, sticky="W")
         self.gammaEntry.grid(column=2, row=3, sticky="W")
@@ -1012,7 +877,6 @@ class eF(tk.Frame):
                 data = np.loadtxt(n, skiprows=3)
             else:
                 data = np.loadtxt(n)
-            #fileWeightIn = data[0,0]
             re_in = data[1,0]
             w_in = data[2:,0]
             rstddev_in = data[2:,1]
@@ -1024,7 +888,6 @@ class eF(tk.Frame):
             if (not (len(w_in) == len(rstddev_in) and len(rstddev_in) == len(jstddev_in) and len(jstddev_in) == len(r_in) and len(r_in) == len(j_in) and len(j_in) == len(z_in) and len(z_in) == len(sigma_in))):
                 raise FileLengthError
             for i in range(len(w_in)):
-                #int(fileWeightIn)
                 float(re_in)
                 float(w_in[i])
                 float(rstddev_in[i])
@@ -1033,24 +896,10 @@ class eF(tk.Frame):
                 float(j_in[i])
                 float(z_in[i])
                 float(sigma_in[i])
-#            if (not self.noneLoaded):
-#                if (len(w_in) != self.wdataLength):
-#                    raise FileLengthError
-#                else:
-#                    for i in range(len(w_in)):
-#                        if (self.wdata[0][i] != w_in[i]):
-#                            raise FrequencyMismatchError
-#            if (name in self.fileListbox.get(0, tk.END) and not alreadyWarned):
-#                alreadyWarned = True
-#                if (len(n) > 1):
-#                    messagebox.showwarning("File already loaded", "Warning: One or more of the selected files is already loaded and is being loaded again")
-#                else:
-#                    messagebox.showwarning("File already loaded", "Warning: The selected file is already loaded and is being loaded again")
             self.fileListbox.insert(tk.END, n)
             if (self.noneLoaded):
                 self.wdataLength = len(w_in)
                 self.noneLoaded = False
-            #self.fileWeightsIn.append(fileWeightIn)
             self.wdata.append(w_in)
             self.avgRe.append(re_in)
             self.rres.append(rstddev_in)
@@ -1083,7 +932,6 @@ class eF(tk.Frame):
                     data = np.loadtxt(name, skiprows=3)
                 else:
                     data = np.loadtxt(name)
-                #fileWeightIn = data[0,0]
                 re_in = data[1,0]
                 w_in = data[2:,0]
                 rstddev_in = data[2:,1]
@@ -1095,7 +943,6 @@ class eF(tk.Frame):
                 if (not (len(w_in) == len(rstddev_in) and len(rstddev_in) == len(jstddev_in) and len(jstddev_in) == len(r_in) and len(r_in) == len(j_in) and len(j_in) == len(z_in) and len(z_in) == len(sigma_in))):
                     raise FileLengthError
                 for i in range(len(w_in)):
-                    #int(fileWeightIn)
                     float(re_in)
                     float(w_in[i])
                     float(rstddev_in[i])
@@ -1113,7 +960,6 @@ class eF(tk.Frame):
                 self.fileListbox.insert(tk.END, name)
                 if (self.noneLoaded):
                     self.noneLoaded = False
-                #self.fileWeightsIn.append(fileWeightIn)
                 self.wdata.append(w_in)
                 self.avgRe.append(re_in)
                 self.rres.append(rstddev_in)

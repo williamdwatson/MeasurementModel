@@ -149,8 +149,7 @@ class ThreadedTaskBootstrap(threading.Thread):
         try:
             r, s, sdr, sdi, chi, aic, rF, iF, cW = self.fittingObject.findFit(self.extraI, self.percent_list, self.nBootStrap, self.in_r, self.in_s, self.in_sdR, self.in_sdI, self.in_chi, self.in_aic, self.in_realF, self.in_imagF, self.fT, self.nM, self.wght, self.aN, self.formula, self.wdat, self.rdat, self.jdat, self.pN, self.pG, self.pL, self.eP)
             self.queue.put((r, s, sdr, sdi, chi, aic, rF, iF, cW))
-        except Exception as inst:
-            #print(inst)
+        except Exception:
             self.queue.put(("@", "@", "@", "@", "@", "@", "@", "@"))
     def get_id(self):
         # From https://www.geeksforgeeks.org/python-different-ways-to-kill-a-thread/
@@ -167,7 +166,6 @@ class ThreadedTaskBootstrap(threading.Thread):
         res = ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, ctypes.py_object(SystemExit))
         if res > 1: 
             ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, 0) 
-            #print('Exception raise failure')
 
 class CreateToolTip(object):
     """
@@ -207,7 +205,7 @@ class CreateToolTip(object):
         x, y, cx, cy = self.widget.bbox("insert")
         x += self.widget.winfo_rootx() + 25
         y += self.widget.winfo_rooty() + 20
-        # creates a toplevel window
+        # Creates a toplevel window
         self.tw = tk.Toplevel(self.widget)
         # Leaves only the label and removes the app window
         self.tw.wm_overrideredirect(True)

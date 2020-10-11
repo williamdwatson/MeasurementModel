@@ -142,7 +142,7 @@ def mp_real(guesses, sharedList, index, parameters, numVoigtElements, Zr, V, w):
     sharedList[index] = [mp_current_min, mp_current_best]
 
 class autoFitter:
-    def __init__(self):#, w, Zr, Zj, numVoigtElements, numMonteCarlo, choice, assumed_noise, Rm, fitType, lowerBounds, initialGuesses, constants, upperBounds, *error_params):
+    def __init__(self):
         self.processes = []
         self.keepGoing = True
     
@@ -352,11 +352,6 @@ class autoFitter:
             Zpolar += result[i]
             ZpolarSigma += sigma[i]**2
         ZpolarSigma = np.sqrt(ZpolarSigma)
-        
-    #    #---Replace "fitted" values for fixed parameters with their initial guesses---
-    #    if (constants[0] != -1):
-    #        for constant in constants:
-    #            result[constant] = initialGuesses[constant]
                 
         #---Return everything---
         return result, sigma, standardDevsReal, standardDevsImag, Zzero, ZzeroSigma, Zpolar, ZpolarSigma, bestResults.chisqr, cor, bestResults.aic, currentFitType, currentFitWeighting
@@ -365,13 +360,12 @@ class autoFitter:
         np.random.seed(1234)        #Use constant seed to ensure reproducibility of Monte Carlo simulations
         constants = np.sort(constants)
         Z_append = np.append(Zr, Zj)
-        #numParams = numVoigtElements*2 + 1
         
-        V = np.ones(len(w))     #Default no weighting (all weights are 1) if choice==0
-        if (choice == 1):       #Modulus weighting
+        V = np.ones(len(w))                 #Default no weighting (all weights are 1) if choice==0
+        if (choice == 1):                   #Modulus weighting
             for i in range(len(V)):
                 V[i] = assumed_noise*np.sqrt(Zr[i]**2 + Zj[i]**2)
-        elif (choice == 2):     #Proportional weighting
+        elif (choice == 2):                 #Proportional weighting
             Vj = np.ones(len(w))
             for i in range(len(V)):
                 if (fitType != 1):          #If the fit type isn't imaginary use both Zr and Zj
@@ -379,7 +373,7 @@ class autoFitter:
                 else:                       #If the fit is imaginary use only Zj in weighting
                     V[i] = assumed_noise*Zj[i]
                 Vj[i] = assumed_noise*Zj[i]
-        elif (choice == 3):     #Error model weighting
+        elif (choice == 3):                 #Error model weighting
             alpha = error_params[0]
             beta = error_params[1]
             betaRe = error_params[2]
@@ -449,14 +443,6 @@ class autoFitter:
                 parameters['R'+str(i)].max = 0
             parameters.add("T"+str(i), value=initialGuesses[i+1+parameterCorrector][0], min=0.0)
             parameterCorrector += 1
-        #if (constants[0] != -1):
-        #    for constant in constants:
-        #        if (constant == 0):
-        #            parameters['Re'].vary = False
-        #        elif (constant%2 == 0):
-        #            parameters['T'+str(int(constant/2))].vary = False
-        #        else:
-        #            parameters['R'+str(int(np.ceil(constant/2)))].vary = False
         
         current_min = 1E9
         current_best = 0
@@ -623,6 +609,7 @@ class autoFitter:
         for i in range(len(result)):
             if (result[i] != 0):
                 if (abs(2*sigma[i]/result[i]) >= 1.0 or np.isnan(sigma[i])):
-                    return "$"       
+                    return "$"    
+        
         #---Return everything---
         return minimized

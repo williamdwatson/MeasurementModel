@@ -61,7 +61,7 @@ class CreateToolTip(object):
         x, y, cx, cy = self.widget.bbox("insert")
         x += self.widget.winfo_rootx() + 25
         y += self.widget.winfo_rooty() + 20
-        # creates a toplevel window
+        # Creates a toplevel window
         self.tw = tk.Toplevel(self.widget)
         # Leaves only the label and removes the app window
         self.tw.wm_overrideredirect(True)
@@ -90,6 +90,8 @@ class hF(tk.Frame):
         
         self.parent = parent
         self.topGUI = topOne
+        
+        #---Appearance---
         if (self.topGUI.getTheme() == "dark"):
             self.backgroundColor = "#424242"
             self.foregroundColor = "white"
@@ -99,29 +101,8 @@ class hF(tk.Frame):
             self.foregroundColor = "black"
             self.linkColor = "blue"
         tk.Frame.__init__(self, parent, background=self.backgroundColor)
-        """
-        self.detectPopup = tk.Toplevel(background=self.backgroundColor)
-        self.detectPopup.withdraw()
-        self.detectPopup.title("detect_delimiter")
-        self.detectPopup.iconbitmap(resource_path('img/elephant3.ico'))
-        self.detectPopupTitle = tk.Label(self.detectPopup, text="Module: detect_delimiter", bg=self.backgroundColor, fg=self.foregroundColor)
-        self.detectPopupAuthor = tk.Label(self.detectPopup, text="Author: Tim McNamara", bg=self.backgroundColor, fg=self.foregroundColor)
-        self.detectPopupEmailLabel = tk.Label(self.detectPopup, text="Author email: ", bg=self.backgroundColor, fg=self.foregroundColor)
-        self.detectPopupEmail = tk.Label(self.detectPopup, text="paperless@timmcnamara.co.nz", bg=self.backgroundColor, fg=self.linkColor, cursor="hand2")
-        self.detectPopupLicense = tk.Label(self.detectPopup, text="Copyright: Tim McNamara, License: Apache License Version 2.0", bg=self.backgroundColor, fg=self.foregroundColor)
-        self.detectPopupLink = tk.Label(self.detectPopup, text="https://pypi.org/project/detect-delimiter/", cursor="hand2", bg=self.backgroundColor, fg=self.linkColor)
         
-        self.rangeSliderPopup = tk.Toplevel(background=self.backgroundColor)
-        self.rangeSliderPopup.withdraw()
-        self.rangeSliderPopup.title("rangeSlider")
-        self.rangeSliderPopup.iconbitmap(resource_path('img/elephant3.ico'))
-        self.rangeSliderTitle = tk.Label(self.rangeSliderPopup, text="Module: rangeSlider", bg=self.backgroundColor, fg=self.foregroundColor)
-        self.rangeSliderAuthor = tk.Label(self.rangeSliderPopup, text="Author: Stephen Damm", bg=self.backgroundColor, fg=self.foregroundColor)
-        self.rangeSliderEmailLabel = tk.Label(self.rangeSliderPopup, text="Author email: ", bg=self.backgroundColor, fg=self.foregroundColor)
-        self.rangeSliderEmail = tk.Label(self.rangeSliderPopup, text="shinhalsafar@gmail.com", bg=self.backgroundColor, fg=self.linkColor, cursor="hand2")
-        self.rangeSliderLicense = tk.Label(self.rangeSliderPopup, text="License: \"THE BEER-WARE LICENSE\" (Revision 42)", bg=self.backgroundColor, fg=self.foregroundColor)
-        self.rangeSliderLink = tk.Label(self.rangeSliderPopup, text="https://github.com/halsafar/rangeslider", cursor="hand2", bg=self.backgroundColor, fg=self.linkColor)
-        """
+        #---Links to other libraries---
         self.aboutCodeFrame = tk.Frame(self, background=self.backgroundColor)
         self.aboutCode = tk.Label(self.aboutCodeFrame, text="Modules used outside the", background=self.backgroundColor, fg=self.foregroundColor)
         self.aboutCodeLink = tk.Label(self.aboutCodeFrame, text=" standard library:", background=self.backgroundColor, fg=self.linkColor, cursor="hand2")
@@ -172,9 +153,10 @@ class hF(tk.Frame):
         self.galvaniLink.bind("<Button-1>", lambda e: webbrowser.open_new(r"https://pypi.org/project/galvani/"))
         galvani_ttp = CreateToolTip(self.galvaniLink, 'https://pypi.org/project/galvani/')
         
+        #---Help and about links---
         self.helpLink = tk.Label(self, text="User manual")
-        self.helpLink.bind('<Button-1>', lambda e: webbrowser.open_new(r'file://' + os.path.dirname(os.path.realpath(__file__)) + '\Measurement_model_guide.pdf'))
-        self.helpLink.configure(background=self.backgroundColor, cursor="hand2", fg=self.linkColor)#, font=("Arial", 16))
+        self.helpLink.bind('<Button-1>', lambda e: webbrowser.open_new('file://' + os.path.join(os.path.dirname(os.path.realpath(__file__)), 'Measurement_model_guide.pdf')))
+        self.helpLink.configure(background=self.backgroundColor, cursor="hand2", fg=self.linkColor)
         self.aboutUsFrame = tk.Frame(self, bg=self.backgroundColor)
         self.orazem = tk.Label(self.aboutUsFrame, text="Dr. Mark Orazem", bg=self.backgroundColor, fg=self.foregroundColor)
         self.orazemPhone = tk.Label(self.aboutUsFrame, text="Phone: 352-392-6207", bg=self.backgroundColor, fg=self.foregroundColor)
@@ -189,20 +171,8 @@ class hF(tk.Frame):
         self.william.grid(column=0, row=1, sticky="W", pady=3)
         self.williamEmail.grid(column=1, row=1, sticky="W", columnspan=2, padx=3)
         help_ttp = CreateToolTip(self.helpLink, 'Open a PDF user manual')
-#        self.bugLink = tk.Label(self, text="Report a bug")
-#        self.bugLink.bind('<Button-1>', lambda e: webbrowser.open_new(r"https://forms.office.com/Pages/ResponsePage.aspx?id=-KBNDTFKdk2s5gpiMx4bhIVLel2pg8ZKgMQj1D0CxAZUNDVQWDVGRUhINTRZMEpSOU80SFdNTkUzUy4u"))
-#        self.bugLink.configure(background=self.backgroundColor, cursor="hand2", fg=self.linkColor, font=("Arial", 16))
-        """
-        self.about.grid(column=0, row=1, sticky="W")
-        self.smashiconLink.grid(column=0, row=2, sticky="W")
-        self.freepikLink.grid(column=0, row=3, sticky="W")
-        self.phatplusLink.grid(column=0, row=4, sticky="W")
-        self.dinosoftlabsLink.grid(column=0, row=5, sticky="W")
-        self.gregorLink.grid(column=0, row=6, sticky="W")
-        self.roundiconsLink.grid(column=0, row=7, sticky="W")
-        self.becrisLink.grid(column=0, row=8, sticky="W")
-        """
         
+        #---Copyright information---
         self.copyrightLabel = tk.Label(self, text="©Copyright 2020 University of Florida Research Foundation, Inc. All Rights Reserved.\n\nThis program is free software: you can redistribute it and/or modify \
 it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.\n\n\
 \
@@ -231,20 +201,17 @@ You should have received a copy of the GNU General Public License along with thi
         self.aboutUsFrame.grid(column=0, row=13, sticky="W", pady=7)
         self.copyrightLabel.grid(column=0, row=14, sticky="W")
         self.gnuLicenseLink.grid(column=0, row=15, sticky="W", pady=7)
-#        self.bugLink.grid(column=0, row=6, sticky="W", pady=7)
     
     def setThemeLight(self):
+        """
+        Change the appearance to light theme
+
+        Returns
+        -------
+        None
+
+        """
         self.configure(bg="#FFFFFF")
-        """
-        self.about.configure(background="#FFFFFF", foreground="#000000")                          
-        self.freepikLink2.configure(background="#FFFFFF", foreground="blue")
-        self.freepikLink.configure(background="#FFFFFF", foreground="blue")
-        self.smashiconLink.configure(background="#FFFFFF", foreground="blue")
-        self.roundiconsLink.configure(background="#FFFFFF", foreground="blue")
-        self.dinosoftlabsLink.configure(background="#FFFFFF", foreground="blue")
-        self.gregorLink.configure(background="#FFFFFF", foreground="blue")
-        self.becrisLink.configure(background="#FFFFFF", foreground="blue")
-        """
         self.aboutUsFrame.configure(background="#FFFFFF")
         self.orazem.configure(background="#FFFFFF", foreground="#000000")
         self.orazemPhone.configure(background="#FFFFFF", foreground="#000000")
@@ -252,7 +219,6 @@ You should have received a copy of the GNU General Public License along with thi
         self.william.configure(background="#FFFFFF", foreground="#000000")
         self.williamEmail.configure(background="#FFFFFF", foreground="blue")
         self.helpLink.configure(background="#FFFFFF", foreground="blue")
-        #self.phatplusLink.configure(background="#FFFFFF", foreground="blue")
         self.aboutCode.configure(background="#FFFFFF", foreground="#000000")
         self.copyrightLabel.configure(background="#FFFFFF", foreground="#000000")
         self.aboutCodeFrame.configure(background="#FFFFFF")
@@ -269,20 +235,17 @@ You should have received a copy of the GNU General Public License along with thi
         self.sciLink.configure(background="#FFFFFF", foreground="blue")
         self.pltLink.configure(background="#FFFFFF", foreground="blue")
         self.gnuLicenseLink.configure(background="#FFFFFF", foreground="blue")
-#        self.bugLink.configure(background="#FFFFFF", foreground="blue")
                                   
     def setThemeDark(self):
+        """
+        Change the appearance to dark theme
+        
+        Returns
+        -------
+        None
+        
+        """
         self.configure(bg="#424242")
-        """
-        self.about.configure(background="#424242", foreground="#FFFFFF")
-        self.freepikLink2.configure(background="#424242", foreground="skyblue")
-        self.freepikLink.configure(background="#424242", foreground="skyblue")
-        self.smashiconLink.configure(background="#424242", foreground="skyblue")
-        self.roundiconsLink.configure(background="#424242", foreground="skyblue")
-        self.dinosoftlabsLink.configure(background="#424242", foreground="skyblue")
-        self.gregorLink.configure(background="#424242", foreground="skyblue")
-        self.becrisLink.configure(background="#424242", foreground="skyblue")
-        """
         self.aboutUsFrame.configure(background="#424242")
         self.orazem.configure(background="#424242", foreground="#FFFFFF")
         self.orazemPhone.configure(background="#424242", foreground="#FFFFFF")
@@ -290,7 +253,6 @@ You should have received a copy of the GNU General Public License along with thi
         self.william.configure(background="#424242", foreground="#FFFFFF")
         self.williamEmail.configure(background="#424242", foreground="skyblue")
         self.helpLink.configure(background="#424242", foreground="skyblue")
-        #self.phatplusLink.configure(background="#424242", foreground="skyblue")
         self.aboutCode.configure(background="#424242", foreground="#FFFFFF")
         self.copyrightLabel.configure(background="#424242", foreground="#FFFFFF")
         self.aboutCodeFrame.configure(background="#424242")
@@ -307,4 +269,3 @@ You should have received a copy of the GNU General Public License along with thi
         self.sciLink.configure(background="#424242", foreground="skyblue")
         self.pltLink.configure(background="#424242", foreground="skyblue")
         self.gnuLicenseLink.configure(background="#424242", foreground="skyblue")
-#        self.bugLink.configure(background="#424242", foreground="skyblue")

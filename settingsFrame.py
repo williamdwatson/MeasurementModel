@@ -70,7 +70,7 @@ class CreateToolTip(object):
         x, y, cx, cy = self.widget.bbox("insert")
         x += self.widget.winfo_rootx() + 25
         y += self.widget.winfo_rooty() + 20
-        # creates a toplevel window
+        # Creates a toplevel window
         self.tw = tk.Toplevel(self.widget)
         # Leaves only the label and removes the app window
         self.tw.wm_overrideredirect(True)
@@ -88,6 +88,7 @@ class sF(tk.Frame):
     def __init__(self, parent, topOne):
         self.parent = parent
         self.topGUI = topOne
+        #---Appearance---
         if (self.topGUI.getTheme() == "dark"):
             self.backgroundColor = "#424242"
             self.foregroundColor = "#FFFFFF"
@@ -109,6 +110,7 @@ class sF(tk.Frame):
         
         tk.Frame.__init__(self, parent, background=self.backgroundColor)
         
+        #---Tabs for different settings groups---
         self.notebook = ttk.Notebook(self)
         self.tabOverall = tk.Frame(self.notebook, background=self.backgroundColor)
         self.tabInput = tk.Frame(self.notebook, background=self.backgroundColor)
@@ -124,6 +126,7 @@ class sF(tk.Frame):
         self.notebook.add(self.tabCustom, text="Custom")
         self.notebook.grid(column=0, row=0, columnspan=2, sticky="W")
         
+        #---General tab---
         self.themeLabel = tk.Label(self.tabOverall, text="Theme: ", fg=self.foregroundColor, bg=self.backgroundColor)
         self.themeFrame = tk.Frame(self.tabOverall, background=self.backgroundColor)
         if (self.topGUI.getTheme() == "dark"):
@@ -190,11 +193,55 @@ class sF(tk.Frame):
         directoryBtn_ttp = CreateToolTip(self.defaultDirectoryButton, 'Default directory for files')
         scroll_ttp = CreateToolTip(self.defaultScroll, 'Whether or not to use the scrollwheel to change tabs when mouse is over the navigation pane')
         
+        #---Paths tab---
+        self.defaultFormulaDirectoryLabel = tk.Label(self.tabPaths, text="Formula directory: ", bg=self.backgroundColor, fg=self.foregroundColor)
+        self.defaultFormulaDirectoryEntry = ttk.Entry(self.tabPaths, width=40, state="readonly")
+        self.defaultFormulaDirectoryButton = ttk.Button(self.tabPaths, text="Browse...", command=self.findNewFormulaDirectory)
+        formulaDirectoryEntry_ttp = CreateToolTip(self.defaultFormulaDirectoryEntry, 'Default directory for .mmformula files')
+        formulaDirectoryButton_ttp = CreateToolTip(self.defaultFormulaDirectoryButton, 'Default directory for .mmformula files')
+        
         self.defaultDirectoryEntry.configure(state="normal")
         self.defaultDirectoryEntry.delete(0,tk.END)
         self.defaultDirectoryEntry.insert(0, self.topGUI.getDefaultDirectory())
         self.defaultDirectoryEntry.configure(state="readonly")
+        self.defaultFormulaDirectoryEntry.configure(state="normal")
+        self.defaultFormulaDirectoryEntry.delete(0,tk.END)
+        self.defaultFormulaDirectoryEntry.insert(0, self.topGUI.getDefaultFormulaDirectory())
+        self.defaultFormulaDirectoryEntry.configure(state="readonly")
         
+        self.importPathLabel = tk.Label(self.tabPaths, text="Import paths: ", fg=self.foregroundColor, bg=self.backgroundColor)
+        self.importPathListboxFrame = tk.Frame(self.tabPaths, bg=self.backgroundColor)
+        self.importPathListboxScrollbar = ttk.Scrollbar(self.importPathListboxFrame, orient=tk.VERTICAL)
+        self.importPathListboxScrollbarHorizontal = ttk.Scrollbar(self.importPathListboxFrame, orient=tk.HORIZONTAL)
+        self.importPathListbox = tk.Listbox(self.importPathListboxFrame, height=3, width=40, selectmode=tk.BROWSE, activestyle='none', yscrollcommand=self.importPathListboxScrollbar.set, xscrollcommand=self.importPathListboxScrollbarHorizontal.set)
+        self.importPathListboxScrollbar['command'] = self.importPathListbox.yview
+        self.importPathListboxScrollbarHorizontal['command'] = self.importPathListbox.xview
+        self.importPathButtonFrame = tk.Frame(self.tabPaths, bg=self.backgroundColor)
+        self.importPathButton = ttk.Button(self.importPathButtonFrame, text="Browse...", command=self.importDirectoryBrowse)
+        self.importPathRemoveButton = ttk.Button(self.importPathButtonFrame, text="Remove", command=self.importDirectoryRemove)
+        self.importPathButton.pack(side=tk.TOP, fill=tk.NONE, expand=False)
+        self.importPathRemoveButton.pack(side=tk.TOP, fill=tk.NONE, expand=False, pady=5)
+        self.importPathListboxScrollbar.pack(side=tk.RIGHT, fill=tk.Y, expand=False)
+        self.importPathListboxScrollbarHorizontal.pack(side=tk.BOTTOM, fill=tk.X, expand=False)
+        self.defaultFormulaDirectoryLabel.grid(column=0, row=6, sticky="W")
+        self.defaultFormulaDirectoryEntry.grid(column=1, row=6, sticky="W")
+        self.defaultFormulaDirectoryButton.grid(column=2, row=6, sticky="W", padx=2)
+        self.importPathListbox.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        self.importPathLabel.grid(column=0, row=7, pady=5, sticky="NW")
+        self.importPathListboxFrame.grid(column=1, row=7, pady=5, sticky="W")
+        self.importPathButtonFrame.grid(column=2, row=7, padx=3, sticky="W")
+        importPathButton_ttp = CreateToolTip(self.importPathButton, 'Add default import path')
+        importPathRemoveButton_ttp = CreateToolTip(self.importPathRemoveButton, 'Remove selected path')
+        
+        self.popup_menu_importPath = tk.Menu(self.importPathListbox, tearoff=0)
+        self.popup_menu_importPath.add_command(label="Remove directory", command=self.importDirectoryRemove)
+
+        self.importPathListbox.bind("<Button-3>", self.popup_inputFiles)
+        for val in self.topGUI.getDefaultImports():
+            if (len(val) > 0):
+                self.importPathListbox.insert(tk.END, val)
+        
+        #---Input tab---
         self.defaultDetectCommentsCheckboxVariable = tk.IntVar(self, self.topGUI.getDetectComments())
         self.defaultDetectCommentsCheckbox = ttk.Checkbutton(self.tabInput, variable=self.defaultDetectCommentsCheckboxVariable, text="Detect number of comment lines", command=self.defaultCommentsCommand)
         self.defaultComments = tk.Label(self.tabInput, text="Number of comment lines: ", bg=self.backgroundColor, fg=self.foregroundColor)
@@ -207,8 +254,6 @@ class sF(tk.Frame):
         self.defaultDetectDelimiterCheckbox = ttk.Checkbutton(self.tabInput, variable=self.defaultDetectDelimiterCheckboxVariable, text="Detect delimiter")
         self.inputExitAlertVariable = tk.IntVar(self, self.topGUI.getInputExitAlert())
         self.inputExitAlertCheckbox = ttk.Checkbutton(self.tabInput, variable=self.inputExitAlertVariable, text="Alert on close if unsaved")
-        
-        #Columns and scaling, line frequency deletion
         self.defaultDetectCommentsCheckbox.grid(column=0, row=0, columnspan=2, sticky="W")
         self.defaultComments.grid(column=0, row=1, pady=2, sticky="W")
         self.defaultCommentsEntry.grid(column=1, row=1, sticky="W")
@@ -222,6 +267,7 @@ class sF(tk.Frame):
         delimiterEntry_ttp = CreateToolTip(self.defaultDelimiterCombobox, 'The default delimiter')
         inputExit_ttp = CreateToolTip(self.inputExitAlertCheckbox, 'Whether or not the program should alert before closing if a file has been loaded but not saved')
         
+        #---Model tab---
         self.defaultMC = tk.Label(self.tabModel, text="Number of simulations: ", fg=self.foregroundColor, bg=self.backgroundColor)
         self.defaultMCVariable = tk.StringVar(self, self.topGUI.getMC())
         self.defaultMCEntry = ttk.Entry(self.tabModel, textvariable=self.defaultMCVariable, width=6, exportselection=0)
@@ -261,6 +307,7 @@ class sF(tk.Frame):
         freqLoad_ttp = CreateToolTip(self.defaultFreqLoad, 'Whether or not the adjusted frequency range should be kept when a new file is loaded')
         freqUndo_ttp = CreateToolTip(self.defaultFreqUndo, 'Whether or not the adjusted frequency range should be changed to what it was previously when the Undo feature is used')
         
+        #---Errors tab---
         self.defaultParamChoices = tk.Label(self.tabError, text="Error Model Parameters: ", fg=self.foregroundColor, bg=self.backgroundColor)
         self.defaultAlphaCheckboxVariable = tk.IntVar(self, self.topGUI.getErrorAlpha())
         self.defaultAlphaCheckbox = ttk.Checkbutton(self.tabError, variable=self.defaultAlphaCheckboxVariable, text="\u03B1")
@@ -302,57 +349,17 @@ class sF(tk.Frame):
         ma_ttp = CreateToolTip(self.defaultMovingAverageCombobox, 'Default moving average choice for error structure regression (only if Variance weighting is chosen)')
         detrend_ttp = CreateToolTip(self.defaultDetrendCombobox, 'Whether or not detrending should be done by default')
         
-        self.defaultFormulaDirectoryLabel = tk.Label(self.tabPaths, text="Formula directory: ", bg=self.backgroundColor, fg=self.foregroundColor)
-        self.defaultFormulaDirectoryEntry = ttk.Entry(self.tabPaths, width=40, state="readonly")
-        self.defaultFormulaDirectoryButton = ttk.Button(self.tabPaths, text="Browse...", command=self.findNewFormulaDirectory)
+        #---Custom tab---
         self.customFormulaExitAlertVariable = tk.IntVar(self, self.topGUI.getCustomFormulaExitAlert())
         self.customFormulaExitAlertCheckbox = ttk.Checkbutton(self.tabCustom, variable=self.customFormulaExitAlertVariable, text="Alert on close if unsaved")
         self.customFreqLoadVariable = tk.IntVar(self, self.topGUI.getFreqLoadCustom())
         self.customFreqLoad = ttk.Checkbutton(self.tabCustom, variable=self.customFreqLoadVariable, text="Keep frequency range on loading new file")
-        self.defaultFormulaDirectoryLabel.grid(column=0, row=6, sticky="W")
-        self.defaultFormulaDirectoryEntry.grid(column=1, row=6, sticky="W")
-        self.defaultFormulaDirectoryButton.grid(column=2, row=6, sticky="W", padx=2)
         self.customFormulaExitAlertCheckbox.grid(column=0, row=1, pady=2, sticky="W", columnspan=3)
         self.customFreqLoad.grid(column=0, row=2, sticky="W", columnspan=3)
         customAlert_ttp = CreateToolTip(self.customFormulaExitAlertCheckbox, 'Whether or not the program should alert prior to closing if an unsaved formula is present')
         customFreqLoad_ttp = CreateToolTip(self.customFreqLoad, 'Whether or not the adjusted frequency range should be kept when a new file is loaded')
-        formulaDirectoryEntry_ttp = CreateToolTip(self.defaultFormulaDirectoryEntry, 'Default directory for .mmformula files')
-        formulaDirectoryButton_ttp = CreateToolTip(self.defaultFormulaDirectoryButton, 'Default directory for .mmformula files')
         
-        self.defaultFormulaDirectoryEntry.configure(state="normal")
-        self.defaultFormulaDirectoryEntry.delete(0,tk.END)
-        self.defaultFormulaDirectoryEntry.insert(0, self.topGUI.getDefaultFormulaDirectory())
-        self.defaultFormulaDirectoryEntry.configure(state="readonly")
-        
-        self.importPathLabel = tk.Label(self.tabPaths, text="Import paths: ", fg=self.foregroundColor, bg=self.backgroundColor)
-        self.importPathListboxFrame = tk.Frame(self.tabPaths, bg=self.backgroundColor)
-        self.importPathListboxScrollbar = ttk.Scrollbar(self.importPathListboxFrame, orient=tk.VERTICAL)
-        self.importPathListboxScrollbarHorizontal = ttk.Scrollbar(self.importPathListboxFrame, orient=tk.HORIZONTAL)
-        self.importPathListbox = tk.Listbox(self.importPathListboxFrame, height=3, width=40, selectmode=tk.BROWSE, activestyle='none', yscrollcommand=self.importPathListboxScrollbar.set, xscrollcommand=self.importPathListboxScrollbarHorizontal.set)
-        self.importPathListboxScrollbar['command'] = self.importPathListbox.yview
-        self.importPathListboxScrollbarHorizontal['command'] = self.importPathListbox.xview
-        self.importPathButtonFrame = tk.Frame(self.tabPaths, bg=self.backgroundColor)
-        self.importPathButton = ttk.Button(self.importPathButtonFrame, text="Browse...", command=self.importDirectoryBrowse)
-        self.importPathRemoveButton = ttk.Button(self.importPathButtonFrame, text="Remove", command=self.importDirectoryRemove)
-        self.importPathButton.pack(side=tk.TOP, fill=tk.NONE, expand=False)
-        self.importPathRemoveButton.pack(side=tk.TOP, fill=tk.NONE, expand=False, pady=5)
-        self.importPathListboxScrollbar.pack(side=tk.RIGHT, fill=tk.Y, expand=False)
-        self.importPathListboxScrollbarHorizontal.pack(side=tk.BOTTOM, fill=tk.X, expand=False)
-        self.importPathListbox.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-        self.importPathLabel.grid(column=0, row=7, pady=5, sticky="NW")
-        self.importPathListboxFrame.grid(column=1, row=7, pady=5, sticky="W")
-        self.importPathButtonFrame.grid(column=2, row=7, padx=3, sticky="W")
-        importPathButton_ttp = CreateToolTip(self.importPathButton, 'Add default import path')
-        importPathRemoveButton_ttp = CreateToolTip(self.importPathRemoveButton, 'Remove selected path')
-        
-        self.popup_menu_importPath = tk.Menu(self.importPathListbox, tearoff=0)
-        self.popup_menu_importPath.add_command(label="Remove directory", command=self.importDirectoryRemove)
-
-        self.importPathListbox.bind("<Button-3>", self.popup_inputFiles)
-        for val in self.topGUI.getDefaultImports():
-            if (len(val) > 0):
-                self.importPathListbox.insert(tk.END, val)
-        
+        #---Save and reset buttons---
         self.saveButton = ttk.Button(self, text="Save and Apply", width=20, command=self.saveSettings)
         self.saveButton.grid(column=0, row=5, sticky="W", pady=2)
         save_ttp = CreateToolTip(self.saveButton, 'Save and apply all settings')
@@ -367,6 +374,14 @@ class sF(tk.Frame):
         closeAllPopups_ttp = CreateToolTip(self.closeAllPopupsButton, 'Close all open popup windows')
     
     def applySettings(self):
+        """
+        Apply changes to the settings tab, and propagate those to the other tabs
+        
+        Returns
+        -------
+        None
+        
+        """
         if (self.themeChosen == "light"):
             self.configure(bg="#FFFFFF")
             self.themeLabel.configure(bg="#FFFFFF")
@@ -474,6 +489,14 @@ class sF(tk.Frame):
         self.topGUI.setDefaultImports(self.importPathListbox.get(0, tk.END))
     
     def resetDefaults(self):
+        """
+        Reset all settings to their default values
+
+        Returns
+        -------
+        None
+        
+        """
         a = messagebox.askokcancel("Reset all settings?", "Are you sure you want to reset all settings to the defaults?")
         if (a):
             self.themeChosen = "light"
@@ -513,6 +536,8 @@ class sF(tk.Frame):
             self.defaultFormulaDirectoryEntry.insert(0, "C:\\")
             self.defaultFormulaDirectoryEntry.configure(state="readonly")
             self.importPathListbox.delete(0, tk.END)
+            
+            #---Save the reset settings using ConfigParser---
             config = configparser.ConfigParser()
             config['settings'] = {'theme': self.themeChosen, 'bar': self.barColor, 'highlight': self.highlightColor, 'accent': self.activeColor, 'dir': "C:\\", 'tab': self.defaultTabVariable.get(), 'scroll': self.defaultScrollVariable.get(), 'formulaDir': "C:\\"}
             config['input'] = {'detect': self.defaultDetectCommentsCheckboxVariable.get(),'comments': self.defaultCommentsVariable.get(), 'delimiter': self.defaultDelimiterVariable.get(), 'detectDelimiter': self.defaultDetectDelimiterCheckboxVariable.get()}
@@ -536,6 +561,7 @@ class sF(tk.Frame):
         finally:
             self.popup_menu_importPath.grab_release()
     
+    #---Change the appearance of the light/dark theme selecter---
     def lightTheme(self, e):
         self.lightLabel.configure(relief="sunken")
         self.darkLabel.configure(relief="raised")
@@ -546,6 +572,7 @@ class sF(tk.Frame):
         self.darkLabel.configure(relief="sunken")
         self.themeChosen = 'dark'
     
+    #---Control what (dis)appears when (un)checking beta in the errors tab---
     def checkRe(self):
         if (self.defaultReCheckboxVariable.get() == 1):
             self.defaultBetaCheckboxVariable.set(1)
@@ -554,6 +581,7 @@ class sF(tk.Frame):
         if (self.defaultBetaCheckboxVariable.get() == 0):
             self.defaultReCheckboxVariable.set(0)
     
+    #---Appearance color popups---
     def pickBarColor(self, e):
         color = colorchooser.askcolor(self.barColor, title="Choose bar color") 
         if (color[1] is not None):
@@ -575,12 +603,14 @@ class sF(tk.Frame):
             self.defaultEllipseColorLabel.configure(bg=color[1])
             self.ellipseColor = color[1]
     
+    #---Control comment detection checkbox---
     def defaultCommentsCommand(self):
         if (self.defaultDetectCommentsCheckboxVariable.get() == 1):
             self.defaultDetectDelimiterCheckbox.grid(column=0, row=2, pady=2)
         else:
             self.defaultDetectDelimiterCheckbox.grid_remove()   
     
+    #---Directory selection popups---
     def findNewDirectory(self):
         folder = askdirectory(initialdir=self.topGUI.getCurrentDirectory())
         folder_str = str(folder)
@@ -616,6 +646,19 @@ class sF(tk.Frame):
                  self.importPathListbox.delete(tk.ANCHOR)
     
     def saveSettings(self, e=None):
+        """
+        Save the settings using ConfigParser to LOCALAPPDATA/MeasurementModel/settings.ini
+        
+        Parameters
+        ----------
+        e : optional (unused)
+            Unused. The default is None.
+
+        Returns
+        -------
+        None
+        
+        """
         try:
             numMCDefault = int(self.defaultMCVariable.get())
             if (numMCDefault <= 0):
@@ -639,32 +682,40 @@ class sF(tk.Frame):
             return
         try:
             config = configparser.ConfigParser()
+            #---Get all import paths, and separate with a * ---
             imports_tuple = self.importPathListbox.get(0, tk.END)
             imports = ""
             for val in imports_tuple:
                 imports += val + "*"
             
-            imports = imports[:-1]
+            imports = imports[:-1]      #Remove the last character (*)
+            
+            #---ConfigParser dictionary---
             config['settings'] = {'theme': self.themeChosen, 'bar': self.barColor, 'highlight': self.highlightColor, 'accent': self.activeColor, 'dir': self.defaultDirectoryEntry.get(), 'tab': self.defaultTabVariable.get(), 'scroll': self.defaultScrollVariable.get(), 'formulaDir': self.defaultFormulaDirectoryEntry.get()}
             config['input'] = {'detect': self.defaultDetectCommentsCheckboxVariable.get(), 'comments': numCommentDefault, 'delimiter': self.defaultDelimiterVariable.get(), 'detectDelimiter': self.defaultDetectDelimiterCheckboxVariable.get(), 'askInputExit': self.inputExitAlertVariable.get()}
             config['model'] = {'mc': numMCDefault, 'fit': self.defaultFitVariable.get(), 'weight': self.defaultWeightingVariable.get(), 'alpha': numAlphaDefault, 'ellipse': self.ellipseColor, 'freqLoad': self.defaultFreqLoadVariable.get(), 'freqUndo': self.defaultFreqUndoVariable.get()}
             config['error'] = {'detrend': self.defaultDetrendVariable.get(), 'alphaError': self.defaultAlphaCheckboxVariable.get(), 'betaError': self.defaultBetaCheckboxVariable.get(), 'reError': self.defaultReCheckboxVariable.get(), 'gammaError': self.defaultGammaCheckboxVariable.get(), 'deltaError': self.defaultDeltaCheckboxVariable.get(), 'errorWeighting': self.defaultErrorWeightingVariable.get(), 'errorMA': self.defaultMovingAverageVariable.get()}
             config['custom'] = {'askCustomExit': self.customFormulaExitAlertVariable.get(), 'freqLoadCustom': self.customFreqLoadVariable.get(), 'imports': imports}
-            if (os.path.exists(os.getenv('LOCALAPPDATA')+r"\MeasurementModel")):
-                with open(os.getenv('LOCALAPPDATA')+r"\MeasurementModel\settings.ini", 'w+') as configfile:
+           
+            #---Write to LOCALAPPDATA/MeasurementModel/settings.ini---
+            settingsDirectoryPath = os.path.join(os.getenv('LOCALAPPDATA'), "MeasurementModel")
+            settingsFilePath = os.path.join(settingsDirectoryPath, "settings.ini")
+            if (os.path.exists(settingsDirectoryPath)):
+                with open(settingsFilePath, 'w+') as configfile:
                     config.write(configfile)
                     configfile.close()
             else:
-                os.makedirs(os.getenv('LOCALAPPDATA')+r"\MeasurementModel")
-                with open(os.getenv('LOCALAPPDATA')+r"\MeasurementModel\settings.ini", 'w') as configfile:
+                os.makedirs(settingsDirectoryPath)
+                with open(settingsFilePath, 'w') as configfile:
                     config.write(configfile)
                     configfile.close()
             self.applySettings()
             self.saveButton.configure(text="Saved")
             self.after(500, lambda: self.saveButton.configure(text="Save and Apply"))
-        except:
+        except Exception:
             messagebox.showerror("File error", "Error 52:\nError in applying or saving settings")
     
+    #---Bindings for using Control+s to save---
     def bindIt(self, e=None):
         self.bind_all("<Control-s>", self.saveSettings)
     

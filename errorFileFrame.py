@@ -396,7 +396,6 @@ class eFF(tk.Frame):
             saveName.close()
             self.saveButton.configure(text="Saved")
             self.after(1000, lambda : self.saveButton.configure(text="Save errors"))
-            #scipy.stats.f.ppf(0.95, dfn, dfd)
         
         def plotResiduals():
             resPlot = tk.Toplevel(background=self.backgroundColor)
@@ -423,7 +422,6 @@ class eFF(tk.Frame):
                     realColor = "tab:blue"
                 a.plot(self.wdata[0], self.standardDevsR, "o", markerfacecolor="None", color=realColor, label="Real")
                 a.plot(self.wdata[0], self.standardDevsI, "^", markerfacecolor="None", color=imagColor, label="Imaginary")
-                #model = np.zeros(self.wdataLength)
                 a.set_xscale("log")
                 a.set_yscale("log")
                 a.set_title("Standard Deviations", color=self.foregroundColor)
@@ -617,19 +615,6 @@ class eFF(tk.Frame):
                 float(jres_in[i])
                 float(r_in[i])
                 float(j_in[i])
-#            if (not self.noneLoaded):
-#                if (len(w_in) != self.wdataLength):
-#                    raise FileLengthError
-#                else:
-#                    for i in range(len(w_in)):
-#                        if (self.wdata[0][i] != w_in[i]):
-#                            raise FrequencyMismatchError
-#            if (name in self.fileListbox.get(0, tk.END) and not alreadyWarned):
-#                alreadyWarned = True
-#                if (len(n) > 1):
-#                    messagebox.showwarning("File already loaded", "Warning: One or more of the selected files is already loaded and is being loaded again")
-#                else:
-#                    messagebox.showwarning("File already loaded", "Warning: The selected file is already loaded and is being loaded again")
             self.fileListbox.insert(tk.END, n)
             self.wdataLength = len(w_in)
             self.noneLoaded = False
@@ -651,7 +636,6 @@ class eFF(tk.Frame):
         except:
             messagebox.showerror("File error", "Error 29:\nThere was an error reading the file")
     def residualsEnter(self, n):
-        #print(n)
         try:
             alreadyWarned = False
             for name in n:
