@@ -3,6 +3,8 @@ A GUI Python-based impedance measurement model tool. This project served as my U
 _mm.py_ is the program launching point.  
 _Measurement_model_guide.pdf_ is a very in-depth look at the program's abilities.  
 
+![Screenshot of program when fitting impedance of DI water](Screenshot.png)
+
 ### Features
 ##### Importing data
 * Read common impedance file types and automatically select the data contained therein
