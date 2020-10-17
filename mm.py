@@ -1471,7 +1471,7 @@ You should have received a copy of the GNU General Public License along with thi
     gnuLicenseLink.bind('<Button-1>', lambda e: webbrowser.open_new("gpl-3.0-standalone.html"))
     buttonFrame = tk.Frame(splashScreen, bg="white")
     
-    #---If Start program is clicked in the splash screen---
+    #---If Start program is clicked in the splash screen, enter the main program---
     def on_start_splash():
         splashScreen.destroy()
         root.deiconify()
@@ -1479,7 +1479,7 @@ You should have received a copy of the GNU General Public License along with thi
     okButton = ttk.Button(buttonFrame, text="Start program", command=on_start_splash)
     okButton.bind("<Return>", lambda e: on_start_splash())
     
-    #---If Cancel is clicked in the splash screen---
+    #---If Cancel is clicked in the splash screen, close the program---
     def on_cancel_splash():
         splashScreen.destroy()
         root.destroy()

@@ -88,18 +88,18 @@ def mp_complex(sharedList, numBootstrap, perVal, numParams, paramNames, r_in, Z_
     
     def weightCode(p):
         """
-            Calculate weighting used in regression for complex fits
+        Calculate weighting used in regression for complex fits
 
-            Parameters
-            ----------
-            p : lmfit Parameters
-                The parameters to be fit.
+        Parameters
+        ----------
+        p : lmfit Parameters
+            The parameters to be fit.
 
-            Returns
-            -------
-            weight : numpy array
-                The weighting for regression, as a single array; the first half will be the real weighting, with the imaginary weighting appended at the end.
-                For proportional weighting, the weighting is a repeat, with the real/imaginary weighting first, then the real/imaginary weighting appended again.
+        Returns
+        -------
+        weight : numpy array
+            The weighting for regression, as a single array; the first half will be the real weighting, with the imaginary weighting appended at the end.
+            For proportional weighting, the weighting is a repeat, with the real/imaginary weighting first, then the real/imaginary weighting appended again.
 
         """
         V = np.ones(len(w))                #Default - no weighting
@@ -137,17 +137,17 @@ def mp_complex(sharedList, numBootstrap, perVal, numParams, paramNames, r_in, Z_
         
     def model(p):
         """
-            The model used in complex fitting
+        The model used in complex fitting
 
-            Parameters
-            ----------
-            p : lmfit Parameters
-                The parameters for the current fitting iteration.
+        Parameters
+        ----------
+        p : lmfit Parameters
+            The parameters for the current fitting iteration.
 
-            Returns
-            -------
-            model : numpy array
-                Numpy array of the real impedance, then the imaginary impedance appended to that.
+        Returns
+        -------
+        model : numpy array
+            Numpy array of the real impedance, then the imaginary impedance appended to that.
 
         """
         p.valuesdict()
@@ -166,19 +166,19 @@ def mp_complex(sharedList, numBootstrap, perVal, numParams, paramNames, r_in, Z_
     
     def diffComplex(params, yVals):
         """
-            The objective function for complex fitting.
-            
-            Parameters
-            ----------
-            params : lmfit Parameters
-                The parameters for the current fitting iteration
-            
-            yVals : The data values
-            
-            Returns
-            -------
-            residuals : list/array
-                Array of the residuals (the known values minus the model values over the weighting)
+        The objective function for complex fitting.
+        
+        Parameters
+        ----------
+        params : lmfit Parameters
+            The parameters for the current fitting iteration
+        
+        yVals : The data values
+        
+        Returns
+        -------
+        residuals : list/array
+            Array of the residuals (the known values minus the model values over the weighting)
             
         """
         return (yVals - model(params))/weightCode(params)
@@ -263,17 +263,17 @@ def mp_imag(sharedList, numBootstrap, perVal, numParams, paramNames, r_in, Z_app
 
     def weightCodeHalf(p):
         """
-            Calculate weighting used in regression for real or imaginary fits
+        Calculate weighting used in regression for real or imaginary fits
 
-            Parameters
-            ----------
-            p : lmfit Parameters
-                The parameters to be fit.
+        Parameters
+        ----------
+        p : lmfit Parameters
+            The parameters to be fit.
 
-            Returns
-            -------
-            weight : numpy array
-                The weighting for regression, as a single array. This array is not appended (unlike weightCode), and so is half the length.
+        Returns
+        -------
+        weight : numpy array
+            The weighting for regression, as a single array. This array is not appended (unlike weightCode), and so is half the length.
 
         """
         V = np.ones(len(w))             #Default (weight == 0) is no weighting (weights are 1)
@@ -302,17 +302,17 @@ def mp_imag(sharedList, numBootstrap, perVal, numParams, paramNames, r_in, Z_app
     
     def modelImag(p):
         """
-            The model used in imaginary fitting
+        The model used in imaginary fitting
 
-            Parameters
-            ----------
-            p : lmfit Parameters
-                The parameters for the current fitting iteration.
+        Parameters
+        ----------
+        p : lmfit Parameters
+            The parameters for the current fitting iteration.
 
-            Returns
-            -------
-            model : list/array
-                Array of the imaginary impedance
+        Returns
+        -------
+        model : list/array
+            Array of the imaginary impedance
 
         """
         p.valuesdict()
@@ -331,19 +331,19 @@ def mp_imag(sharedList, numBootstrap, perVal, numParams, paramNames, r_in, Z_app
     
     def diffImag(params, yVals):
         """
-            The objective function for imaginary fitting.
-            
-            Parameters
-            ----------
-            params : lmfit Parameters
-                The parameters for the current fitting iteration
-            
-            yVals : The data values
-            
-            Returns
-            -------
-            residuals : list/array
-                Array of the residuals (the known values minus the model values over the weighting)
+        The objective function for imaginary fitting.
+        
+        Parameters
+        ----------
+        params : lmfit Parameters
+            The parameters for the current fitting iteration
+        
+        yVals : The data values
+        
+        Returns
+        -------
+        residuals : list/array
+            Array of the residuals (the known values minus the model values over the weighting)
             
         """
         return (yVals - modelImag(params))/weightCodeHalf(params)
@@ -425,17 +425,17 @@ def mp_real(sharedList, numBootstrap, perVal, numParams, paramNames, r_in, Z_app
     
     def weightCodeHalf(p):
         """
-            Calculate weighting used in regression for real or imaginary fits
+        Calculate weighting used in regression for real or imaginary fits
 
-            Parameters
-            ----------
-            p : lmfit Parameters
-                The parameters to be fit.
+        Parameters
+        ----------
+        p : lmfit Parameters
+            The parameters to be fit.
 
-            Returns
-            -------
-            weight : numpy array
-                The weighting for regression, as a single array. This array is not appended (unlike weightCode), and so is half the length.
+        Returns
+        -------
+        weight : numpy array
+            The weighting for regression, as a single array. This array is not appended (unlike weightCode), and so is half the length.
 
         """
         V = np.ones(len(w))             #Default (weight == 0) is no weighting (weights are 1)
@@ -464,17 +464,17 @@ def mp_real(sharedList, numBootstrap, perVal, numParams, paramNames, r_in, Z_app
     
     def modelReal(p):
         """
-            The model used in real fitting
+        The model used in real fitting
 
-            Parameters
-            ----------
-            p : lmfit Parameters
-                The parameters for the current fitting iteration.
+        Parameters
+        ----------
+        p : lmfit Parameters
+            The parameters for the current fitting iteration.
 
-            Returns
-            -------
-            model : list/array
-                Array of the real impedance
+        Returns
+        -------
+        model : list/array
+            Array of the real impedance
 
         """
         p.valuesdict()
@@ -493,19 +493,19 @@ def mp_real(sharedList, numBootstrap, perVal, numParams, paramNames, r_in, Z_app
     
     def diffReal(params, yVals):
         """
-            The objective function for real fitting.
-            
-            Parameters
-            ----------
-            params : lmfit Parameters
-                The parameters for the current fitting iteration
-            
-            yVals : The data values
-            
-            Returns
-            -------
-            residuals : list/array
-                Array of the residuals (the known values minus the model values over the weighting)
+        The objective function for real fitting.
+        
+        Parameters
+        ----------
+        params : lmfit Parameters
+            The parameters for the current fitting iteration
+        
+        yVals : The data values
+        
+        Returns
+        -------
+        residuals : list/array
+            Array of the residuals (the known values minus the model values over the weighting)
             
         """
         return (yVals - modelReal(params))/weightCodeHalf(params)
