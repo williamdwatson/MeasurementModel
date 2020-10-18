@@ -125,6 +125,7 @@ def mp_complex(sharedList, numBootstrap, perVal, numParams, paramNames, r_in, Z_
             Zimag = []
             weighting = []
             freq = w.copy()
+            #---Assign variable names their values, then exec the Python string---
             for i in range(numParams):
                 exec(paramNames[i] + " = " + str(float(p[paramNames[i]])))
             ldict = locals()
@@ -156,6 +157,7 @@ def mp_complex(sharedList, numBootstrap, perVal, numParams, paramNames, r_in, Z_
         Zreal = []
         Zimag = []
         freq = w.copy()
+        #---Assign variable names their values, then exec the Python string---
         for i in range(numParams):
             exec(paramNames[i] + " = " + str(float(p[paramNames[i]])))
         ldict = locals()
@@ -293,6 +295,7 @@ def mp_imag(sharedList, numBootstrap, perVal, numParams, paramNames, r_in, Z_app
             Zimag = []
             weighting = []
             freq = w.copy()
+            #---Assign variable names their values, then exec the Python string---
             for i in range(numParams):
                 exec(paramNames[i] + " = " + str(float(p[paramNames[i]])))
             ldict = locals()
@@ -321,6 +324,7 @@ def mp_imag(sharedList, numBootstrap, perVal, numParams, paramNames, r_in, Z_app
         Zreal = []
         Zimag = []
         freq = w.copy()
+        #---Assign variable names their values, then exec the Python string---
         for i in range(numParams):
             exec(paramNames[i] + " = " + str(float(p[paramNames[i]])))
         ldict = locals()
@@ -455,6 +459,7 @@ def mp_real(sharedList, numBootstrap, perVal, numParams, paramNames, r_in, Z_app
             Zimag = []
             weighting = []
             freq = w.copy()
+            #---Assign variable names their values, then exec the Python string---
             for i in range(numParams):
                 exec(paramNames[i] + " = " + str(float(p[paramNames[i]])))
             ldict = locals()
@@ -483,6 +488,7 @@ def mp_real(sharedList, numBootstrap, perVal, numParams, paramNames, r_in, Z_app
         Zreal = []
         Zimag = []
         freq = w.copy()
+        #---Assign variable names their values, then exec the Python string---
         for i in range(numParams):
             exec(paramNames[i] + " = " + str(float(p[paramNames[i]])))
         ldict = locals()
@@ -644,7 +650,7 @@ class bootstrapFitter:
                 Array of the residuals (the known values minus the model values over the weighting)
             
             """
-            if (not self.keepGoing):
+            if (not self.keepGoing):            #Check if the fitting has been cancelled
                 return
             return (yVals - model(params))/weightCode(params)
         
@@ -665,7 +671,7 @@ class bootstrapFitter:
                 Array of the residuals (the known values minus the model values over the weighting)
             
             """
-            if (not self.keepGoing):
+            if (not self.keepGoing):            #Check if the fitting has been cancelled
                 return
             return (yVals - modelImag(params))/weightCodeHalf(params)
         
@@ -686,7 +692,7 @@ class bootstrapFitter:
                 Array of the residuals (the known values minus the model values over the weighting)
             
             """
-            if (not self.keepGoing):
+            if (not self.keepGoing):            #Check if the fitting has been cancelled
                 return
             return (yVals - modelReal(params))/weightCodeHalf(params)
         
@@ -983,8 +989,10 @@ class bootstrapFitter:
                         listPercent.append(2)
                     def checkVal():
                         """Self-calling thread which checks processes progress"""
+                        #---Check percent completion from shared variable, then append to list to communicate with GUI---
                         for i in range(percentVal.value+1 - len(listPercent)):
                             listPercent.append(1)
+                        #---Initiate self-calling every 0.1 seconds while not at 100% completion---
                         if (percentVal.value < listPercent[0]):
                             timer = threading.Timer(0.1, checkVal)
                             timer.start()
@@ -1007,8 +1015,10 @@ class bootstrapFitter:
                         listPercent.append(2)
                     def checkVal():
                         """Self-calling thread which checks processes progress"""
+                        #---Check percent completion from shared variable, then append to list to communicate with GUI---
                         for i in range(percentVal.value+1 - len(listPercent)):
                             listPercent.append(1)
+                        #---Initiate self-calling every 0.1 seconds while not at 100% completion---
                         if (percentVal.value < listPercent[0]):
                             timer = threading.Timer(0.1, checkVal)
                             timer.start()
@@ -1031,8 +1041,10 @@ class bootstrapFitter:
                         listPercent.append(2)
                     def checkVal():
                         """Self-calling thread which checks processes progress"""
+                        #---Check percent completion from shared variable, then append to list to communicate with GUI---
                         for i in range(percentVal.value+1 - len(listPercent)):
                             listPercent.append(1)
+                        #---Initiate self-calling every 0.1 seconds while not at 100% completion---
                         if (percentVal.value < listPercent[0]):
                             timer = threading.Timer(0.1, checkVal)
                             timer.start()
@@ -1057,6 +1069,7 @@ class bootstrapFitter:
         weightingToReturn = 1
         if (weight == 4):
             weighting = []
+        #---Assign variable names their values, then exec the Python string---
         for i in range(numParams):
             exec(paramNames[i] + " = " + str(float(r_in[i])))
         ldict = locals()
@@ -1089,6 +1102,7 @@ class bootstrapFitter:
             Zreal = []
             Zimag = []
             freq = w.copy()
+            #---Assign variable names their values, then exec the Python string---
             for k in range(numParams):
                 exec(paramNames[k] + " = " + str(float(randomParams[k][i])))
             ldict = locals()

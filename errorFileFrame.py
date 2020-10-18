@@ -129,7 +129,7 @@ class eFF(tk.Frame):
         self.standardDevsR = []
         
         def addFile():
-            n = askopenfilenames(initialdir=self.topGUI.getCurrentDirectory(), filetypes =[("Residuals File (*.mmresiduals)", "*.mmresiduals")],title = "Choose a file")
+            n = askopenfilenames(initialdir=self.topGUI.getCurrentDirectory(), filetypes =[("Residuals File (*.mmresiduals)", "*.mmresiduals")], title = "Choose a file")
             if (len(n) != 0):
                 try:
                     alreadyWarned = False

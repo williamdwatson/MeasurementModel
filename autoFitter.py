@@ -1069,13 +1069,13 @@ class autoFitter:
                     p.join()
             lowest = 1E9        #The lowest chi-squared value
             lowestIndex = -1    #The index of the minimization for the lowest chi-squared value
-            #Look through each chi-squared value and see if it's the lowest; if it is, then set lowest and lowestIndex
+            #---Look through each chi-squared value and see if it's the lowest; if it is, then set lowest and lowestIndex---
             for i in range(len(vals)):
                 if (vals[i][0] < lowest):
                     lowest = vals[i][0]
                     lowestIndex = i
             minimized = vals[lowestIndex][1]    #The lmfit minimization for the best result
-            current_min = vals[lowestIndex][0]
+            current_min = vals[lowestIndex][0]  #The chi-squared value at that minimization
         #---If we're not using multiprocessing---
         else:
             if (fitType == 0):      #Complex fitting
