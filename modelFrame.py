@@ -84,7 +84,7 @@ class ThreadedTaskAuto(threading.Thread):
         try:
             r, s, sdr, sdi, zz, zzs, zp, zps, chi, cor, aic, ft, fw = self.fittingObject.autoFit(self.nve_max, self.reFix, self.reFixVal, self.nMC, self.wdat, self.rdat, self.jdat, self.listPer, self.choice, self.autoType, self.errAlpha, self.errBeta, self.errBetaRe, self.errGamma, self.errDelta)  
             self.queue.put((r, s, sdr, sdi, zz, zzs, zp, zps, chi, cor, aic, ft, fw))
-        except:
+        except Exception:
             self.queue.put(("@", "@", "@", "@", "@", "@", "@", "@", "@", "@", "@", "@", "@"))
     def get_id(self):
         # From https://www.geeksforgeeks.org/python-different-ways-to-kill-a-thread/
@@ -131,7 +131,7 @@ class ThreadedTask(threading.Thread):
         try:
             r, s, sdr, sdi, zz, zzs, zp, zps, chi, cor, aic = self.fittingObject.findFit(self.wdat, self.rdat, self.jdat, self.nVE, self.nMC, self.choice, self.assumeNoise, self.rM, self.fitType, self.boundLower, self.guesses, self.const, self.boundUpper, self.listPer, self.errAlpha, self.errBeta, self.errBetaRe, self.errGamma, self.errDelta)
             self.queue.put((r, s, sdr, sdi, zz, zzs, zp, zps, chi, cor, aic))
-        except:
+        except Exception:
             self.queue.put(("@", "@", "@", "@", "@", "@", "@", "@", "@", "@", "@"))
     def get_id(self):
         # From https://www.geeksforgeeks.org/python-different-ways-to-kill-a-thread/
@@ -182,7 +182,7 @@ class ThreadedTaskCap(threading.Thread):
         try:
             r, s, sdr, sdi, zz, zzs, zp, zps, chi, cor, aic, capR, capS, corCap = self.fittingObjectCap.findFit(self.wdat, self.rdat, self.jdat, self.nVE, self.nMC, self.choice, self.assumeNoise, self.rM, self.fitType, self.boundLower, self.guesses, self.const, self.boundUpper, self.listPer, self.capG, self.bLCap, self.bUCap, self.fCap, self.errAlpha, self.errBeta, self.errBetaRe, self.errGamma, self.errDelta)
             self.queue.put((r, s, sdr, sdi, zz, zzs, zp, zps, chi, cor, aic, capR, capS, corCap))
-        except:
+        except Exception:
             self.queue.put(("@", "@", "@", "@", "@", "@", "@", "@", "@", "@", "@"))
     
     def get_id(self): 
@@ -483,7 +483,7 @@ class mmF(tk.Frame):
             try:
                 with open(name,'r') as UseFile:
                     return name
-            except:
+            except Exception:
                 return "+"
             
         def browse():
@@ -534,7 +534,7 @@ class mmF(tk.Frame):
                                     self.jdata = self.jdataRaw.copy()[self.lowDelete:-1*self.upDelete]
                                 self.lowerSpinboxVariable.set(str(self.lowDelete))
                                 self.upperSpinboxVariable.set(str(self.upDelete))
-                            except:
+                            except Exception:
                                 messagebox.showwarning("Frequency error", "There are more frequencies set to be deleted than data points. The number of frequencies to delete has been reset to 0.")
                                 self.upDelete = 0
                                 self.lowDelete = 0
@@ -598,7 +598,7 @@ class mmF(tk.Frame):
                                 self.imagFreq.set_ylabel("-Zj / Ω", color=self.foregroundColor)
                                 self.imagFreq.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                                 self.canvasFreq.draw()
-                        except:
+                        except Exception:
                             pass
                         self.lengthOfData = len(self.wdata)
                         self.tauDefault = 1/((max(w_in)-min(w_in))/(np.log10(abs(max(w_in)/min(w_in)))))
@@ -633,7 +633,7 @@ class mmF(tk.Frame):
                         self.browseEntry.delete(0,tk.END)
                         self.browseEntry.insert(0, n)
                         self.browseEntry.configure(state="readonly")
-                    except:
+                    except Exception:
                         messagebox.showerror("File error", "Error 9:\nThere was an error loading or reading the file")
                 elif (fext == ".mmfitting"):
                     try:
@@ -803,7 +803,7 @@ class mmF(tk.Frame):
                                 self.imagFreq.set_ylabel("-Zj / Ω", color=self.foregroundColor)
                                 self.imagFreq.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                                 self.canvasFreq.draw()
-                        except:
+                        except Exception:
                             pass
                         self.lengthOfData = len(self.wdata)
                         self.tauDefault = 1/((max(w_in)-min(w_in))/(np.log10(abs(max(w_in)/min(w_in)))))
@@ -910,7 +910,7 @@ class mmF(tk.Frame):
                             self.capacitanceCheckboxVariable.set(1)
                             self.capacitanceEntryVariable.set(str(capValue))
                             self.capacitanceComboboxVariable.set(capCombo)
-                    except:
+                    except Exception:
                         messagebox.showerror("File error", "Error 9:\nThere was an error loading or reading the file")
                 else:
                     messagebox.showerror("File error", "Error 10:\nThe file has an unknown extension")
@@ -930,7 +930,7 @@ class mmF(tk.Frame):
                     return False
                 else:
                     return True
-            except:
+            except Exception:
                 return False
             
         def validateFreqLow(P):
@@ -955,7 +955,7 @@ class mmF(tk.Frame):
                     return False
                 else:
                     return True
-            except:
+            except Exception:
                 return False
             
         def validateFreqHigh(P):
@@ -980,7 +980,7 @@ class mmF(tk.Frame):
                     return False
                 else:
                     return True
-            except:
+            except Exception:
                 return False
             
         def validateEither(P):
@@ -1009,12 +1009,12 @@ class mmF(tk.Frame):
                                 elif (P.count("+") == 1):
                                     if (P[P.find("+")-1] == "E" or P[P.find("+")-1] == "e"):
                                         return True
-                            except:
+                            except Exception:
                                 return False                   
             try:
                 float(P)
                 return True
-            except:
+            except Exception:
                 return False
         
         valcom = (self.register(validateEither), '%P')
@@ -1026,7 +1026,7 @@ class mmF(tk.Frame):
                 return True
             try:
                 val = int(P)
-            except:
+            except Exception:
                 return False
             if (val < 0):
                 return False
@@ -1040,7 +1040,7 @@ class mmF(tk.Frame):
                 return True
             try:
                 val = int(P)
-            except:
+            except Exception:
                 return False
             if (val < 0):
                 return False
@@ -1524,7 +1524,7 @@ class mmF(tk.Frame):
                         self.paramEntryVariables[i].set(str(round(self.rDefault, -int(np.floor(np.log10(self.rDefault))) + (4 - 1))))
                     if (self.paramEntryVariables[i+1].get() == ''):
                         self.paramEntryVariables[i+1].set(str(round(self.tauDefault, -int(np.floor(np.log10(self.tauDefault))) + (4 - 1))))
-            except:
+            except Exception:
                 pass
             name = askopenfilename(initialdir=self.topGUI.getCurrentDirectory(), filetypes = [("Measurement model fitting", "*.mmfitting")], title = "Choose a file")
             if (len(name) == 0):
@@ -1610,7 +1610,7 @@ class mmF(tk.Frame):
                 self.numVoigtTextVariable.set(str(len(tComboboxes)))
                 self.numVoigtVariable.set(str(len(tComboboxes)))
                 self.nVoigt = int(self.numVoigtVariable.get())
-            except:
+            except Exception:
                 messagebox.showerror("File error", "Error 9: \nThere was an error loading or reading the file")
 
         def checkWeight(event):
@@ -1663,11 +1663,11 @@ class mmF(tk.Frame):
                 self.ellipsisPercent = 0
                 try:
                     self.taskbar.SetProgressState(self.masterWindowId, 0x0)
-                except:
+                except Exception:
                     pass
                 try:
                     ctypes.windll.user32.FlashWindow(self.masterWindowId, True)
-                except:
+                except Exception:
                     pass
                 if (len(r) == 1 and len(s) == 1 and len(sdr) == 1 and len(sdi)==1 and len(zz)==1 and len(zzs)==1 and len(chi)==1):
                     if (r=="^" and s=="^" and sdr=="^" and sdi=="^" and zz=="^" and zzs=="^" and zp=="^" and zps=="^" and chi=="^"):
@@ -1871,7 +1871,7 @@ class mmF(tk.Frame):
                     self.aR += "Chi-squared/Degrees of freedom = %.4g"%(chi/(self.lengthOfData*2-len(r))) + "\n"
                     try:
                         self.aR += "Akaike Information Criterion = %.4g"%aic
-                    except:
+                    except Exception:
                         self.aR += "Akaike Information Criterion could not be calculated"
                     self.resultAlert.grid_remove()
                     if (len(s) == 1):
@@ -2045,24 +2045,24 @@ class mmF(tk.Frame):
                 try:
                     self.progStatus.configure(text="Initializing...")
                     self.progStatus.grid_remove()
-                except:
+                except Exception:
                     pass
                 for delButton in self.paramDeleteButtons:
                     delButton.configure(state="normal")
                 try:
                     self.addButton.configure(state="normal")
                     self.removeButton.configure(state="normal")
-                except:
+                except Exception:
                     pass
                 try:
                     self.autoRunButton.configure(state="normal")
-                except:
+                except Exception:
                     pass
                 self.prog_bar.stop()
                 self.prog_bar.destroy()
                 try:
                     self.taskbar.SetProgressState(self.masterWindowId, 0x0)
-                except:
+                except Exception:
                     pass
                 self.cancelButton.grid_remove()
                 if (len(r) == 1 and len(s) == 1 and len(sdr) == 1 and len(sdi)==1 and len(zz)==1 and len(zzs)==1 and len(chi)==1):
@@ -2258,7 +2258,7 @@ class mmF(tk.Frame):
                     self.aR += "Chi-squared/Degrees of freedom = %.4g"%(chi/(self.lengthOfData*2-len(r))) + "\n"
                     try:
                         self.aR += "Akaike Information Criterion = %.4g"%aic
-                    except:
+                    except Exception:
                         self.aR += "Akaike Information Criterion could not be calculated"
                     self.resultAlert.grid_remove()
                     
@@ -2389,7 +2389,7 @@ class mmF(tk.Frame):
                     try:
                         self.taskbar.SetProgressValue(self.masterWindowId, (len(self.listPercent) - 1), self.listPercent[0])
                         self.taskbar.SetProgressState(self.masterWindowId, 0x2)
-                    except:
+                    except Exception:
                         pass
                     if (self.listPercent[len(self.listPercent)-1] == 2):
                         self.progStatus.configure(text="Starting processes...")
@@ -2427,22 +2427,22 @@ class mmF(tk.Frame):
                 try:
                     self.progStatus.configure(text="Initializing...")
                     self.progStatus.grid_remove()
-                except:
+                except Exception:
                     pass
                 try:
                     self.taskbar.SetProgressState(self.masterWindowId, 0x0)
-                except:
+                except Exception:
                     pass
                 for delButton in self.paramDeleteButtons:
                     delButton.configure(state="normal")
                 try:
                     self.addButton.configure(state="normal")
                     self.removeButton.configure(state="normal")
-                except:
+                except Exception:
                     pass
                 try:
                     self.autoRunButton.configure(state="normal")
-                except:
+                except Exception:
                     pass
                 self.prog_bar.stop()
                 self.prog_bar.destroy()
@@ -2567,7 +2567,7 @@ class mmF(tk.Frame):
                         partCap += sigmaCapacitances[i]**2/capacitances[i]**4
                     try:
                         partCap += sc**2/rc**4
-                    except:
+                    except Exception:
                         pass
                     sigmaCeff = ceff**2 * np.sqrt(partCap)
                     self.resultC.configure(text="Overall Capacitance = %.4g"%ceff + " ± %.2g"%sigmaCeff)
@@ -2586,7 +2586,7 @@ class mmF(tk.Frame):
                     self.aR += "\nRe (Rsol) = %.8g"%r[0] + " ± %.4g"%s[0] + "\n"
                     try:
                         self.aR += "Capacitance = %.8g"%rc + " ± %.4g"%sc + "\n"
-                    except:
+                    except Exception:
                         self.aR += "Capacitance = %.8g"%rc + " ± %.4g"%0 + "\n"
                     for i in range(1, len(r), 2):
                         self.aR += "R" + str(int(i/2 + 1)) + " = %.8g"%r[i] + " ± %.4g"%s[i] + "\n"
@@ -2666,7 +2666,7 @@ class mmF(tk.Frame):
                     self.aR += "Chi-squared/Degrees of freedom = %.4g"%(chi/(self.lengthOfData*2-len(r))) + "\n"
                     try:
                         self.aR += "Akaike Information Criterion = %.4g"%aic
-                    except:
+                    except Exception:
                         self.aR += "Akaike Information Criterion could not be calculated"
                     self.resultAlert.grid_remove()
                     if (len(s) == 1):
@@ -2697,7 +2697,7 @@ class mmF(tk.Frame):
                                 self.resultAlert.grid(column=0, row=3, sticky="E")
                             else:
                                 self.resultsView.insert("", tk.END, text="", values=("Capacitance", "%.5g"%rc, "%.3g"%sc, "%.3g"%(sc*2*100/rc)+"%"))
-                        except:
+                        except Exception:
                             self.resultsView.insert("", tk.END, text="", values=("Capacitance", "%.5g"%rc, "%.3g"%0, "%.3g"%(0*2*100/rc)+"%"))
                         for i in range(1, len(r), 2):
                             if (r[i] == 0):
@@ -2805,7 +2805,7 @@ class mmF(tk.Frame):
                     try:
                         self.taskbar.SetProgressValue(self.masterWindowId, (len(self.listPercent) - 1), self.listPercent[0])
                         self.taskbar.SetProgressState(self.masterWindowId, 0x2)
-                    except:
+                    except Exception:
                         pass
                     if (self.listPercent[len(self.listPercent)-1] == 2):
                         self.progStatus.configure(text="Starting processes...")
@@ -2821,7 +2821,7 @@ class mmF(tk.Frame):
         def runMeasurementModel():
             try:
                 self.masterWindowId = ctypes.windll.user32.GetForegroundWindow()
-            except:
+            except Exception:
                 pass
             if (self.browseEntry.get() != ""):
                 if (self.capacitanceCheckboxVariable.get() == 0):
@@ -2835,7 +2835,7 @@ class mmF(tk.Frame):
                         if (self.paramComboboxVariables[0].get() == "+" and float(self.paramEntryVariables[0].get()) < 0):
                             messagebox.showerror("Value error", "Error 18:\nRe has a negative value but is constrained to be positive")
                             return
-                    except:
+                    except Exception:
                         pass
                     bL[0] = np.NINF if (self.paramComboboxVariables[0].get() == "+ or -" or self.paramComboboxVariables[0].get() == "fixed") else 0
                     bU[0] = np.inf if (self.paramComboboxVariables[0].get() == "+ or -" or self.paramComboboxVariables[0].get() == "fixed" or self.paramComboboxVariables[0].get() == "+") else 0
@@ -2880,7 +2880,7 @@ class mmF(tk.Frame):
                             elif (ig[i][0] > 0 and bU[i] == 0):
                                 messagebox.showerror("Value error", "Error 20: \nOne of the parameters has a positive value but is constrained to be negative")
                                 return
-                        except:
+                        except Exception:
                             messagebox.showerror("Value error", "Error 21:\nOne of the parameters has an invalid value: " + str(possibleVal))
                             return
                     try:
@@ -2900,7 +2900,7 @@ class mmF(tk.Frame):
                                     ig[i].extend((float(self.multistartUpper[i].get())-float(self.multistartLower[i].get()))*np.random.rand(int(self.multistartNumber[i].get()))+float(self.multistartLower[i].get()))
                                 if (self.multistartSelection[i].get() == "Custom"):
                                     ig[i].extend(float(val) for val in [x.strip() for x in self.multistartCustom[i].get().split(',')])
-                    except:
+                    except Exception:
                         messagebox.showerror("Value error", "There was an invalid value in the multistart options")
                         return
                     for i in range(len(ig)):
@@ -2951,7 +2951,7 @@ class mmF(tk.Frame):
                                     error_delta = 0
                                 else:
                                     error_delta = float(self.errorDeltaVariable.get())
-                        except:
+                        except Exception:
                             messagebox.showerror("Value error", "Error 23:\nOne of the error structure parameters has an invalid value")
                             return
                         if (error_alpha == 0 and error_beta == 0 and error_gamma == 0 and error_delta == 0):
@@ -2966,7 +2966,7 @@ class mmF(tk.Frame):
                         fT = 1
                     try:
                         aN = float(self.alphaVariable.get()) if (self.alphaVariable.get() != "") else 1
-                    except:
+                    except Exception:
                         messagebox.showerror("Value error", "Error 25:\nThe assumed noise (alpha) has an invalid value")
                         return
                     if (aN <= 0):
@@ -2999,11 +2999,11 @@ class mmF(tk.Frame):
                     try:
                         self.addButton.configure(state="disabled")
                         self.removeButton.configure(state="disabled")
-                    except:
+                    except Exception:
                         pass
                     try:
                         self.autoRunButton.configure(state="disabled")
-                    except:
+                    except Exception:
                         pass
                     if (len(max(ig, key=len)) > 1):
                         self.prog_bar = ttk.Progressbar(self.measureModelFrame, orient="horizontal", length=130, maximum=1, mode="determinate")
@@ -3016,7 +3016,7 @@ class mmF(tk.Frame):
                             self.taskbar.HrInit()
                             self.taskbar.ActivateTab(self.masterWindowId)
                             self.taskbar.SetProgressState(self.masterWindowId, 0x2)
-                        except:
+                        except Exception:
                             pass
                     else:
                         self.prog_bar = ttk.Progressbar(self.measureModelFrame, orient="horizontal", length=130, mode="indeterminate")
@@ -3027,7 +3027,7 @@ class mmF(tk.Frame):
                             self.taskbar.HrInit()
                             self.taskbar.ActivateTab(self.masterWindowId)
                             self.taskbar.SetProgressState(self.masterWindowId, 0x1)
-                        except:
+                        except Exception:
                             pass
                     self.cancelButton = tk.Label(self.measureModelFrame, text="×", font=('Helvetica', 12, 'bold'), fg=self.foregroundColor, bg=self.backgroundColor, cursor="hand2")
                     self.cancelButton.grid(column=4, row=0)
@@ -3059,7 +3059,7 @@ class mmF(tk.Frame):
                         if (self.paramComboboxVariables[0].get() == "+" and float(self.paramEntryVariables[0].get()) < 0):
                             messagebox.showerror("Value error", "Error 18:\nRe has a negative value but is constrained to be positive")
                             return
-                    except:
+                    except Exception:
                         pass
                     bL[0] = np.NINF if (self.paramComboboxVariables[0].get() == "+ or -" or self.paramComboboxVariables[0].get() == "fixed") else 0
                     bU[0] = np.inf if (self.paramComboboxVariables[0].get() == "+ or -" or self.paramComboboxVariables[0].get() == "fixed" or self.paramComboboxVariables[0].get() == "+") else 0
@@ -3105,7 +3105,7 @@ class mmF(tk.Frame):
                             elif (ig[i][0] > 0 and bU[i] == 0):
                                 messagebox.showerror("Value error", "One of the parameters has a positive value but is constrained to be negative")
                                 return
-                        except:
+                        except Exception:
                             messagebox.showerror("Value error", "Error 21:\nOne of the parameters has an invalid value: " + str(possibleVal))
                             return
                     try:
@@ -3125,7 +3125,7 @@ class mmF(tk.Frame):
                                     ig[i].extend((float(self.multistartUpper[i].get())-float(self.multistartLower[i].get()))*np.random.rand(int(self.multistartNumber[i].get()))+float(self.multistartLower[i].get()))
                                 if (self.multistartSelection[i].get() == "Custom"):
                                     ig[i].extend(int(val) for val in [x.strip() for x in self.multistartCustom[i].get().split(',')])
-                    except:
+                    except Exception:
                         messagebox.showerror("Value error", "There was an invalid value in the multistart options")
                         return
                     for i in range(len(ig)):
@@ -3158,7 +3158,7 @@ class mmF(tk.Frame):
                             elif (g[i] > 0 and bU[i] == 0):
                                 messagebox.showerror("Value error", "One of the parameters has a positive value but is constrained to be negative")
                                 return
-                        except:
+                        except Exception:
                             messagebox.showerror("Value error", "Error 21:\nOne of the parameters has an invalid value: " + str(possibleVal))
                             return
                     error_alpha = 0
@@ -3198,7 +3198,7 @@ class mmF(tk.Frame):
                                     error_delta = 0
                                 else:
                                     error_delta = float(self.errorDeltaVariable.get())
-                        except:
+                        except Exception:
                             messagebox.showerror("Value error", "Error 23:\nOne of the error structure parameters has an invalid value")
                             return
                         if (error_alpha == 0 and error_beta == 0 and error_gamma == 0 and error_delta == 0):
@@ -3213,7 +3213,7 @@ class mmF(tk.Frame):
                         fT = 1
                     try:
                         aN = float(self.alphaVariable.get()) if (self.alphaVariable.get() != "") else 1
-                    except:
+                    except Exception:
                         messagebox.showerror("Value error", "Error 25:\nThe assumed noise (alpha) has an invalid value")
                         return
                     try:
@@ -3234,7 +3234,7 @@ class mmF(tk.Frame):
                             bLC = np.NINF
                             bUC = np.inf                       
                         fC = True if self.capacitanceComboboxVariable.get() == "fixed" else False
-                    except:
+                    except Exception:
                         messagebox.showerror("Value error", "The capacitance has an invalid value")
                         return
                     self.measureModelButton.configure(state="disabled")
@@ -3264,11 +3264,11 @@ class mmF(tk.Frame):
                     try:
                         self.addButton.configure(state="disabled")
                         self.removeButton.configure(state="disabled")
-                    except:
+                    except Exception:
                         pass
                     try:
                         self.autoRunButton.configure(state="disabled")
-                    except:
+                    except Exception:
                         pass
                     if (len(max(ig, key=len)) > 1):
                         self.prog_bar = ttk.Progressbar(self.measureModelFrame, orient="horizontal", length=130, maximum=1, mode="determinate")
@@ -3281,7 +3281,7 @@ class mmF(tk.Frame):
                             self.taskbar.HrInit()
                             self.taskbar.ActivateTab(self.masterWindowId)
                             self.taskbar.SetProgressState(self.masterWindowId, 0x2)
-                        except:
+                        except Exception:
                             pass
                     else:
                         self.prog_bar = ttk.Progressbar(self.measureModelFrame, orient="horizontal", length=130, mode="indeterminate")
@@ -3292,7 +3292,7 @@ class mmF(tk.Frame):
                             self.taskbar.HrInit()
                             self.taskbar.ActivateTab(self.masterWindowId)
                             self.taskbar.SetProgressState(self.masterWindowId, 0x1)
-                        except:
+                        except Exception:
                             pass
                     self.cancelButton = tk.Label(self.measureModelFrame, text="×", font=('Helvetica', 12, 'bold'), fg=self.foregroundColor, bg=self.backgroundColor, cursor="hand2")
                     self.cancelButton.grid(column=4, row=0)
@@ -3356,7 +3356,7 @@ class mmF(tk.Frame):
         def runAutoFitter():
             try:
                 self.masterWindowId = ctypes.windll.user32.GetForegroundWindow()
-            except:
+            except Exception:
                 pass
             def onClose():
                 self.autoFitWindow.withdraw()
@@ -3375,14 +3375,14 @@ class mmF(tk.Frame):
                     nve = int(self.autoMaxNVEVariable.get())
                     if (nve <= 0):
                         raise Exception
-                except:
+                except Exception:
                     messagebox.showerror("Bad value", "The maximum number of Voigt elements must be a positive integer.")
                     return
                 try:
                     nmc = int(self.autoNMCVariable.get())
                     if (nmc <= 0):
                         raise Exception
-                except:
+                except Exception:
                     messagebox.showerror("Bad value", "The number of Monte Carlo simulations must be a positive integer.")
                     return
                 try:
@@ -3406,7 +3406,7 @@ class mmF(tk.Frame):
                         errD = 0
                     else:                        
                         errD = float(self.errorDeltaEntryAuto.get())
-                except:
+                except Exception:
                     messagebox.showerror("Bad error value", "The values for the error structure must be real numbers.", parent=self.autoFitWindow)
                     return
                 if (self.autoWeightingVariable.get() == "Error structure" and errA == 0 and errB == 0 and errG == 0 and errD == 0):
@@ -3420,7 +3420,7 @@ class mmF(tk.Frame):
                     choice = 3
                 try:
                     fixReValue = float(self.autoReFixEntryVariable.get())
-                except:
+                except Exception:
                     messagebox.showerror("Bad R\u2091 value", "The value for R\u2091 must be a real number.", parent=self.autoFitWindow)
                     return
                 self.autoStatusLabel.configure(text="Initializing...")
@@ -3464,7 +3464,7 @@ class mmF(tk.Frame):
                     self.taskbar.HrInit()
                     self.taskbar.ActivateTab(self.masterWindowId)
                     self.taskbar.SetProgressState(self.masterWindowId, 0x1)
-                except:
+                except Exception:
                     pass
                 
                 self.currentThreads.append(ThreadedTaskAuto(self.queueAuto, nve, self.autoReFixVariable.get(), fixReValue, nmc, self.wdata, self.rdata, self.jdata, self.autoPercent, choice, self.radioVal.get(), errA, errB, errBRe, errG, errD))
@@ -3623,7 +3623,7 @@ class mmF(tk.Frame):
                 partCap += sigmaCapacitances[i]**2/capacitances[i]**4
             try:
                 partCap += self.sigmaCap**2/self.resultCap**4
-            except:
+            except Exception:
                 pass
             sigmaCeff = ceff**2 * np.sqrt(partCap)
             Zzero = self.fits[0] + self.fits[1]
@@ -4170,10 +4170,10 @@ class mmF(tk.Frame):
                     resultPlotBig.destroy()
                     try:
                         plt.close(fig)
-                    except:
+                    except Exception:
                         pass
                 resultPlotBig.protocol("WM_DELETE_WINDOW", on_closing)
-            except:     #A subplot wasn't clicked
+            except Exception:     #A subplot wasn't clicked
                 pass
         
         def graphOut(event):
@@ -4937,7 +4937,7 @@ class mmF(tk.Frame):
                                 self.jdata = self.jdataRaw.copy()[self.lowDelete:-1*self.upDelete]
                             self.lowerSpinboxVariable.set(str(self.lowDelete))
                             self.upperSpinboxVariable.set(str(self.upDelete))
-                        except:
+                        except Exception:
                             messagebox.showwarning("Frequency error", "There are more frequencies set to be deleted than data points. The number of frequencies to delete has been reset to 0.")
                             self.upDelete = 0
                             self.lowDelete = 0
@@ -4977,7 +4977,7 @@ class mmF(tk.Frame):
                                 self.imagFreq.set_ylabel("-Zj / Ω", color=self.foregroundColor)
                                 self.imagFreq.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                                 self.canvasFreq.draw()
-                        except:
+                        except Exception:
                             pass
                     for i in range(NVE_undo*2 + 1):
                         self.paramEntryVariables[i].set(str(self.undoStack[len(self.undoStack)-1][i]))
@@ -4988,7 +4988,7 @@ class mmF(tk.Frame):
                     try:    #Ignore these lines if the parameter popup has never been used
                         self.capacitanceEntry.configure(state="disabled")
                         self.capacitanceCombobox.configure(state="disabled")
-                    except:
+                    except Exception:
                         pass
                     self.resultAlert.grid_remove()
                     self.resultsView.delete(*self.resultsView.get_children())
@@ -5123,7 +5123,7 @@ class mmF(tk.Frame):
                     self.aR += "Chi-squared/Degrees of freedom = %.4g"%(chi/(self.lengthOfData*2-len(self.fits))) + "\n"
                     try:
                         self.aR += "Akaike Information Criterion = %.4g"%aic#(np.log(chi*((1+2*len(r))/self.lengthOfData))) + "\n"
-                    except:
+                    except Exception:
                         self.aR += "Akaike Information Criterion could not be calculated"
                     
                     self.undoStack.pop()
@@ -5189,7 +5189,7 @@ class mmF(tk.Frame):
                                 self.jdata = self.jdataRaw.copy()[self.lowDelete:-1*self.upDelete]
                             self.lowerSpinboxVariable.set(str(self.lowDelete))
                             self.upperSpinboxVariable.set(str(self.upDelete))
-                        except:
+                        except Exception:
                             messagebox.showwarning("Frequency error", "There are more frequencies set to be deleted than data points. The number of frequencies to delete has been reset to 0.")
                             self.upDelete = 0
                             self.lowDelete = 0
@@ -5229,7 +5229,7 @@ class mmF(tk.Frame):
                                 self.imagFreq.set_ylabel("-Zj / Ω", color=self.foregroundColor)
                                 self.imagFreq.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                                 self.canvasFreq.draw()
-                        except:
+                        except Exception:
                             pass
                     for i in range(NVE_undo*2 + 1):
                         self.paramEntryVariables[i].set(str(self.undoStack[len(self.undoStack)-1][i]))
@@ -5296,7 +5296,7 @@ class mmF(tk.Frame):
                         partCap += sigmaCapacitances[i]**2/capacitances[i]**4
                     try:
                         partCap += self.sigmaCap**2/self.resultCap**4
-                    except:
+                    except Exception:
                         pass
                     sigmaCeff = ceff**2 * np.sqrt(partCap)
                     self.resultC.configure(text="Overall Capacitance = %.4g"%ceff + " ± %.2g"%sigmaCeff)
@@ -5315,7 +5315,7 @@ class mmF(tk.Frame):
                     self.aR += "\nRe (Rsol) = %.8g"%self.fits[0] + " ± %.4g"%self.sigmas[0] + "\n"
                     try:
                         self.aR += "Capacitance = %.8g"%self.resultCap + " ± %.4g"%self.sigmaCap + "\n"
-                    except:
+                    except Exception:
                         self.aR += "Capacitance = %.8g"%self.resultCap + " ± NA" + "\n"
                     for i in range(1, len(self.fits), 2):
                         self.aR += "R" + str(int(i/2 + 1)) + " = %.8g"%self.fits[i] + " ± %.4g"%self.sigmas[i] + "\n"
@@ -5396,7 +5396,7 @@ class mmF(tk.Frame):
                     self.aR += "Chi-squared/Degrees of freedom = %.4g"%(chi/(self.lengthOfData*2-len(self.fits))) + "\n"
                     try:
                         self.aR += "Akaike Information Criterion = %.4g"%aic
-                    except:
+                    except Exception:
                         self.aR += "Akaike Information Criterion could not be calculated"
                     self.undoStack.pop()
                     self.undoSigmaStack.pop()
@@ -5466,7 +5466,7 @@ class mmF(tk.Frame):
                         entryGood = True
                     elif (not entryGood):
                         float(updateReVar)
-                except:
+                except Exception:
                     messagebox.showerror("Value error", "The value for ohmic resistance must be a real number", parent=updateWindow)
                     return
                 cont = False
@@ -5534,7 +5534,7 @@ class mmF(tk.Frame):
                         self.alreadyChanged = True
                         self.updateReVariable.set('{:.5f}'.format(float(self.updateReVariable.get()) + float(self.updateReVariable.get())*0.05))
                         updatePlotNow(None)
-                except:
+                except Exception:
                     messagebox.showwarning("Re update failed", "There was an issue updating Re")
             
             def updatePlotDown5(percent):
@@ -5545,7 +5545,7 @@ class mmF(tk.Frame):
                         self.alreadyChanged = True
                         self.updateReVariable.set('{:.5f}'.format(float(self.updateReVariable.get()) - float(self.updateReVariable.get())*0.05))
                         updatePlotNow(None)
-                except:
+                except Exception:
                     messagebox.showwarning("Re update failed", "There was an issue updating Re")
                 
             def updatePlotUp1(percent):
@@ -5556,7 +5556,7 @@ class mmF(tk.Frame):
                         self.alreadyChanged = True
                         self.updateReVariable.set('{:.5f}'.format(float(self.updateReVariable.get()) + float(self.updateReVariable.get())*0.01))
                         updatePlotNow(None)
-                except:
+                except Exception:
                     messagebox.showwarning("Re update failed", "There was an issue updating Re")
             
             def updatePlotDown1(e):
@@ -5567,7 +5567,7 @@ class mmF(tk.Frame):
                         self.alreadyChanged = True
                         self.updateReVariable.set('{:.5f}'.format(float(self.updateReVariable.get()) - float(self.updateReVariable.get())*0.01))
                         updatePlotNow(None)
-                except:
+                except Exception:
                     messagebox.showwarning("Re update failed", "There was an issue updating Re")
             
             updateFrame = tk.Frame(updateWindow, background=self.backgroundColor)
@@ -5653,11 +5653,11 @@ class mmF(tk.Frame):
                     #---Change the button to say "Added" for 0.5 seconds---
                     self.magicElementEnterButton.configure(text="Added")
                     self.after(500, lambda: self.magicElementEnterButton.configure(text="Add"))
-                except:
+                except Exception:
                     pass
                 self.magicElementTVariable.set('0')
                 self.magicElementRVariable.set('0')
-            except:
+            except Exception:
                 messagebox.showwarning("Bad value(s)", "Invalid element or values", parent=self.magicPlot)
                 self.magicPlot.lift()
         
@@ -5797,7 +5797,7 @@ class mmF(tk.Frame):
                         self.upDelete = 0
                     else:
                         self.upDelete = int(self.upperSpinboxVariable.get())
-                except:
+                except Exception:
                     messagebox.showwarning("Value error", "The number of frequencies deleted must be a positive integer", parent=self.freqWindow)
                     return
                 if (self.lowDelete >= len(self.wdataRaw) or self.upDelete >= len(self.wdataRaw) or (self.lowDelete + self.upDelete) >= len(self.wdataRaw)):
@@ -5843,7 +5843,7 @@ class mmF(tk.Frame):
                     lowerDelete = 0 if self.lowerSpinboxVariable.get() == "" else int(self.lowerSpinboxVariable.get())
                     self.upperSpinbox.configure(to=len(self.wdataRaw)-1-lowerDelete)
                     updateFreqs()
-                except:
+                except Exception:
                     pass
             
             def changeFreqSpinboxUpper(e = None):
@@ -5852,7 +5852,7 @@ class mmF(tk.Frame):
                     lowerDelete = 0 if self.lowerSpinboxVariable.get() == "" else int(self.lowerSpinboxVariable.get())
                     self.lowerSpinbox.configure(to=len(self.wdataRaw)-1-higherDelete)
                     updateFreqs()
-                except:
+                except Exception:
                     pass
             
             self.lowerLabel = tk.Label(self.freqWindow, text="Number of low frequencies\n to delete", fg=self.foregroundColor, bg=self.backgroundColor)
@@ -6295,7 +6295,7 @@ class mmF(tk.Frame):
             else:
                 try:
                     stringToCopy = self.errorAlphaEntry.selection_get()
-                except:
+                except Exception:
                     stringToCopy = self.errorAlphaEntry.get()
                 pyperclip.copy(stringToCopy)
         self.popup_menuA = tk.Menu(self.errorAlphaEntry, tearoff=0)
@@ -6318,7 +6318,7 @@ class mmF(tk.Frame):
             else:
                 try:
                     stringToCopy = self.errorBetaEntry.selection_get()
-                except:
+                except Exception:
                     stringToCopy = self.errorBetaEntry.get()
                 pyperclip.copy(stringToCopy)
         self.popup_menuB = tk.Menu(self.errorBetaEntry, tearoff=0)
@@ -6341,7 +6341,7 @@ class mmF(tk.Frame):
             else:
                 try:
                     stringToCopy = self.errorBetaReEntry.selection_get()
-                except:
+                except Exception:
                     stringToCopy = self.errorBetaReEntry.get()
                 pyperclip.copy(stringToCopy)
         self.popup_menuR = tk.Menu(self.errorBetaReEntry, tearoff=0)
@@ -6364,7 +6364,7 @@ class mmF(tk.Frame):
             else:
                 try:
                     stringToCopy = self.errorGammaEntry.selection_get()
-                except:
+                except Exception:
                     stringToCopy = self.errorGammaEntry.get()
                 pyperclip.copy(stringToCopy)
         self.popup_menuG = tk.Menu(self.errorGammaEntry, tearoff=0)
@@ -6387,7 +6387,7 @@ class mmF(tk.Frame):
             else:
                 try:
                     stringToCopy = self.errorDeltaEntry.selection_get()
-                except:
+                except Exception:
                     stringToCopy = self.errorDeltaEntry.get()
                 pyperclip.copy(stringToCopy)
         self.popup_menuD = tk.Menu(self.errorDeltaEntry, tearoff=0)
@@ -6575,7 +6575,7 @@ class mmF(tk.Frame):
                 self.imagFreq.set_ylabel("-Zj / Ω", color=self.foregroundColor)
                 self.imagFreq.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.canvasFreq.draw()
-        except:
+        except Exception:
             pass
         try:
             self.autoErrorFrame.configure(background="#FFFFFF")
@@ -6585,46 +6585,46 @@ class mmF(tk.Frame):
             self.autoNMCLabel.configure(background="#FFFFFF", foreground="#000000")
             self.autoSliderFrame.configure(background="#FFFFFF")
             self.autoRadioLabel.configure(background="#FFFFFF", foreground="#000000")
-        except:
+        except Exception:
             pass
         try:
             self.lowestUndeleted.configure(background="#FFFFFF", foreground="#000000")
             self.highestUndeleted.configure(background="#FFFFFF", foreground="#000000")
-        except:
+        except Exception:
             pass
         try:
             self.upperLabel.configure(background="#FFFFFF", foreground="#000000")
             self.lowerLabel.configure(background="#FFFFFF", foreground="#000000")
-        except:
+        except Exception:
             pass
         try:
             self.progStatus.configure(background="#FFFFFF", foreground="#000000")
-        except:
+        except Exception:
             pass
         self.paramPopup.configure(background="#FFFFFF")
         try:
             self.buttonFrame.configure(background="#FFFFFF")
-        except:
+        except Exception:
             pass
         try:
             self.reFrame.configure(background="#FFFFFF")
-        except:
+        except Exception:
             pass
         try:
            self.pframe.configure(background="#FFFFFF")
-        except:
+        except Exception:
             pass
         try:
             self.pcanvas.configure(background="#FFFFFF")
-        except:
+        except Exception:
             pass
         try:
             self.reLabel.configure(background="#FFFFFF", foreground="#000000")
-        except:
+        except Exception:
             pass
         try:
             self.howMany.configure(background="#FFFFFF", foreground="#000000")
-        except:
+        except Exception:
             pass
         if (self.paramPopup.state() != "withdrawn"):
             for label in self.paramLabels:
@@ -6638,7 +6638,7 @@ class mmF(tk.Frame):
             self.advNumberLabel.configure(background="#FFFFFF", foreground="#000000")
             self.advSelectionLabel.configure(background="#FFFFFF", foreground="#000000")
             self.advCustomLabel.configure(background="#FFFFFF", foreground="#000000")
-        except:
+        except Exception:
             pass
         
         s = ttk.Style()
@@ -6646,13 +6646,13 @@ class mmF(tk.Frame):
         s.configure('TRadiobutton', background='#FFFFFF', foreground='#000000')
         try:
             s.configure('Treeview', background='#FFFFFF', foreground='#000000', fieldbackground='#FFFFFF')
-        except:
+        except Exception:
             pass
         
         try:
             if (tk.Toplevel.winfo_exists(self.resultsWindow)):
                 self.advResults.configure(background='#FFFFFF', foreground='#000000')
-        except:
+        except Exception:
             pass
                     
     def setThemeDark(self):
@@ -6714,7 +6714,7 @@ class mmF(tk.Frame):
                 self.imagFreq.set_ylabel("-Zj / Ω", color=self.foregroundColor)
                 self.imagFreq.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.canvasFreq.draw()
-        except:
+        except Exception:
             pass
         try:
             self.autoErrorFrame.configure(background="#424242")
@@ -6724,46 +6724,46 @@ class mmF(tk.Frame):
             self.autoNMCLabel.configure(background="#424242", foreground="#FFFFFF")
             self.autoSliderFrame.configure(background="#424242")
             self.autoRadioLabel.configure(background="#424242", foreground="#FFFFFF")
-        except:
+        except Exception:
             pass
         try:
             self.lowestUndeleted.configure(background="#424242", foreground="#FFFFFF")
             self.highestUndeleted.configure(background="#424242", foreground="#FFFFFF")
-        except:
+        except Exception:
             pass
         try:
             self.upperLabel.configure(background="#424242", foreground="#FFFFFF")
             self.lowerLabel.configure(background="#424242", foreground="#FFFFFF")
-        except:
+        except Exception:
             pass
         try:
             self.progStatus.configure(background="#424242", foreground="#FFFFFF")
-        except:
+        except Exception:
             pass
         self.paramPopup.configure(background="#424242")
         try:
             self.buttonFrame.configure(background="#424242")
-        except:
+        except Exception:
             pass
         try:
            self.reFrame.configure(background="#424242")
-        except:
+        except Exception:
             pass
         try:
            self.pframe.configure(background="#424242")
-        except:
+        except Exception:
             pass
         try:
             self.pcanvas.configure(background="#424242")
-        except:
+        except Exception:
             pass
         try:
             self.reLabel.configure(background="#424242", foreground="#FFFFFF")
-        except:
+        except Exception:
             pass
         try:
             self.howMany.configure(background="#424242", foreground="#FFFFFF")
-        except:
+        except Exception:
             pass
         if (self.paramPopup.state() != "withdrawn"):
             for label in self.paramLabels:
@@ -6777,7 +6777,7 @@ class mmF(tk.Frame):
             self.advNumberLabel.configure(background="#424242", foreground="#FFFFFF")
             self.advSelectionLabel.configure(background="#424242", foreground="#FFFFFF")
             self.advCustomLabel.configure(background="#424242", foreground="#FFFFFF")
-        except:
+        except Exception:
             pass
         
         s = ttk.Style()
@@ -6787,7 +6787,7 @@ class mmF(tk.Frame):
         try:
             if (tk.Toplevel.winfo_exists(self.resultsWindow)):
                 self.advResults.configure(background='#424242', foreground='#FFFFFF')
-        except:
+        except Exception:
             pass
     
     def browseEnter(self, n):
@@ -6836,7 +6836,7 @@ class mmF(tk.Frame):
                         self.jdata = self.jdataRaw.copy()[self.lowDelete:-1*self.upDelete]
                     self.lowerSpinboxVariable.set(str(self.lowDelete))
                     self.upperSpinboxVariable.set(str(self.upDelete))
-                except:
+                except Exception:
                     messagebox.showwarning("Frequency error", "There are more frequencies set to be deleted than data points. The number of frequencies to delete has been reset to 0.")
                     self.upDelete = 0
                     self.lowDelete = 0
@@ -6900,7 +6900,7 @@ class mmF(tk.Frame):
                     self.imagFreq.set_ylabel("-Zj / Ω", color=self.foregroundColor)
                     self.imagFreq.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                     self.canvasFreq.draw()
-            except:
+            except Exception:
                 pass
             self.lengthOfData = len(self.wdata)
             self.tauDefault = 1/((max(w_in)-min(w_in))/(np.log10(abs(max(w_in)/min(w_in)))))
@@ -6933,7 +6933,7 @@ class mmF(tk.Frame):
             self.browseEntry.delete(0,tk.END)
             self.browseEntry.insert(0, n)
             self.browseEntry.configure(state="readonly")
-        except:
+        except Exception:
             messagebox.showerror("File error", "Error 9:\nThere was an error loading or reading the file")
     
     def closeWindows(self):
@@ -6960,7 +6960,7 @@ class mmF(tk.Frame):
                     self.paramEntryVariables[i].set(str(round(self.rDefault, -int(np.floor(np.log10(self.rDefault))) + (4 - 1))))
                 if (self.paramEntryVariables[i+1].get() == ''):
                     self.paramEntryVariables[i+1].set(str(round(self.tauDefault, -int(np.floor(np.log10(self.tauDefault))) + (4 - 1))))
-        except:
+        except Exception:
             pass
         try:
             self.advancedOptionsPopup.withdraw()
@@ -6976,7 +6976,7 @@ class mmF(tk.Frame):
             self.advUpperEntry.destroy()
             self.advNumberLabel.destroy()
             self.advNumberEntry.destroy()
-        except:
+        except Exception:
             pass
         self.autoFitWindow.withdraw()
         self.upperSpinboxVariable.set(str(self.upDelete))
@@ -6987,52 +6987,52 @@ class mmF(tk.Frame):
         for resultWindow in self.resultsWindows:
             try:
                 resultWindow.destroy()
-            except:
+            except Exception:
                 pass
         for resultPlotBig in self.resultPlotBigs:
             try:
                 resultPlotBig.destroy()
-            except:
+            except Exception:
                 pass
         for resultPlotBigFig in self.resultPlotBigFigs:
             try:
                 resultPlotBigFig.clear()
-            except:
+            except Exception:
                 pass
         for updateWindow in self.updateWindows:
             try:
                 updateWindow.destroy()
-            except:
+            except Exception:
                 pass
         for updateFig in self.updateFigs:
             try:
                 updateFig.clear()
-            except:
+            except Exception:
                 pass
         for simplePopup in self.simplePopups:
             try:
                 simplePopup.destroy()
-            except:
+            except Exception:
                 pass
         for pltFig in self.pltFigs:
             try:
                 pltFig.clear()
-            except:
+            except Exception:
                 pass
         for resultPlot in self.resultPlots:
             try:
                 resultPlot.destroy()
-            except:
+            except Exception:
                 pass
         for nyCanvasButton in self.saveNyCanvasButtons:
             try:
                 nyCanvasButton.destroy()
-            except:
+            except Exception:
                 pass
         for nyCanvasButton_ttp in self.saveNyCanvasButton_ttps:
             try:
                 del nyCanvasButton_ttp
-            except:
+            except Exception:
                 pass
         self.alreadyPlotted = False
     
@@ -7312,5 +7312,5 @@ class mmF(tk.Frame):
                 self.capacitanceCheckboxVariable.set(1)
                 self.capacitanceEntryVariable.set(str(capValue))
                 self.capacitanceComboboxVariable.set(capCombo)
-        except:
+        except Exception:
             messagebox.showerror("File error", "Error 9:\nThere was an error loading or reading the file")

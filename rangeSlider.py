@@ -139,134 +139,134 @@ class RangeSlider(Canvas):
 		try:
 			lowerBound = cnf.pop('lowerBound')
 			self.__model.setLowerBound(lowerBound)
-		except:
+		except Exception:
 			self.__model.setLowerBound(0)
 
 		try:
 			upperBound = cnf.pop('upperBound')
 			self.__model.setUpperBound(upperBound)
-		except:
+		except Exception:
 			self.__model.setUpperBound(100)
 
 		try:
 			initialLowerBound = cnf.pop('initialLowerBound')
 			self.__model.setLower(initialLowerBound)
-		except:
+		except Exception:
 			self.__model.setLower(0)
 
 		try:
 			initialUpperBound = cnf.pop('initialUpperBound')
 			self.__model.setUpper(initialUpperBound)
-		except:
+		except Exception:
 			self.__model.setUpper(100)
 			
 		try:
 			sliderColor = cnf.pop('sliderColor')
 			self.__sliderColor = sliderColor
-		except:
+		except Exception:
 			None
 		try:
 			sliderHighlightedColor = cnf.pop('sliderHighlightedColor')
 			self.__sliderHighlightedColor = sliderHighlightedColor
-		except:
+		except Exception:
 			None
 		try:
 			sliderNoFocusColor = cnf.pop('sliderNoFocusColor')
 			self.__sliderNoFocusColor = sliderNoFocusColor
-		except:
+		except Exception:
 			None
 		try:
 			sliderOutlineColor = cnf.pop('sliderOutlineColor')
 			self.__sliderOutlineColor = sliderOutlineColor
-		except:
+		except Exception:
 			None
 		try:
 			sliderNoFocusOutlineColor = cnf.pop('sliderNoFocusOutlineColor')
 			self.__sliderNoFocusOutlineColor = sliderNoFocusOutlineColor
-		except:
+		except Exception:
 			None			
 		try:
 			barColor = cnf.pop('barColor')
 			self.__barColor = barColor
-		except:
+		except Exception:
 			None
 		try:
 			barHighlightedColor = cnf.pop('barHighlightedColor')
 			self.__barHighlightedColor = barHighlightedColor
-		except:
+		except Exception:
 			None	
 		try:
 			barNoFocusColor = cnf.pop('barNoFocusColor')
 			self.__barNoFocusColor = barNoFocusColor
-		except:
+		except Exception:
 			None
 		try:
 			barOutlineColor = cnf.pop('barOutlineColor')
 			self.__barOutlineColor = barOutlineColor
-		except:
+		except Exception:
 			None
 		try:
 			barNoFocusOutlineColor = cnf.pop('barNoFocusOutlineColor')
 			self.__barNoFocusOutlineColor = barNoFocusOutlineColor
-		except:
+		except Exception:
 			None			
 		try:
 			caretColor = cnf.pop('caretColor')
 			self.__caretColor = caretColor
-		except:
+		except Exception:
 			None
 		try:
 			caretHighlightedColor = cnf.pop('caretHighlightedColor')
 			self.__caretHighlightedColor = caretHighlightedColor
-		except:
+		except Exception:
 			None	
 		try:
 			caretNoFocusColor = cnf.pop('caretNoFocusColor')
 			self.__caretNoFocusColor = caretNoFocusColor
-		except:
+		except Exception:
 			None
 		try:
 			caretOutlineColor = cnf.pop('caretOutlineColor')
 			self.__caretOutlineColor = caretOutlineColor
-		except:
+		except Exception:
 			None
 		try:
 			caretNoFocusOutlineColor = cnf.pop('caretNoFocusOutlineColor')
 			self.__caretNoFocusOutlineColor = caretNoFocusOutlineColor
-		except:
+		except Exception:
 			None
 		try:
 			barWidthPercent = cnf.pop('barWidthPercent')
 			self.__barWidthPercent = barWidthPercent
-		except:
+		except Exception:
 			None			
 		try:
 			barHeightPercent = cnf.pop('barHeightPercent')
 			self.__barHeightPercent = barHeightPercent
-		except:
+		except Exception:
 			None
 		try:
 			caretWidthPercent = cnf.pop('caretWidthPercent')
 			self.__caretWidthPercent = caretWidthPercent
-		except:
+		except Exception:
 			None
 		try:
 			caretHeightPercent = cnf.pop('caretHeightPercent')
 			self.__caretHeightPercent = caretHeightPercent
-		except:
+		except Exception:
 			None
 		try:
 			backgroundColor = cnf.pop('background')
 			self.__backgroundColor = backgroundColor
 			self.mainCanvas.configure(self, background=self.__backgroundColor)
-		except:
+		except Exception:
 			None
 		try:
 			tickColor = cnf.pop('tickColor')
 			self.__tickNoFocusOutlineColor = tickColor
 			self.__tickOutlineColor = tickColor
 			self.redraw()
-		except:
+		except Exception:
 			None
 
 	'''

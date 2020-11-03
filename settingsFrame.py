@@ -663,21 +663,21 @@ class sF(tk.Frame):
             numMCDefault = int(self.defaultMCVariable.get())
             if (numMCDefault <= 0):
                 raise Exception
-        except:
+        except Exception:
             messagebox.showerror("Value error", "Error 49:\nPlease enter a positive integer for number of simulations")
             return
         try:
             numAlphaDefault = float(self.defaultAlphaVariable.get())
             if (numAlphaDefault <= 0):
                 raise Exception
-        except:
+        except Exception:
             messagebox.showerror("Value error", "Error 50:\nPlease enter a positive number for the assumed noise (α)")
             return
         try:
             numCommentDefault = int(self.defaultCommentsVariable.get())
             if (numCommentDefault < 0):
                 raise Exception
-        except:
+        except Exception:
             messagebox.showerror("Value error", "Error 51:\nPlease enter a positive integer for number of comment lines")
             return
         try:

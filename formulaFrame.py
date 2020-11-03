@@ -284,14 +284,14 @@ class fF(tk.Frame):
         def copyFormula_description():
             try:
                 pyperclip.copy(self.formulaDescriptionEntry.get(tk.SEL_FIRST, tk.SEL_LAST))
-            except:
+            except Exception:
                 pass
         
         def cutFormula_description():
             try:
                 pyperclip.copy(self.formulaDescriptionEntry.get(tk.SEL_FIRST, tk.SEL_LAST))
                 self.formulaDescriptionEntry.delete(tk.SEL_FIRST, tk.SEL_LAST)
-            except:
+            except Exception:
                 pass
         
         def pasteFormula_description():
@@ -299,19 +299,19 @@ class fF(tk.Frame):
                 toPaste = pyperclip.paste()
                 self.formulaDescriptionEntry.insert(tk.INSERT, toPaste)
                 keyup(None)
-            except:
+            except Exception:
                 pass
             
         def undoFormula_description():
             try:
                 self.formulaDescriptionEntry.edit_undo()
-            except:
+            except Exception:
                 pass
             
         def redoFormula_description():
             try:
                 self.formulaDescriptionEntry.edit_redo()
-            except:
+            except Exception:
                 pass
         
         self.importPathWindow = tk.Toplevel(bg=self.backgroundColor)
@@ -659,7 +659,7 @@ class fF(tk.Frame):
                     self.paramComboboxValues[self.paramListboxSelection].set("+")
                 else:
                     self.paramComboboxValues[self.paramListboxSelection].set("custom")
-            except:
+            except Exception:
                 pass    #If it fails, it isn't a big deal
         self.advancedUpperLimitEntry.bind("<KeyRelease>", checkUpperAndLower)
         self.advancedLowerLimitEntry.bind("<KeyRelease>", checkUpperAndLower)
@@ -694,7 +694,7 @@ class fF(tk.Frame):
                 return True
             try:
                 val = int(P)
-            except:
+            except Exception:
                 return False
             if (val < 0):
                 return False
@@ -708,7 +708,7 @@ class fF(tk.Frame):
                 return True
             try:
                 val = int(P)
-            except:
+            except Exception:
                 return False
             if (val < 0):
                 return False
@@ -722,7 +722,7 @@ class fF(tk.Frame):
             try:
                 with open(name,'r') as UseFile:
                     return name
-            except:
+            except Exception:
                 return "+"
         
         def limitChanged(num, e):
@@ -799,7 +799,7 @@ class fF(tk.Frame):
                                     self.wdata = self.wdataRaw.copy()[self.lowDelete:-1*self.upDelete]
                                     self.rdata = self.rdataRaw.copy()[self.lowDelete:-1*self.upDelete]
                                     self.jdata = self.jdataRaw.copy()[self.lowDelete:-1*self.upDelete]
-                            except:
+                            except Exception:
                                 messagebox.showwarning("Frequency error", "There are more frequencies set to be deleted than data points. The number of frequencies to delete has been reset to 0.")
                                 self.upDelete = 0
                                 self.lowDelete = 0
@@ -864,7 +864,7 @@ class fF(tk.Frame):
                                 self.imagFreq.set_ylabel("-Zj / Ω", color=self.foregroundColor)
                                 self.imagFreq.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                                 self.canvasFreq.draw()
-                        except:
+                        except Exception:
                             pass
                         self.lengthOfData = len(self.wdata)
                         self.freqRangeButton.configure(state="normal")
@@ -874,7 +874,7 @@ class fF(tk.Frame):
                         self.browseEntry.configure(state="readonly")
                         self.runButton.configure(state="normal")
                         self.simplexButton.configure(state="normal")
-                    except:
+                    except Exception:
                         messagebox.showerror("File error", "Error 42: \nThere was an error loading or reading the file")
                 elif (fext == ".mmcustom"):
                     try:
@@ -1035,7 +1035,7 @@ class fF(tk.Frame):
                                     self.multistartNumberVariables.append(tk.StringVar(self, pnumber))
                                     self.upperLimits.append(tk.StringVar(self, plimup))
                                     self.lowerLimits.append(tk.StringVar(self, plimlow))
-                                except:
+                                except Exception:
                                     try:
                                         pname, pval, pcombo, pcheck, pspacing, pupper, plower, pnumber, pcustom = p.split("~=~")
                                         self.multistartCheckboxVariables.append(tk.IntVar(self, int(pcheck)))
@@ -1046,7 +1046,7 @@ class fF(tk.Frame):
                                         self.multistartNumberVariables.append(tk.StringVar(self, pnumber))
                                         self.upperLimits.append(tk.StringVar(self, "inf"))
                                         self.lowerLimits.append(tk.StringVar(self, "-inf"))
-                                    except:
+                                    except Exception:
                                         pname, pval, pcombo = p.split("~=~")
                                         self.multistartCheckboxVariables.append(tk.IntVar(self, 0))
                                         self.multistartLowerVariables.append(tk.StringVar(self, "1E-5"))
@@ -1198,13 +1198,13 @@ class fF(tk.Frame):
                                     self.imagFreq.set_ylabel("-Zj / Ω", color=self.foregroundColor)
                                     self.imagFreq.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                                     self.canvasFreq.draw()
-                            except:
+                            except Exception:
                                 pass
                             self.lengthOfData = len(self.wdata)
                             self.freqRangeButton.configure(state="normal")
                             self.runButton.configure(state="normal")
                             self.simplexButton.configure(state="normal")
-                        except:
+                        except Exception:
                             messagebox.showerror("File not found", "Error 53: \nThe linked .mmfile could not be found")
                             fileToLoad = ""
                         self.browseEntry.configure(state="normal")
@@ -1276,7 +1276,7 @@ class fF(tk.Frame):
                         self.customFormula.delete("1.0", tk.END)
                         self.customFormula.insert("1.0", formulaIn.rstrip())
                         keyup("")
-                    except:
+                    except Exception:
                         messagebox.showerror("File error", "Error 42: \nThere was an error loading or reading the file")
                 else:
                     messagebox.showerror("File error", "Error 43:\n The file has an unknown extension")
@@ -1328,7 +1328,7 @@ class fF(tk.Frame):
                         self.upDelete = 0
                     else:
                         self.upDelete = int(self.upperSpinboxVariable.get())
-                except:
+                except Exception:
                     messagebox.showwarning("Value error", "The number of frequencies deleted must be a positive integer", parent=self.freqWindow)
                     return
                 if (self.lowDelete >= len(self.wdataRaw) or self.upDelete >= len(self.wdataRaw) or (self.lowDelete + self.upDelete) >= len(self.wdataRaw)):
@@ -1375,7 +1375,7 @@ class fF(tk.Frame):
                     lowerDelete = 0 if self.lowerSpinboxVariable.get() == "" else int(self.lowerSpinboxVariable.get())
                     self.upperSpinbox.configure(to=len(self.wdataRaw)-1-lowerDelete)
                     updateFreqs()
-                except:
+                except Exception:
                     pass
             
             def changeFreqSpinboxUpper(e = None):
@@ -1384,7 +1384,7 @@ class fF(tk.Frame):
                     lowerDelete = 0 if self.lowerSpinboxVariable.get() == "" else int(self.lowerSpinboxVariable.get())
                     self.lowerSpinbox.configure(to=len(self.wdataRaw)-1-higherDelete)
                     updateFreqs()
-                except:
+                except Exception:
                     pass
             
             self.lowerLabel = tk.Label(self.freqWindow, text="Number of low frequencies\n to delete", bg=self.backgroundColor, fg=self.foregroundColor)
@@ -1421,7 +1421,7 @@ class fF(tk.Frame):
                 self.paramListbox.insert(tk.END, n.get())
             try:
                 self.advancedOptionsLabel.configure(text=self.paramNameValues[self.paramListboxSelection].get())
-            except:
+            except Exception:
                 pass
             self.customFormula.tag_remove("tagZreal", "1.0", tk.END)
             self.customFormula.tag_remove("tagReservedWords2", "1.0", tk.END)
@@ -1799,7 +1799,7 @@ class fF(tk.Frame):
                 self.multistartCustomEntry.configure(textvariable=self.multistartCustomVariables[num_selected])
                 self.advancedLowerLimitEntry.configure(textvariable=self.lowerLimits[num_selected])
                 self.advancedUpperLimitEntry.configure(textvariable=self.upperLimits[num_selected])
-            except:     #No parameters left
+            except Exception:     #No parameters left
                 self.paramListboxSelection = 0
                 self.advancedOptionsLabel.configure(text="")
                 self.advancedLowerLimitFrame.pack_forget()
@@ -1835,7 +1835,7 @@ class fF(tk.Frame):
                     try:
                         with open(name,'r') as UseFile:
                             return name
-                    except:
+                    except Exception:
                         return "+"
                 n = OpenFile()
                 if (n != '+'):
@@ -1893,7 +1893,7 @@ class fF(tk.Frame):
                                         self.multistartNumberVariables.append(tk.StringVar(self, pnumber))
                                         self.upperLimits.append(tk.StringVar(self, plimup))
                                         self.lowerLimits.append(tk.StringVar(self, plimlow))
-                                    except:
+                                    except Exception:
                                         pname, pval, pcombo = p.split("~=~")
                                         self.multistartCheckboxVariables.append(tk.IntVar(self, 0))
                                         self.multistartLowerVariables.append(tk.StringVar(self, "1E-5"))
@@ -1975,7 +1975,7 @@ class fF(tk.Frame):
                             self.paramListbox.event_generate("<<ListboxSelect>>")
                             keyup("")
                             parameterPopup()
-                        except:
+                        except Exception:
                             messagebox.showerror("File error", "Error 42: \nThere was an error loading or reading the file")
                     else:
                         messagebox.showerror("File error", "Error 43:\n The file has an unknown extension")
@@ -2019,9 +2019,9 @@ class fF(tk.Frame):
                     formula = formula.replace("\n", "\n\t")
                     formula = "try:\n\t" + formula
                     formula = formula.rstrip()
-                    formula += "\n\tif any(np.isnan(Zreal)) or any(np.isnan(Zimag)):\n\t\traise Exception\nexcept:\n\tZreal = np.full(len(freq), 1E300)\n\tZimag = np.full(len(freq), 1E300)"
+                    formula += "\n\tif any(np.isnan(Zreal)) or any(np.isnan(Zimag)):\n\t\traise Exception\nexcept Exception:\n\tZreal = np.full(len(freq), 1E300)\n\tZimag = np.full(len(freq), 1E300)"
                     compile(formula, 'user_generated_formula', 'exec')
-                except:
+                except Exception:
                     messagebox.showwarning("Compile error", "There was an issue compiling the code", parent=self.paramPopup)
                     return
                 
@@ -2046,7 +2046,7 @@ class fF(tk.Frame):
                 try:
                     for pG in self.paramValueValues:
                         param_guesses.append(float(pG.get()))
-                except:
+                except Exception:
                     messagebox.showwarning("Value error", "Error 54: \nThe parameter guesses must be real numbers", parent=self.paramPopup)
                     return
                 weight = 0
@@ -2085,7 +2085,7 @@ class fF(tk.Frame):
                                 errorModelParams[4] = 0
                             else:
                                 errorModelParams[4] = float(self.errorDeltaVariable.get())
-                    except:
+                    except Exception:
                         messagebox.showerror("Value error", "One of the error structure parameters has an invalid value", parent=self.paramPopup)
                         return
                     if (errorModelParams[0] == 0 and errorModelParams[1] == 0 and errorModelParams[3] == 0 and errorModelParams[4] == 0):
@@ -2108,7 +2108,7 @@ class fF(tk.Frame):
                         try:
                             float(self.upperLimits[i].get())
                             float(self.lowerLimits[i].get())
-                        except:
+                        except Exception:
                             messagebox.showwarning("Value error", "Error 61: \nThe upper and lower limits must be real numbers", parent=self.paramPopup)
                             return
                         param_limits.append(str(self.upperLimits[i].get()) + ";" + str(self.lowerLimits[i].get()))
@@ -2205,7 +2205,7 @@ class fF(tk.Frame):
                             bb = tLatex.get_window_extent(renderer=rLatex)
                         self.latexAx.axis("off")
                         self.latexCanvas.draw()
-            except:
+            except Exception:
                 pass
         
         def formulaDescriptionPopup(event):
@@ -2283,7 +2283,7 @@ class fF(tk.Frame):
                         self.fitWeightJ[i] = custom_weight[i]
                 try:
                     self.taskbar.SetProgressState(self.masterWindowId, 0x0)
-                except:
+                except Exception:
                     pass
                 if (len(r) == 1):
                     if (r == "b"):
@@ -2310,7 +2310,7 @@ class fF(tk.Frame):
                 self.aR += "Chi-squared/Degrees of freedom = %.4g"%(chi/(self.lengthOfData*2-len(r))) + "\n"
                 try:
                     self.aR += "Akaike Information Criterion = %.4g"%aic
-                except:
+                except Exception:
                     self.aR += "Akaike Information Criterion could not be calculated"
                 
                 self.resultsView.delete(*self.resultsView.get_children())
@@ -2344,14 +2344,14 @@ class fF(tk.Frame):
                 self.fits = r
                 self.sigmas = s
                 self.chiSquared = chi
-            except:
+            except Exception:
                 percent_to_step = (len(self.listPercent) - 1)/self.listPercent[0]
                 #print(percent_to_step*100)
                 self.prog_bar.config(value=percent_to_step*100)
                 try:
                     self.taskbar.SetProgressValue(self.masterWindowId, (len(self.listPercent) - 1), self.listPercent[0])
                     self.taskbar.SetProgressState(self.masterWindowId, 0x2)
-                except:
+                except Exception:
                     pass
                 if (self.listPercent[len(self.listPercent)-1] == 2):
                     self.progStatus.configure(text="Starting processes...")
@@ -2371,7 +2371,7 @@ class fF(tk.Frame):
                 bootstrapNum = int(self.bootstrapEntryVariable.get())
                 if (bootstrapNum <= 0):
                     raise Exception
-            except:
+            except Exception:
                 messagebox.showwarning("Invalid value", "Error 53: \nThe number of simulations must be a positive integer")
                 return
             self.queueBootstrap = queue.Queue()
@@ -2409,9 +2409,9 @@ class fF(tk.Frame):
                 formula = formula.replace("\n", "\n\t")
                 formula = "try:\n\t" + formula
                 formula = formula.rstrip()
-                formula += "\n\tif any(np.isnan(Zreal)) or any(np.isnan(Zimag)):\n\t\traise Exception\nexcept:\n\tZreal = np.full(len(freq), 1E300)\n\tZimag = np.full(len(freq), 1E300)"
+                formula += "\n\tif any(np.isnan(Zreal)) or any(np.isnan(Zimag)):\n\t\traise Exception\nexcept Exception:\n\tZreal = np.full(len(freq), 1E300)\n\tZimag = np.full(len(freq), 1E300)"
                 compile(formula, 'user_generated_formula', 'exec')
-            except:
+            except Exception:
                 messagebox.showwarning("Compile error", "There was an issue compiling the code")
                 return
             
@@ -2432,7 +2432,7 @@ class fF(tk.Frame):
             num_monte = 1000
             try:
                 num_monte = int(self.monteCarloValue.get())
-            except:
+            except Exception:
                 messagebox.showwarning("Bad number of simulations", "The number of simulations must be an integer")
                 return
             param_names = []
@@ -2450,7 +2450,7 @@ class fF(tk.Frame):
                     try:
                         float(self.upperLimits[i].get())
                         float(self.lowerLimits[i].get())
-                    except:
+                    except Exception:
                         messagebox.showwarning("Value error", "Error 61: \nThe upper and lower limits must be real numbers")
                         return
                     param_limits.append(str(self.upperLimits[i].get()) + ";" + str(self.lowerLimits[i].get()))
@@ -2492,7 +2492,7 @@ class fF(tk.Frame):
                             errorModelParams[4] = 0
                         else:
                             errorModelParams[4] = float(self.errorDeltaVariable.get())
-                except:
+                except Exception:
                     messagebox.showerror("Value error", "One of the error structure parameters has an invalid value")
                     return
                 if (errorModelParams[0] == 0 and errorModelParams[1] == 0 and errorModelParams[3] == 0 and errorModelParams[4] == 0):
@@ -2524,7 +2524,7 @@ class fF(tk.Frame):
                 self.taskbar.HrInit()
                 self.taskbar.ActivateTab(self.masterWindowId)
                 self.taskbar.SetProgressState(self.masterWindowId, 0x2)
-            except:
+            except Exception:
                 pass
             self.listPercent = [bootstrapNum]
             extra_imports = self.importPathListbox.get(0, tk.END)
@@ -2604,11 +2604,11 @@ class fF(tk.Frame):
                 try:
                     self.progStatus.grid_remove()
                     self.progStatus.destroy()
-                except:
+                except Exception:
                     pass
                 try:
                     self.taskbar.SetProgressState(self.masterWindowId, 0x0)
-                except:
+                except Exception:
                     pass
                 continueResults = True
                 if (len(r) == 1):
@@ -2667,7 +2667,7 @@ class fF(tk.Frame):
                     self.aR += "Chi-squared/Degrees of freedom = %.4g"%(chi/(self.lengthOfData*2-len(r))) + "\n"
                     try:
                         self.aR += "Akaike Information Criterion = %.4g"%aic
-                    except:
+                    except Exception:
                         self.aR += "Akaike Information Criterion could not be calculated"
                     self.resultsView.delete(*self.resultsView.get_children())
                     self.resultAlert.grid_remove()
@@ -2705,14 +2705,14 @@ class fF(tk.Frame):
                     self.fits = r
                     self.sigmas = s
                     self.chiSquared = chi
-            except:
+            except Exception:
                 if (self.listPercent[0] > 1):
                     percent_to_step = (len(self.listPercent) - 1)/self.listPercent[0]
                     self.prog_bar.config(value=percent_to_step*100)
                     try:
                         self.taskbar.SetProgressValue(self.masterWindowId, (len(self.listPercent) - 1), self.listPercent[0])
                         self.taskbar.SetProgressState(self.masterWindowId, 0x2)
-                    except:
+                    except Exception:
                         pass
                     if (self.listPercent[len(self.listPercent)-1] == 2):
                         self.progStatus.configure(text="Starting processes...")
@@ -2725,7 +2725,7 @@ class fF(tk.Frame):
         def checkFitting():
             try:
                 self.masterWindowId = ctypes.windll.user32.GetForegroundWindow()
-            except:
+            except Exception:
                 pass
             #---Check if a formula has been entered----
             formula = self.customFormula.get("1.0", tk.END)
@@ -2761,9 +2761,9 @@ class fF(tk.Frame):
                 formula = formula.replace("\n", "\n\t")
                 formula = "try:\n\t" + formula
                 formula = formula.rstrip()
-                formula += "\n\tif any(np.isnan(Zreal)) or any(np.isnan(Zimag)):\n\t\traise Exception\nexcept:\n\tZreal = np.full(len(freq), 1E300)\n\tZimag = np.full(len(freq), 1E300)"
+                formula += "\n\tif any(np.isnan(Zreal)) or any(np.isnan(Zimag)):\n\t\traise Exception\nexcept Exception:\n\tZreal = np.full(len(freq), 1E300)\n\tZimag = np.full(len(freq), 1E300)"
                 compile(formula, 'user_generated_formula', 'exec')
-            except:
+            except Exception:
                 messagebox.showwarning("Compile error", "There was an issue compiling the code")
                 return
             
@@ -2784,7 +2784,7 @@ class fF(tk.Frame):
             num_monte = 1000
             try:
                 num_monte = int(self.monteCarloValue.get())
-            except:
+            except Exception:
                 messagebox.showwarning("Bad number of simulations", "The number of simulations must be an integer")
                 return
             param_names = []
@@ -2796,43 +2796,43 @@ class fF(tk.Frame):
             for i in range(len(self.paramValueValues)):
                 try:
                     param_guesses[i].append(float(self.paramValueValues[i].get()))
-                except:
+                except Exception:
                     messagebox.showwarning("Bad parameter value", "Error 54: \nThe parameter values must be real numbers")
                     return
                 if (self.multistartCheckboxVariables[i].get()):
                         if (self.multistartSpacingVariables[i].get() == "Linear"):
                             try:
                                 float(self.multistartLowerVariables[i].get())
-                            except:
+                            except Exception:
                                 messagebox.showwarning("Bad lower bound", "Error 55: \nThe lower bound on a multistart must be a real number")
                                 return
                             try:
                                 float(self.multistartUpperVariables[i].get())
-                            except:
+                            except Exception:
                                 messagebox.showwarning("Bad upper bound", "Error 56: \nThe upper bound on a multistart must be a real number")
                                 return
                             try:
                                 if (int(self.multistartNumberVariables[i].get()) <= 0):
                                     raise Exception
-                            except:
+                            except Exception:
                                 messagebox.showwarning("Bad number of multistarts", "Error 57: \nThe number of multistarts must be a positive integer")
                                 return
                             param_guesses[i].extend(np.linspace(float(self.multistartLowerVariables[i].get()), float(self.multistartUpperVariables[i].get()), int(self.multistartNumberVariables[i].get())))
                         elif (self.multistartSpacingVariables[i].get() == "Logarithmic"):
                             try:
                                 float(self.multistartLowerVariables[i].get())
-                            except:
+                            except Exception:
                                 messagebox.showwarning("Bad lower bound", "Error 55: \nThe lower bound on a multistart must be a real number")
                                 return
                             try:
                                 float(self.multistartUpperVariables[i].get())
-                            except:
+                            except Exception:
                                 messagebox.showwarning("Bad upper bound", "Error 56: \nThe upper bound on a multistart must be a real number")
                                 return
                             try:
                                 if (int(self.multistartNumberVariables[i].get()) <= 0):
                                     raise Exception
-                            except:
+                            except Exception:
                                 messagebox.showwarning("Bad number of multistarts", "Error 57: \nThe number of multistarts must be a positive integer")
                                 return
                             if (np.sign(float(self.multistartLowerVariables[i].get())) != np.sign(float(self.multistartUpperVariables[i].get()))):
@@ -2845,25 +2845,25 @@ class fF(tk.Frame):
                         elif (self.multistartSpacingVariables[i].get() == "Random"):
                             try:
                                 float(self.multistartLowerVariables[i].get())
-                            except:
+                            except Exception:
                                 messagebox.showwarning("Bad lower bound", "Error 55: \nThe lower bound on a multistart must be a real number")
                                 return
                             try:
                                 float(self.multistartUpperVariables[i].get())
-                            except:
+                            except Exception:
                                 messagebox.showwarning("Bad upper bound", "Error 56: \nThe upper bound on a multistart must be a real number")
                                 return
                             try:
                                 if (int(self.multistartNumberVariables[i].get()) <= 0):
                                     raise Exception
-                            except:
+                            except Exception:
                                 messagebox.showwarning("Bad number of multistarts", "Error 57: \nThe number of multistarts must be a positive integer")
                                 return
                             param_guesses[i].extend((float(self.multistartUpperVariables[i].get())-float(self.multistartLowerVariables[i].get()))*np.random.rand(int(self.multistartNumberVariables[i].get()))+float(self.multistartLowerVariables[i].get()))
                         elif (self.multistartSpacingVariables[i].get() == "Custom"):
                             try:
                                 param_guesses[i].extend(float(val) for val in [x.strip() for x in self.multistartCustomVariables[i].get().split(',')])
-                            except:
+                            except Exception:
                                 messagebox.showwarning("Value error", "Error 60: \nThere was a problem with the custom multistart choices")
                                 return
             param_limits = []
@@ -2879,7 +2879,7 @@ class fF(tk.Frame):
                     try:
                         float(self.upperLimits[i].get())
                         float(self.lowerLimits[i].get())
-                    except:
+                    except Exception:
                         messagebox.showwarning("Value error", "Error 61: \nThe upper and lower limits must be real numbers")
                         return
                     param_limits.append(str(self.upperLimits[i].get()) + ";" + str(self.lowerLimits[i].get()))
@@ -2921,7 +2921,7 @@ class fF(tk.Frame):
                             errorModelParams[4] = 0
                         else:
                             errorModelParams[4] = float(self.errorDeltaVariable.get())
-                except:
+                except Exception:
                     messagebox.showerror("Value error", "One of the error structure parameters has an invalid value")
                     return
                 if (errorModelParams[0] == 0 and errorModelParams[1] == 0 and errorModelParams[3] == 0 and errorModelParams[4] == 0):
@@ -2975,7 +2975,7 @@ class fF(tk.Frame):
                     self.taskbar.HrInit()
                     self.taskbar.ActivateTab(self.masterWindowId)
                     self.taskbar.SetProgressState(self.masterWindowId, 0x2)
-                except:
+                except Exception:
                     pass
             else:
                 self.prog_bar = ttk.Progressbar(self.runFrame, orient="horizontal", length=150, mode="indeterminate")
@@ -2988,7 +2988,7 @@ class fF(tk.Frame):
                     self.taskbar.HrInit()
                     self.taskbar.ActivateTab(self.masterWindowId)
                     self.taskbar.SetProgressState(self.masterWindowId, 0x1)
-                except:
+                except Exception:
                     pass
             self.currentThreads.append(ThreadedTaskCustom(self.queue, extra_imports, self.listPercent, fit_type, num_monte, weight, assumed_noise, formula, self.wdata, self.rdata, self.jdata, param_names, param_guesses, param_limits, errorModelParams))
             self.currentThreads[len(self.currentThreads) - 1].start()
@@ -3005,14 +3005,14 @@ class fF(tk.Frame):
         def copyFormula():
             try:
                 pyperclip.copy(self.customFormula.get(tk.SEL_FIRST, tk.SEL_LAST))
-            except:
+            except Exception:
                 pass
         
         def cutFormula():
             try:
                 pyperclip.copy(self.customFormula.get(tk.SEL_FIRST, tk.SEL_LAST))
                 self.customFormula.delete(tk.SEL_FIRST, tk.SEL_LAST)
-            except:
+            except Exception:
                 pass
         
         def pasteFormula():
@@ -3020,19 +3020,19 @@ class fF(tk.Frame):
                 toPaste = pyperclip.paste()
                 self.customFormula.insert(tk.INSERT, toPaste)
                 keyup(None)
-            except:
+            except Exception:
                 pass
             
         def undoFormula():
             try:
                 self.customFormula.edit_undo()
-            except:
+            except Exception:
                 pass
             
         def redoFormula():
             try:
                 self.customFormula.edit_redo()
-            except:
+            except Exception:
                 pass
         
         def handle_click(event):
@@ -3363,7 +3363,7 @@ class fF(tk.Frame):
 
                 resultPlotBig.protocol("WM_DELETE_WINDOW", on_closing)
 
-            except:
+            except Exception:
                 pass
         
         def graphOut(event):
@@ -3958,7 +3958,7 @@ class fF(tk.Frame):
                 stringToSave += str(self.wdata[i]) + "\t" + str(self.rdata[i]) + "\t" + str(self.jdata[i]) + "\t" + str(self.realFit[i]) + "\t" + str(self.imagFit[i])
                 try:
                     stringToSave += "\t"  + str(self.sdrReal[i]) + "\t" + str(self.sdrImag[i]) + "\n"
-                except:
+                except Exception:
                     stringToSave += "\n"
             stringToSave += "----------------------------------------------------------------------------------\n"
             stringToSave += "File name: " + str(self.browseEntry.get()) + "\n"
@@ -3973,7 +3973,7 @@ class fF(tk.Frame):
                          stringToSave += "\tStd. Dev. = nan\n"
                      else:
                          stringToSave += "\tStd. Dev. = " + str(self.sigmas[i]) + "\n"
-                 except:
+                 except Exception:
                      stringToSave += "\tStd. Dev. = nan\n"
             stringToSave += "Chi-squared = " + str(self.chiSquared) + "\n"
             stringToSave += "Chi-squared/Degrees of freedom = " + str(self.chiSquared/(self.lengthOfData*2-len(self.fits)))
@@ -4061,7 +4061,7 @@ class fF(tk.Frame):
                     self.numberOfPointsLabel.configure(text="Total number of points: ")
                 else:
                     self.numberOfPointsLabel.configure(text="Total number of points: " + str(num_points))
-            except:
+            except Exception:
                 self.numberOfPointsLabel.configure(text="Total number of points: ")
         
         def runSimulations(e=None):
@@ -4069,7 +4069,7 @@ class fF(tk.Frame):
                 with np.errstate(divide='raise', invalid='raise'):
                     num_decades = np.log10(float(self.simulationUpperFreq.get())) - np.log10(float(self.simulationLowerFreq.get()))
                 num_points = int(num_decades) * int(self.simulationNumFreq.get())
-            except:
+            except Exception:
                 messagebox.showwarning("Value error", "Error 64: \nThe upper and lower frequencies must be real numbers, and the points per decade must be an integer", parent=self.simulationWindow)
                 return
             if (num_points <= 0):
@@ -4110,9 +4110,9 @@ class fF(tk.Frame):
                 formula = formula.replace("\n", "\n\t")
                 formula = "try:\n\t" + formula
                 formula = formula.rstrip()
-                formula += "\n\tif any(np.isnan(Zreal)) or any(np.isnan(Zimag)):\n\t\traise Exception\nexcept:\n\tZreal = np.full(len(freq), 1E300)\n\tZimag = np.full(len(freq), 1E300)"
+                formula += "\n\tif any(np.isnan(Zreal)) or any(np.isnan(Zimag)):\n\t\traise Exception\nexcept Exception:\n\tZreal = np.full(len(freq), 1E300)\n\tZimag = np.full(len(freq), 1E300)"
                 compile(formula, 'user_generated_formula', 'exec')
-            except:
+            except Exception:
                 messagebox.showwarning("Compile error", "There was an issue compiling the code", parent=self.simulationWindow)
                 return
             
@@ -4134,7 +4134,7 @@ class fF(tk.Frame):
             for i in range(len(self.paramValueValues)):
                 try:
                     param_values.append(float(self.paramValueValues[i].get()))
-                except:
+                except Exception:
                     messagebox.showwarning("Bad parameter value", "Error 54: \nThe parameter values must be real numbers", parent=self.simulationWindow)
                     return
             self.sim_real, self.sim_imag = dataSimulation.run_simulations(self.sim_freqs, formula, param_names, param_values)
@@ -4188,34 +4188,34 @@ class fF(tk.Frame):
             for s in self.simPlots:
                 try:
                     s.destroy()
-                except:
+                except Exception:
                     pass
             for s in self.simPlotFigs:
                 try:
                     s.clear()
                     plt.close(s)
-                except:
+                except Exception:
                     pass
             for s in self.simPlotBigs:
                 try:
                     s.destroy()
-                except:
+                except Exception:
                     pass
             for s in self.simPlotBigFigs:
                 try:
                     s.clear()
                     plt.close(s)
-                except:
+                except Exception:
                     pass
             for s in self.simSaveNyCanvasButtons:
                 try:
                     s.destroy()
-                except:
+                except Exception:
                     pass
             for s in self.simSaveNyCanvasButton_ttps:
                 try:
                     del s
-                except:
+                except Exception:
                     pass
             simPlot = tk.Toplevel(background=self.backgroundColor)
             self.simPlots.append(simPlot)
@@ -4483,10 +4483,10 @@ class fF(tk.Frame):
                             sim_resultPlotBig.destroy()
                             try:
                                 plt.close(sim_fig)
-                            except:
+                            except Exception:
                                 pass
                         sim_resultPlotBig.protocol("WM_DELETE_WINDOW", sim_big_on_closing)
-                except:
+                except Exception:
                     pass
             
             sim_nyCanvas = FigureCanvasTkAgg(sim_pltFig, simPlot)
@@ -4752,7 +4752,7 @@ class fF(tk.Frame):
             else:
                 try:
                     stringToCopy = self.errorAlphaEntry.selection_get()
-                except:
+                except Exception:
                     stringToCopy = self.errorAlphaEntry.get()
                 pyperclip.copy(stringToCopy)
         self.popup_menuA = tk.Menu(self.errorAlphaEntry, tearoff=0)
@@ -4775,7 +4775,7 @@ class fF(tk.Frame):
             else:
                 try:
                     stringToCopy = self.errorBetaEntry.selection_get()
-                except:
+                except Exception:
                     stringToCopy = self.errorBetaEntry.get()
                 pyperclip.copy(stringToCopy)
         self.popup_menuB = tk.Menu(self.errorBetaEntry, tearoff=0)
@@ -4798,7 +4798,7 @@ class fF(tk.Frame):
             else:
                 try:
                     stringToCopy = self.errorBetaReEntry.selection_get()
-                except:
+                except Exception:
                     stringToCopy = self.errorBetaReEntry.get()
                 pyperclip.copy(stringToCopy)
         self.popup_menuR = tk.Menu(self.errorBetaReEntry, tearoff=0)
@@ -4821,7 +4821,7 @@ class fF(tk.Frame):
             else:
                 try:
                     stringToCopy = self.errorGammaEntry.selection_get()
-                except:
+                except Exception:
                     stringToCopy = self.errorGammaEntry.get()
                 pyperclip.copy(stringToCopy)
         self.popup_menuG = tk.Menu(self.errorGammaEntry, tearoff=0)
@@ -4844,7 +4844,7 @@ class fF(tk.Frame):
             else:
                 try:
                     stringToCopy = self.errorDeltaEntry.selection_get()
-                except:
+                except Exception:
                     stringToCopy = self.errorDeltaEntry.get()
                 pyperclip.copy(stringToCopy)
         self.popup_menuD = tk.Menu(self.errorDeltaEntry, tearoff=0)
@@ -4978,7 +4978,7 @@ class fF(tk.Frame):
             self.paramListbox.insert(tk.END, n.get())
         try:
             self.advancedOptionsLabel.configure(text=self.paramNameValues[self.paramListboxSelection].get())
-        except:
+        except Exception:
             pass
         self.customFormula.tag_remove("tagZreal", "1.0", tk.END)
         self.customFormula.tag_remove("tagReservedWords2", "1.0", tk.END)
@@ -5256,7 +5256,7 @@ class fF(tk.Frame):
             self.multistartCustomEntry.configure(textvariable=self.multistartCustomVariables[num_selected])
             self.advancedLowerLimitEntry.configure(textvariable=self.lowerLimits[num_selected])
             self.advancedUpperLimitEntry.configure(textvariable=self.upperLimits[num_selected])
-        except:     #No parameters left
+        except Exception:     #No parameters left
             self.paramListboxSelection = 0
             self.advancedOptionsLabel.configure(text="")
             self.advancedLowerLimitFrame.pack_forget()
@@ -5352,7 +5352,7 @@ class fF(tk.Frame):
                         bb = tLatex.get_window_extent(renderer=rLatex)
                     self.latexAx.axis("off")
                     self.latexCanvas.draw()
-        except:
+        except Exception:
             pass
     
     def formulaEnter(self, n):
@@ -5415,7 +5415,7 @@ class fF(tk.Frame):
                 self.browseEntry.configure(state="readonly")
                 self.runButton.configure(state="normal")
                 self.simplexButton.configure(state="normal")
-            except:
+            except Exception:
                 messagebox.showerror("File error", "Error 42: \nThere was an error loading or reading the file")
         elif (fext == ".mmcustom"):
             try:
@@ -5574,7 +5574,7 @@ class fF(tk.Frame):
                             self.multistartNumberVariables.append(tk.StringVar(self, pnumber))
                             self.upperLimits.append(tk.StringVar(self, plimup))
                             self.lowerLimits.append(tk.StringVar(self, plimlow))
-                        except:
+                        except Exception:
                             try:
                                 pname, pval, pcombo, pcheck, pspacing, pupper, plower, pnumber, pcustom = p.split("~=~")
                                 self.multistartCheckboxVariables.append(tk.IntVar(self, int(pcheck)))
@@ -5585,7 +5585,7 @@ class fF(tk.Frame):
                                 self.multistartNumberVariables.append(tk.StringVar(self, pnumber))
                                 self.upperLimits.append(tk.StringVar(self, "inf"))
                                 self.lowerLimits.append(tk.StringVar(self, "-inf"))
-                            except:
+                            except Exception:
                                 pname, pval, pcombo = p.split("~=~")
                                 self.multistartCheckboxVariables.append(tk.IntVar(self, 0))
                                 self.multistartLowerVariables.append(tk.StringVar(self, "1E-5"))
@@ -5710,7 +5710,7 @@ class fF(tk.Frame):
                     self.freqRangeButton.configure(state="normal")
                     self.runButton.configure(state="normal")
                     self.simplexButton.configure(state="normal")
-                except:
+                except Exception:
                     messagebox.showerror("File not found", "Error 53: \nThe linked .mmfile could not be found")
                     fileToLoad = ""
                 self.browseEntry.configure(state="normal")
@@ -5782,7 +5782,7 @@ class fF(tk.Frame):
                 self.customFormula.delete("1.0", tk.END)
                 self.customFormula.insert("1.0", formulaIn.rstrip())    #Insert custom formula into code box and remove trailing whitespace
                 self.keyup("")
-            except:
+            except Exception:
                 messagebox.showerror("File error", "Error 42: \nThere was an error loading or reading the file")
         else:
             messagebox.showerror("File error", "Error 43: \nThe file has an unknown extension")
@@ -5892,7 +5892,7 @@ class fF(tk.Frame):
                         bb = tLatex.get_window_extent(renderer=rLatex)
                     self.latexAx.axis("off")
                     self.latexCanvas.draw()
-        except:
+        except Exception:
             pass
         self.loadFormulaWindow.configure(background="#FFFFFF")
         self.loadFormulaFrame.configure(background="#FFFFFF")
@@ -5938,7 +5938,7 @@ class fF(tk.Frame):
                 self.imagFreq.set_ylabel("-Zj / Ω", color=self.foregroundColor)
                 self.imagFreq.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.canvasFreq.draw()
-        except:
+        except Exception:
             pass
         self.howMany.configure(background="#FFFFFF", foreground="#000000")
         self.paramPopup.configure(background="#FFFFFF")
@@ -5954,7 +5954,7 @@ class fF(tk.Frame):
             self.upperLabel.configure(background="#FFFFFF", foreground="#000000")
             self.lowerLabel.configure(background="#FFFFFF", foreground="#000000")
             self.rangeLabel.configure(background="#FFFFFF", foreground="#000000")
-        except:
+        except Exception:
             pass
                                  
     def setThemeDark(self):
@@ -6071,7 +6071,7 @@ class fF(tk.Frame):
                         bb = tLatex.get_window_extent(renderer=rLatex)
                     self.latexAx.axis("off")
                     self.latexCanvas.draw()
-        except:
+        except Exception:
             pass
         self.loadFormulaWindow.configure(background="#424242")
         self.loadFormulaFrame.configure(background="#424242")
@@ -6117,14 +6117,14 @@ class fF(tk.Frame):
                 self.imagFreq.set_ylabel("-Zj / Ω", color=self.foregroundColor)
                 self.imagFreq.set_xlabel("Frequency / Hz", color=self.foregroundColor)
                 self.canvasFreq.draw()
-        except:
+        except Exception:
             pass
         self.saveFrame.configure(background="#424242")
         try:
             self.upperLabel.configure(background="#424242", foreground="#FFFFFF")
             self.lowerLabel.configure(background="#424242", foreground="#FFFFFF")
             self.rangeLabel.configure(background="#424242", foreground="#FFFFFF")
-        except:
+        except Exception:
             pass
     
     def setEllipseColor(self, color):
@@ -6142,7 +6142,7 @@ class fF(tk.Frame):
                 if os.path.isdir(abspath):
                     self.loadFormulaNodes[node] = abspath
                     self.loadFormulaTree.insert(node, 'end')
-            except:
+            except Exception:
                 pass    #Don't show directories we don't have permission to access
     def open_node(self, event):
         node = self.loadFormulaTree.focus()
@@ -6206,7 +6206,7 @@ class fF(tk.Frame):
                         bb = tLatex.get_window_extent(renderer=rLatex)
                     self.load_latexAx.axis("off")
                     self.load_latexCanvas.draw()
-        except:
+        except Exception:
             pass
     
     def clickFormula(self, event):
@@ -6333,10 +6333,10 @@ class fF(tk.Frame):
                                     bb = tLatex.get_window_extent(renderer=rLatex)
                                 self.load_latexAx.axis("off")
                                 self.load_latexCanvas.draw()
-                    except:
+                    except Exception:
                         pass
                     toLoad.close()
-                except:
+                except Exception:
                    messagebox.showerror("File error", "Error 62: \nThere was an error loading or reading the file")
             else:
                 self.loadFormulaDescription.configure(state="normal")
@@ -6350,7 +6350,7 @@ class fF(tk.Frame):
                     self.load_latexAx.clear()
                     self.load_latexAx.axis("off")
                     self.load_latexCanvas.draw()
-        except:
+        except Exception:
             pass    #Ignore clicks that would be out-of-range
     
     def enterFormula(self, path_to_child):
@@ -6512,7 +6512,7 @@ class fF(tk.Frame):
                             self.multistartNumberVariables.append(tk.StringVar(self, pnumber))
                             self.upperLimits.append(tk.StringVar(self, plimup))
                             self.lowerLimits.append(tk.StringVar(self, plimlow))
-                        except:
+                        except Exception:
                             try:
                                 pname, pval, pcombo, pcheck, pspacing, pupper, plower, pnumber, pcustom = p.split("~=~")
                                 self.multistartCheckboxVariables.append(tk.IntVar(self, int(pcheck)))
@@ -6523,7 +6523,7 @@ class fF(tk.Frame):
                                 self.multistartNumberVariables.append(tk.StringVar(self, pnumber))
                                 self.upperLimits.append(tk.StringVar(self, "inf"))
                                 self.lowerLimits.append(tk.StringVar(self, "-inf"))
-                            except:
+                            except Exception:
                                 pname, pval, pcombo = p.split("~=~")
                                 self.multistartCheckboxVariables.append(tk.IntVar(self, 0))
                                 self.multistartLowerVariables.append(tk.StringVar(self, "1E-5"))
@@ -6670,7 +6670,7 @@ class fF(tk.Frame):
                 self.customFormula.insert("1.0", formulaIn.rstrip())    #Insert custom formula into code box and remove trailing whitespace
             self.keyup("")
             self.loadFormulaWindow.withdraw()
-        except:
+        except Exception:
             messagebox.showerror("File error", "Error 42: \nThere was an error loading or reading the file")
     
     def loadFormulaCommand(self, e=None):
@@ -6843,7 +6843,7 @@ class fF(tk.Frame):
                             self.multistartNumberVariables.append(tk.StringVar(self, pnumber))
                             self.upperLimits.append(tk.StringVar(self, plimup))
                             self.lowerLimits.append(tk.StringVar(self, plimlow))
-                        except:
+                        except Exception:
                             try:
                                 pname, pval, pcombo, pcheck, pspacing, pupper, plower, pnumber, pcustom = p.split("~=~")
                                 self.multistartCheckboxVariables.append(tk.IntVar(self, int(pcheck)))
@@ -6854,7 +6854,7 @@ class fF(tk.Frame):
                                 self.multistartNumberVariables.append(tk.StringVar(self, pnumber))
                                 self.upperLimits.append(tk.StringVar(self, "inf"))
                                 self.lowerLimits.append(tk.StringVar(self, "-inf"))
-                            except:
+                            except Exception:
                                 pname, pval, pcombo = p.split("~=~")
                                 self.multistartCheckboxVariables.append(tk.IntVar(self, 0))
                                 self.multistartLowerVariables.append(tk.StringVar(self, "1E-5"))
@@ -7001,7 +7001,7 @@ class fF(tk.Frame):
                 self.customFormula.insert("1.0", formulaIn.rstrip())    #Insert custom formula into code box and remove trailing whitespace
             self.keyup("")
             self.loadFormulaWindow.withdraw()
-        except:
+        except Exception:
             messagebox.showerror("File error", "Error 42: \nThere was an error loading or reading the file")
     
     def closeWindows(self):
@@ -7020,75 +7020,75 @@ class fF(tk.Frame):
             self.bootstrapButton.destroy()
             self.bootstrapCancel.destroy()
             self.bootstrapPopup.destroy()
-        except:
+        except Exception:
             pass
         for resultWindow in self.resultsWindows:
             try:
                 resultWindow.destroy()
-            except:
+            except Exception:
                 pass
         for resultPlotBig in self.resultPlotBigs:
             try:
                 resultPlotBig.destroy()
-            except:
+            except Exception:
                 pass
         for resultPlotBigFig in self.resultPlotBigFigs:
             try:
                 resultPlotBigFig.clear()
-            except:
+            except Exception:
                 pass
         for resultPlot in self.resultPlots:
             try:
                 resultPlot.destroy()
-            except:
+            except Exception:
                 pass
         for resultPlotFig in self.resultPlotFigs:
             try:
                 resultPlotFig.clear()
-            except:
+            except Exception:
                 pass
         for nyCanvasButton in self.saveNyCanvasButtons:
             try:
                 nyCanvasButton.destroy()
-            except:
+            except Exception:
                 pass
         for nyCanvasButton_ttp in self.saveNyCanvasButton_ttps:
             try:
                 del nyCanvasButton_ttp
-            except:
+            except Exception:
                 pass
         self.alreadyPlotted = False
         for s in self.simPlots:
             try:
                 s.destroy()
-            except:
+            except Exception:
                 pass
         for s in self.simPlotFigs:
             try:
                 s.clear()
                 plt.close(s)
-            except:
+            except Exception:
                 pass
         for s in self.simPlotBigs:
             try:
                 s.destroy()
-            except:
+            except Exception:
                 pass
         for s in self.simPlotBigFigs:
             try:
                 s.clear()
                 plt.close(s)
-            except:
+            except Exception:
                 pass
         for s in self.simSaveNyCanvasButtons:
             try:
                 s.destroy()
-            except:
+            except Exception:
                 pass
         for s in self.simSaveNyCanvasButton_ttps:
             try:
                 del s
-            except:
+            except Exception:
                 pass
     
     def cancelThreads(self):

@@ -675,7 +675,7 @@ class eFF(tk.Frame):
         for resPlot in self.resPlots:
             try:
                 resPlot.destroy()
-            except:
+            except Exception:
                 pass
                          
     def residualEnter(self, n):
@@ -731,7 +731,7 @@ class eFF(tk.Frame):
             messagebox.showerror("Length error", "Error 27:\nThe number of data do not match")
         except FrequencyMismatchError:
             messagebox.showerror("Frequency error", "Error 28:\nSome of the frequencies being loaded do not match the already loaded frequencies")
-        except:
+        except Exception:
             messagebox.showerror("File error", "Error 29:\nThere was an error reading the file")
     
     def residualsEnter(self, n):
@@ -850,7 +850,7 @@ class eFF(tk.Frame):
             messagebox.showerror("Length error", "Error 27:\nThe number of data do not match")
         except FrequencyMismatchError:
             messagebox.showerror("Frequency error", "Error 28:\nSome of the frequencies being loaded do not match the already loaded frequencies")
-        except:
+        except Exception:
             messagebox.showerror("File error", "Error 29:\nThere was an error reading the file")
         if (self.numFiles > 1):
             self.saveButton.configure(state="normal")

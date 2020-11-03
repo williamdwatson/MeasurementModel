@@ -610,8 +610,8 @@ class myGUI:
                 #---The default import path list---
                 self.defaultImports = config['custom']['imports'].split("*")
                 
-            except:     #If there's an error loading settings
-                pass    #Ignore the error
+            except Exception:     #If there's an error loading settings
+                pass              #Ignore the error
     
     def interpretArgs(self, args):
         if (len(args) > 1):         #If there's an argument coming in (the first argument is always the file name)
@@ -638,14 +638,14 @@ class myGUI:
                         elif (fext == ".mmerrors"):
                             self.errorsFileList.append(args[i])
                             whatExt = fext
-                except:
+                except Exception:
                     messagebox.showerror("File error", "Error: 3\nError opening files")
             else:       #If there's only one input file
                 try:    #Check if the file exists
                     if (not os.path.exists(args[1])):
                         raise Exception
                     self.argFile = args[1]
-                except:
+                except Exception:
                     messagebox.showerror("File error", "Error: 3\nError opening file")
     
     #---Allow the mousewheel to be used to change tabs---

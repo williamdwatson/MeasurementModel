@@ -228,22 +228,25 @@ class CustomText(tk.Text):
 
     def _proxy(self, *args):
         # let the actual widget perform the requested action
-        cmd = (self._orig,) + args
-        result = self.tk.call(cmd)
-
-        # generate an event if something was added or deleted,
-        # or the cursor position changed
-        if (args[0] in ("insert", "replace", "delete") or 
-            args[0:3] == ("mark", "set", "insert") or
-            args[0:2] == ("xview", "moveto") or
-            args[0:2] == ("xview", "scroll") or
-            args[0:2] == ("yview", "moveto") or
-            args[0:2] == ("yview", "scroll")
-        ):
-            self.event_generate("<<Change>>", when="tail")
-
-        # return what the actual widget returned
-        return result
+        try:
+            cmd = (self._orig,) + args
+            result = self.tk.call(cmd)
+    
+            # generate an event if something was added or deleted,
+            # or the cursor position changed
+            if (args[0] in ("insert", "replace", "delete") or 
+                args[0:3] == ("mark", "set", "insert") or
+                args[0:2] == ("xview", "moveto") or
+                args[0:2] == ("xview", "scroll") or
+                args[0:2] == ("yview", "moveto") or
+                args[0:2] == ("yview", "scroll")
+            ):
+                self.event_generate("<<Change>>", when="tail")
+    
+            # return what the actual widget returned
+            return result
+        except Exception:
+            pass
 
 class iF(tk.Frame):
     def __init__(self, parent, topOne):
@@ -327,7 +330,7 @@ class iF(tk.Frame):
         def copyInputFileText():
             try:
                 pyperclip.copy(self.inputFileText.selection_get())
-            except:
+            except Exception:
                 pass
 
         def select_inputFileText():
@@ -356,7 +359,7 @@ class iF(tk.Frame):
                     else:
                         with open(name,'r') as UseFile:
                             return name, UseFile.read()
-                except:     #If there's a problem with the file
+                except Exception:     #If there's a problem with the file
                     messagebox.showerror("File error", "Error 5:\nThere was an error opening the file.")
                     return "+", "+"   
         
@@ -561,7 +564,7 @@ class iF(tk.Frame):
                     return False
                 else:
                     return True
-            except:
+            except Exception:
                 return False
         def validateCol(P):
             if P == '':
@@ -578,7 +581,7 @@ class iF(tk.Frame):
                     return False
                 else:
                     return True
-            except:
+            except Exception:
                 return False
         
         def validatePlusMinus(P):
@@ -598,7 +601,7 @@ class iF(tk.Frame):
                     return False
                 else:
                     return True
-            except:
+            except Exception:
                 return False
             
         def validateUnit(P):
@@ -613,7 +616,7 @@ class iF(tk.Frame):
             try:
                 float(P)
                 return True
-            except:
+            except Exception:
                 return False
         
         valUnit = (self.register(validateUnit), '%P')
@@ -755,7 +758,7 @@ class iF(tk.Frame):
                                         if 'EXPERIMENTABORTED' in line:
                                             endHere = i
                                             break
-                        except:     #If there's a problem with the file
+                        except Exception:     #If there's a problem with the file
                             messagebox.showerror("File error", "Error 5:\nThere was an error opening the file.")
                             return
                     if (self.realUnitVariable.get() == "." or self.imagUnitVariable.get() == "." or self.freqUnitVariable.get() == "."):
@@ -997,6 +1000,7 @@ class iF(tk.Frame):
             self.text.bind("<<Change>>", _on_change)
             self.text.bind("<Configure>", _on_change)
             self.text.insert("end", self.fileText)
+            self.text.configure(state="disabled")
             self.linenumbers.setFillColor(self.foregroundColor)
             
         s = ttk.Style()
@@ -1231,7 +1235,7 @@ class iF(tk.Frame):
             self.text.configure(background="#FFFFFF", foreground="#000000")
             self.linenumbers.configure(background="#FFFFFF")
             self.linenumbers.setFillColor("#000000")
-        except:
+        except Exception:
             pass
         s = ttk.Style()
         s.configure('TCheckbutton', background='#FFFFFF', foreground="#000000")
@@ -1268,7 +1272,7 @@ class iF(tk.Frame):
             self.text.configure(background="#424242", foreground="#FFFFFF")
             self.linenumbers.configure(background="#424242")
             self.linenumbers.setFillColor("#FFFFFF")
-        except:
+        except Exception:
             pass
         s = ttk.Style()
         s.configure('TCheckbutton', background='#424242', foreground="white")
@@ -1277,7 +1281,7 @@ class iF(tk.Frame):
         try:
             with open(name,'r') as UseFile:
                 return name, UseFile.read()
-        except:     #If there's a problem with the file
+        except Exception:     #If there's a problem with the file
             messagebox.showerror("File error", "Error 5:\nThere was an error opening the file.")
             return "+", "+"
     
@@ -1311,17 +1315,17 @@ class iF(tk.Frame):
         for textPopup in self.textPopups:
             try:
                 textPopup.destroy()
-            except:
+            except Exception:
                 pass
         for popup in self.nyPlots:
             try:
                 popup.destroy()
-            except:
+            except Exception:
                 pass
         for fInput in self.fInputs:
             try:
                 fInput.clear()
-            except:
+            except Exception:
                 pass
         
     def inputEnter(self, fileName):

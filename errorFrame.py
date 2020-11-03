@@ -219,7 +219,7 @@ class eF(tk.Frame):
                     messagebox.showerror("File error", "Error 30:\nThe file has an unknown extension")
                 except FileLengthError:
                     messagebox.showerror("Length error", "Error 31:\nThe number of data do not match")
-                except:
+                except Exception:
                     messagebox.showerror("File error", "Error 33:\nThere was an error reading the file")
                 
         def removeFile():
@@ -344,7 +344,7 @@ class eF(tk.Frame):
                 else:
                     try:
                         fittingGuesses[0] = float(self.alphaEntryVariable.get())
-                    except:
+                    except Exception:
                         messagebox.showerror("Value error", "Error 37:\nThe alpha value guess is invalid")
                         return
             if (self.betaCheckboxVariable.get() == 1):
@@ -354,7 +354,7 @@ class eF(tk.Frame):
                 else:
                     try:
                         fittingGuesses[1] = float(self.betaEntryVariable.get())
-                    except:
+                    except Exception:
                         messagebox.showerror("Value error", "Error 38:\nThe beta value guess is invalid")
                         return
             if (self.gammaCheckboxVariable.get() == 1):
@@ -364,7 +364,7 @@ class eF(tk.Frame):
                 else:
                     try:
                         fittingGuesses[2] = float(self.gammaEntryVariable.get())
-                    except:
+                    except Exception:
                         messagebox.showerror("Value error", "Error 39:\nThe gamma value guess is invalid")
                         return
             if (self.deltaCheckboxVariable.get() == 1):
@@ -374,7 +374,7 @@ class eF(tk.Frame):
                 else:
                     try:
                         fittingGuesses[3] = float(self.deltaEntryVariable.get())
-                    except:
+                    except Exception:
                         messagebox.showerror("Value error", "Error 40:\nThe delta value guess is invalid")
                         return
             
@@ -641,7 +641,7 @@ class eF(tk.Frame):
             else:
                 try:
                     stringToCopy = self.alphaEntry.selection_get()
-                except:
+                except Exception:
                     stringToCopy = self.alphaEntry.get()
                 pyperclip.copy(stringToCopy)
         self.popup_menuA = tk.Menu(self.alphaEntry, tearoff=0)
@@ -671,7 +671,7 @@ class eF(tk.Frame):
             else:
                 try:
                     stringToCopy = self.betaEntry.selection_get()
-                except:
+                except Exception:
                     stringToCopy = self.betaEntry.get()
                 pyperclip.copy(stringToCopy)
         self.popup_menuB = tk.Menu(self.betaEntry, tearoff=0)
@@ -703,7 +703,7 @@ class eF(tk.Frame):
             else:
                 try:
                     stringToCopy = self.gammaEntry.selection_get()
-                except:
+                except Exception:
                     stringToCopy = self.gammaEntry.get()
                 pyperclip.copy(stringToCopy)
         self.popup_menuG = tk.Menu(self.gammaEntry, tearoff=0)
@@ -733,7 +733,7 @@ class eF(tk.Frame):
             else:
                 try:
                     stringToCopy = self.deltaEntry.selection_get()
-                except:
+                except Exception:
                     stringToCopy = self.deltaEntry.get()
                 pyperclip.copy(stringToCopy)
         self.popup_menuD = tk.Menu(self.deltaEntry, tearoff=0)
@@ -865,7 +865,7 @@ class eF(tk.Frame):
         for resPlot in self.resPlots:
             try:
                 resPlot.destroy()
-            except:
+            except Exception:
                 pass
     
     def errorEnter(self, n):
@@ -915,7 +915,7 @@ class eF(tk.Frame):
             messagebox.showerror("File error", "Error 30:\nThe file has an unknown extension")
         except FileLengthError:
             messagebox.showerror("Length error", "Error 31:\nThe number of data do not match")
-        except:
+        except Exception:
             messagebox.showerror("File error", "Error 33:\nThere was an error reading the file")
     
     def errorsEnter(self, n):
@@ -975,5 +975,5 @@ class eF(tk.Frame):
             messagebox.showerror("File error", "Error 30:\nThe file has an unknown extension")
         except FileLengthError:
             messagebox.showerror("Length error", "Error 31:\nThe number of data do not match")
-        except:
+        except Exception:
             messagebox.showerror("File error", "Error 33:\nThere was an error reading the file")

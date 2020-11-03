@@ -246,7 +246,7 @@ def findErrorFit(weighting, choices, stdr, stdj, r, j, modz, sigmaIn, guesses, r
             if (cov[i][i] < 0):     #If there are negatives on the covariance diagonal, something's wrong
                 raise ValueError
         sigma_result = np.sqrt(np.diag(cov))       #The standard deviations
-    except:
+    except Exception:
         return "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"
     
     a, b, g, d = minimized.x
