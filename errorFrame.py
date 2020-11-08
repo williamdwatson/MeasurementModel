@@ -23,15 +23,12 @@ import tkinter as tk
 from tkinter import messagebox
 import tkinter.ttk as ttk
 from tkinter.filedialog import askopenfilenames, asksaveasfile
-import os
-import sys
+import os, sys, threading, queue
 import numpy as np
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 import errorFitting
-import threading
-import queue
 import pyperclip
 #--------------------------------pyperclip-----------------------------------
 #     Source: https://pypi.org/project/pyperclip/

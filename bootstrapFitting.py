@@ -23,8 +23,7 @@ import numpy as np
 from numpy.random import normal
 import lmfit
 import multiprocessing as mp
-import threading
-import sys
+import threading, sys
 
 def mp_complex(sharedList, numBootstrap, perVal, numParams, paramNames, r_in, Z_append, paramGuesses, paramBounds, w, weight, assumedNoise, ZrIn, ZjIn, fitType, formula, errorParams):
     """

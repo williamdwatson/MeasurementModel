@@ -23,8 +23,7 @@ from tkinter import messagebox
 from tkinter.filedialog import askdirectory
 import tkinter.ttk as ttk
 import tkinter.colorchooser as colorchooser
-import configparser
-import os
+import configparser, os
 
 class FileExtensionError(Exception):
     pass

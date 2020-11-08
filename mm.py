@@ -20,24 +20,12 @@ Created on Wed Jul 25 15:47:07 2018
 """
 
 #---Import necessary libraries/modules---
-import ctypes
-import sys
+import ctypes, sys, os, re, multiprocessing, webbrowser, configparser
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import messagebox
-import inputFrame
-import helpFrame
-import modelFrame
-import errorFileFrame
-import errorFrame
-import settingsFrame
-import formulaFrame
-import configparser
-import os
-import re
-import multiprocessing
+import inputFrame, helpFrame, modelFrame, errorFileFrame, errorFrame, settingsFrame, formulaFrame
 from PIL import ImageTk, Image
-import webbrowser
 
 class CreateToolTip(object):
     """
@@ -1224,7 +1212,14 @@ class myGUI:
                 return False
             else:
                 return True
-            
+    
+    #---Get display width and/or height---
+    def getScreenWidth(self):
+        return self.master.winfo_screenwidth()
+    
+    def getScreenHeight(self):
+        return self.master.winfo_screenheight()
+    
     #---Getters and setters for various settings---    
     def getTheme(self):
         return self.theme

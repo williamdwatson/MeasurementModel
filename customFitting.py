@@ -23,10 +23,8 @@ import numpy as np
 from numpy.random import normal
 import lmfit
 from numpy import nan    #This can be a necessary import if errors occur
-import itertools
+import itertools, threading, sys
 import multiprocessing as mp
-import threading
-import sys
 
 def mp_complex(guesses, sharedList, index, parameters, numParams, weight, assumedNoise, formula, w, ZrIn, ZjIn, Z_append, percentVal, paramNames, fitType, errorParams):
     """

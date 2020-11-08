@@ -25,36 +25,16 @@ from tkinter import messagebox
 import tkinter.ttk as ttk
 from tkinter.filedialog import askopenfilename, asksaveasfile, askdirectory
 from tkinter import simpledialog
-import os
-import sys
-import ctypes
+import os, sys, ctypes, threading, queue, re, webbrowser
 import comtypes.client as cc
 import numpy as np
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
-import customFitting
-import bootstrapFitting
-import simplexFitting
-import dataSimulation
-import threading
-import queue
-#import time
-#from rangeSlider import RangeSlider
-#------------------------------Range Slider----------------------------------
-#  Source: https://github.com/halsafar/rangeslider
-#  "THE BEER-WARE LICENSE" (Revision 42):
-#  <shinhalsafar@gmail.com> wrote this file. As long as you retain this notice you
-#  can do whatever you want with this stuff. If we meet some day, and you think
-#  this stuff is worth it, you can buy me a beer in return.
-#
-#	Stephen Damm (shinhalsafar@gmail.com)
-#----------------------------------------------------------------------------
+import customFitting, bootstrapFitting, simplexFitting, dataSimulation
 import tkinter.scrolledtext as scrolledtext
-import re
 from functools import partial
-import webbrowser
 import pyperclip
 #--------------------------------pyperclip-----------------------------------
 #     Source: https://pypi.org/project/pyperclip/
@@ -115,7 +95,6 @@ class ThreadedTaskCustom(threading.Thread):
         res = ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, ctypes.py_object(SystemExit))
         if res > 1: 
             ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, 0) 
-            #print('Exception raise failure')
 
 class ThreadedTaskBootstrap(threading.Thread):
     def __init__(self, queue, eI, lp, nBS, r_in, s_in, sdR_in, sdI_in, chi_in, aic_in, realF_in, imagF_in, fitType, numMonte, weight, noise, customFormula, w, r, j, paramNames, paramGuesses, paramLimits, errorParams):
@@ -414,7 +393,8 @@ class fF(tk.Frame):
         
         self.formulaDescriptionWindow = tk.Toplevel(bg=self.backgroundColor)
         self.formulaDescriptionWindow.withdraw()
-        self.formulaDescriptionWindow.geometry("1000x700")
+        #---Scale window geometry with screen size---
+        self.formulaDescriptionWindow.geometry("{:.0f}x{:.0f}".format(self.topGUI.getScreenWidth()//2, self.topGUI.getScreenHeight()//1.5))
         self.formulaDescriptionWindow.title("Custom formula description")
         self.formulaDescriptionWindow.iconbitmap(resource_path('img/elephant3.ico'))
         self.formulaDescriptionLabel = tk.Label(self.formulaDescriptionWindow, text="Description: ", bg=self.backgroundColor, fg=self.foregroundColor)
@@ -461,7 +441,7 @@ class fF(tk.Frame):
         
         self.loadFormulaWindow = tk.Toplevel(bg=self.backgroundColor)
         self.loadFormulaWindow.withdraw()
-        self.loadFormulaWindow.geometry("1350x750")
+        self.loadFormulaWindow.geometry("{:.0f}x{:.0f}".format(self.topGUI.getScreenWidth()//1.4, self.topGUI.getScreenHeight()//1.5))
         self.loadFormulaWindow.title("Load formula")
         self.loadFormulaWindow.iconbitmap(resource_path('img/elephant3.ico'))
         self.loadFormulaFrame = tk.Frame(self.loadFormulaWindow, bg=self.backgroundColor)
@@ -3067,7 +3047,7 @@ class fF(tk.Frame):
             self.resultsWindows.append(self.resultsWindow)
             self.resultsWindow.title("Advanced results")
             self.resultsWindow.iconbitmap(resource_path("img/elephant3.ico"))
-            self.resultsWindow.geometry("1000x550")
+            self.resultsWindow.geometry("{:.0f}x{:.0f}".format(self.topGUI.getScreenWidth()//2, self.topGUI.getScreenHeight()//2))
             self.advResults = scrolledtext.ScrolledText(self.resultsWindow, width=50, height=10, bg=self.backgroundColor, fg=self.foregroundColor, state="normal")
             self.advResults.insert(tk.INSERT, self.aR)
             self.advResults.configure(state="disabled")

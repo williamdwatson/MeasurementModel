@@ -19,9 +19,7 @@ Created on Wed Jun 20 15:07:52 2018
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 import tkinter as tk
-import webbrowser
-import sys
-import os
+import webbrowser, sys, os
 
 class CreateToolTip(object):
     """
