@@ -23,6 +23,15 @@ import numpy as np
 from scipy.optimize import least_squares
 
 def findErrorFit(weighting, choices, stdr, stdj, r, j, modz, sigmaIn, guesses, reChoice, re, detrendChoice):
+    """
+    Find the fit for the error structure of form alpha*|Zj| + beta*|Zr (- Re)| + gamma*|Z| + delta
+    
+    Parameters
+    ----------
+    
+    Returns
+    -------
+    """
     stddev = []
     impedReal = []
     impedRealRe = []
@@ -41,14 +50,15 @@ def findErrorFit(weighting, choices, stdr, stdj, r, j, modz, sigmaIn, guesses, r
     if (len(stdr) > 1 and detrendChoice == 3):      #If detrending with multiple files
         sigmaDetrend = []
         for i in range(len(stdr)):
-            if (weighting == 0):                    #No weighting
+            #---Find fitting weights; append twice (once for real, once for imaginary)---
+            if (weighting == 0):                    #No weighting means all weights are one
                 sigma.extend(np.ones(2*len(stdr[i])))
                 sigmaDetrend.extend(np.ones(len(stdr[i])))
-            elif (weighting == 1):                  #Variance weighting
+            elif (weighting == 1):                  #Variance weighting means detrend by sigma
                 sigma.extend(sigmaIn[i])
                 sigma.extend(sigmaIn[i])
                 sigmaDetrend.extend(sigmaIn[i])
-            else:
+            else:                                   #Variance weighting with moving average
                 sigmaTemp = []
                 for k in range(len(stdr[i])):
                     if (weighting == 2):            #Variance weighting with 3-point moving averages
@@ -86,12 +96,14 @@ def findErrorFit(weighting, choices, stdr, stdj, r, j, modz, sigmaIn, guesses, r
             impedMod2.extend(abs(modz[i]))
             res2.extend(np.full(len(r[i]),re[i]))
             impedRealRe2.extend(abs(r[i]) - res[i])
+        #---Detrend by subtracting off average first---
         stddev -= np.mean(stddev)
         impedReal -= np.mean(impedReal)
         impedImag -= np.mean(impedImag)
         impedMod -= np.mean(impedMod)
         impedRealRe -= np.mean(impedRealRe)
         
+        #---Then detrend by dividing by weights---
         start = 0
         for i in range(len(r)):
             stop = start+len(r[i])
@@ -109,31 +121,32 @@ def findErrorFit(weighting, choices, stdr, stdj, r, j, modz, sigmaIn, guesses, r
             start = stop
     else:
         for i in range(len(stdr)):
-            if (weighting == 0):            #No weighting
+            #---Find fitting weights; append twice (once for real, once for imaginary)---
+            if (weighting == 0):                    #No weighting means all weights are one
                 sigma.extend(np.ones(2*len(stdr[i])))
                 sigmaDetrend.extend(np.ones(len(stdr[i])))
-            elif (weighting == 1):          #Variance weighting
+            elif (weighting == 1):                  #Variance weighting means detrend by sigma
                 sigma.extend(sigmaIn[i])
                 sigma.extend(sigmaIn[i])
                 sigmaDetrend.extend(sigmaIn[i])
-            else:
+            else:                                   #Variance weighting with moving average
                 sigmaTemp = []
                 for k in range(len(stdr[i])):
-                    if (weighting == 2):    #Variance weighting with 3-point moving averages
-                        if (k == 0):        #Initial point takes average of following points
+                    if (weighting == 2):            #Variance weighting with 3-point moving averages
+                        if (k == 0):                #Initial point takes average of following points
                             sigmaTemp.append((sigmaIn[i][k]+sigmaIn[i][k+1]+sigmaIn[i][k+2])/3)
-                        elif (k == len(stdr[i])-1):  #Final point takes average of preceding point
+                        elif (k == len(stdr[i])-1): #Final point takes average of preceding point
                             sigmaTemp.append((sigmaIn[i][k]+sigmaIn[i][k-1]+sigmaIn[i][k-2])/3)
                         else:
                             sigmaTemp.append((sigmaIn[i][k-1]+sigmaIn[i][k]+sigmaIn[i][k+1])/3)
-                    elif (weighting == 3):  #Variance weighting with 5-point moving averages
-                        if (k == 0):        #Initial point takes average of following points
+                    elif (weighting == 3):          #Variance weighting with 5-point moving averages
+                        if (k == 0):                #Initial point takes average of following points
                             sigmaTemp.append((sigmaIn[i][k]+sigmaIn[i][k+1]+sigmaIn[i][k+2]+sigmaIn[i][k+3]+sigmaIn[i][k+4])/5)
-                        elif (k == 1):      #Second point takes average of initial and following points
+                        elif (k == 1):              #Second point takes average of initial and following points
                             sigmaTemp.append((sigmaIn[i][k-1]+sigmaIn[i][k]+sigmaIn[i][k+1]+sigmaIn[i][k+2]+sigmaIn[i][k+3])/5)
-                        elif (k == len(stdr[i])-2):  #Second from last point takes average of final point and preceding points
+                        elif (k == len(stdr[i])-2): #Second from last point takes average of final point and preceding points
                             sigmaTemp.append((sigmaIn[i][k-3]+sigmaIn[i][k-2]+sigmaIn[i][k-1]+sigmaIn[i][k]+sigmaIn[i][k+1])/5)
-                        elif (k == len(stdr[i])-1):  #Final point takes average of preceding points
+                        elif (k == len(stdr[i])-1): #Final point takes average of preceding points
                             sigmaTemp.append((sigmaIn[i][k-4]+sigmaIn[i][k-3]+sigmaIn[i][k-2]+sigmaIn[i][k-1]+sigmaIn[i][k])/5)
                         else:
                             sigmaTemp.append((sigmaIn[i][k-2]+sigmaIn[i][k-1]+sigmaIn[i][k]+sigmaIn[i][k+1]+sigmaIn[i][k+2])/5)
@@ -166,12 +179,14 @@ def findErrorFit(weighting, choices, stdr, stdj, r, j, modz, sigmaIn, guesses, r
                     impedMod2.extend(abs(modz[i]))
                     res2.extend(np.full(len(r[i]),re[i]))
                     impedRealRe2.extend(abs(r[i]) - res[i])
+                #---Detrend by subtracting off average first---
                 stddev -= np.mean(stddev)
                 impedReal -= np.mean(impedReal)
                 impedImag -= np.mean(impedImag)
                 impedMod -= np.mean(impedMod)
                 impedRealRe -= np.mean(impedRealRe)
                 
+                #---Then detrend by dividing by weights---
                 start = 0
                 for i in range(len(r)):
                     stop = start+len(r[i])
@@ -187,20 +202,51 @@ def findErrorFit(weighting, choices, stdr, stdj, r, j, modz, sigmaIn, guesses, r
                     for j in range(start, stop):
                         stddev[j] /= sigma[j]
                     start = stop
+    
+    #---If detrending, prep sigma2 for delta fit and set sigma to all ones, as weighting as already been done---
     if (detrendChoice == 3):
-        sigma2 = sigma
+        sigma2 = sigma.copy()
         sigma = np.ones(len(stddev))
 
     def diff(params):
+        """
+        Residuals function for least squares; residuals are standard deviations minus model stddevs divided by sigmas
+        
+        Parameters
+        ----------
+        params : array of floats
+            Current function parameters
+        
+        Returns
+        -------
+        residuals : array of floats
+            Array of residual values
+        """
         return (np.array(stddev) - np.array(model(params)))/np.array(sigma)
 
     def model(p):
+        """
+        Error structure model, of the form alpha*|Zj| + beta*|Zr (- Re)| + gamma*|Z| + delta
+        
+        Parameters
+        ----------
+        p : array of floats
+            Current function parameters
+        
+        Returns
+        -------
+        error_structure : array of floats
+            The error structure given by the current parameters
+        """
         toReturn = []
         start = 0
+        #---Loop through each file---
         for i in range(len(r)):
             toExtend = []
+            #---Loop through each frequency---
             stop = start+len(r[i])
             for k in range(start, stop):
+                #---Only add parameters that have been chosen---
                 toAdd = 0
                 if (choices[0]):
                     toAdd += p[0]*impedImag[k]
@@ -215,20 +261,24 @@ def findErrorFit(weighting, choices, stdr, stdj, r, j, modz, sigmaIn, guesses, r
                     toAdd += p[3]
                 toExtend.append(toAdd)
             start = stop
+            #---Append twice (once for real, once for imaginary)---
             toReturn.extend(toExtend)
             toReturn.extend(toExtend)
         return toReturn
 
     try:
-        minimized = least_squares(diff, guesses, method='lm')
-        J = minimized.jac
+        minimized = least_squares(diff, guesses, method='lm')           #Find best fit for error structure
+        J = minimized.jac                                               #Get fitting Jacobian for future covariance calculations
+        #---Remove unused parameters from the Jacobian---
         deletionCorrector = 0
         for i in range(4):
             if (not choices[i]):
                 J = np.delete(J, i-deletionCorrector, axis=1)
                 deletionCorrector += 1
+        #---Calculate covariances---
         cov = np.linalg.pinv(J.T.dot(J)) * (minimized.fun**2).mean()     #Hessian = J . J^T ; covariance = Hessian^-1 
-        if (not all(choices)):                                           #Add covariances of 0 for parameters not fit
+        #---Add covariances of 0 for parameters not fit---
+        if (not all(choices)):          
             toMerge = np.zeros((4, 4))
             rowCorrector = 0
             for i in range(4):
@@ -243,23 +293,51 @@ def findErrorFit(weighting, choices, stdr, stdj, r, j, modz, sigmaIn, guesses, r
                     toMerge[i][k] = cov[i-rowCorrector][k-colCorrector]
             cov = toMerge
         for i in range(4):
-            if (cov[i][i] < 0):     #If there are negatives on the covariance diagonal, something's wrong
+            if (cov[i][i] < 0):                    #If there are negatives on the covariance diagonal, something's wrong
                 raise ValueError
-        sigma_result = np.sqrt(np.diag(cov))       #The standard deviations
+        sigma_result = np.sqrt(np.diag(cov))       #Result standard deviations are the square roots of the covariance matrix diagonal
     except Exception:
-        return "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"
+        return "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"     #Indicate an error to the GUI
     
     a, b, g, d = minimized.x
     sa, sb, sg, sd = sigma_result
     
     def diff_delta(de):
+        """
+        Residuals function for fitting delta if detrending with delta chosen
+        
+        Parameters
+        ----------
+        de : array of one float
+            Delta value
+        
+        Returns
+        -------
+        residuals : array of floats
+            Array of residual values
+        """
         return (np.array(stddev2) - np.array(delta_model(de[0])))/np.array(sigma2)
     
     def delta_model(de):
+        """
+        Model for fitting delta if detrending with delta chosen
+        
+        Parameters
+        ----------
+        de : array of one float
+            Delta value
+        
+        Returns
+        -------
+        residuals : array of floats
+            Array of residual values
+        """
         toReturn = []
         start = 0
+        #---Loop through each file---
         for i in range(len(r)):
             toExtend = []
+            #---Loop through each frequency---
             stop = start+len(r[i])
             for k in range(start, stop):
                 toAdd = 0
@@ -272,20 +350,26 @@ def findErrorFit(weighting, choices, stdr, stdj, r, j, modz, sigmaIn, guesses, r
                         toAdd += b*impedRealRe2[k]
                 if (choices[2]):
                     toAdd += g*impedMod2[k]
-                if (choices[3]):
+                if (choices[3]):                #This should always be true
                     toAdd += de
                 toExtend.append(toAdd)
             start = stop
+            #---Append twice (once for real, once for imaginary)---
             toReturn.extend(toExtend)
             toReturn.extend(toExtend)
         return toReturn
+    
+    #---If detrending and also fitting delta, need to replace because detrending will remove constants entirely---
     if (detrendChoice == 3 and choices[3]):
+        #---Find delta by least squares---
         minimized_delta = least_squares(diff_delta, [guesses[3]], method='lm')
         d = minimized_delta.x
+        #---Recalculate delta parameter standard errors from fit---
         J_delta = minimized_delta.jac
         cov_delta = np.linalg.pinv(J_delta.T.dot(J_delta)) * (minimized_delta.fun**2).mean()
         sd = np.sqrt(np.diag(cov_delta))
-        
+    
+    #---Create array with real and imaginary values next to each other for mean percent error calculation---
     combined = []
     numPoints = 0
     for i in range(len(stdr)):
@@ -293,5 +377,6 @@ def findErrorFit(weighting, choices, stdr, stdj, r, j, modz, sigmaIn, guesses, r
             combined.append(stdr[i][j])
             combined.append(stdj[i][j])
             numPoints += 2
+    #---Calculate mean percent error---
     mpe = np.sum(100*abs(np.array(combined) - np.array(model([a, b, g, d])))/np.array(model([a, b, g, d])))
     return a, b, g, d, sa, sb, sg, sd, np.sum(minimized.fun**2), mpe/numPoints, cov
