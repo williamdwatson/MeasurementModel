@@ -28,9 +28,55 @@ def findErrorFit(weighting, choices, stdr, stdj, r, j, modz, sigmaIn, guesses, r
     
     Parameters
     ----------
+    weighting : int
+        The weighting choice for the regression; 0 for no weighting (all weights are 1), 1 for variance weighting, otherwise moving average variance
+    choices : list of booleans
+        Which parameters to use in the model; 0 is alpha, 1 is beta, 2 is gamma, 3 is delta
+    stdr : list of lists
+        List of lists of floats, with each sublist containing the real standard deviations for a particular file
+    stdj : list of lists
+        List of lists of floats, with each sublist containing the imaginary standard deviations for a particular file
+    r : list of lists
+        List of lists of floats, with each sublist containing the real data for a particular file
+    j : list of lists
+        List of lists of floats, with each sublist containing the imaginary data for a particular file
+    modz : list of lists
+        List of lists of floats, with each sublist containing the modulus of the impedance data for a particular file
+    sigmaIn : list of lists
+        List of lists of floats of sigma values from fitting
+    guesses: list of floats
+        Parameter initial guesses
+    reChoice : boolean
+        Whether to subtract the ohmic resistance from the real impedance
+    re : list of floats
+        The ohmic resistance for each file
+    detrendChoice : int
+        Whether to detrend or not; 1 for no detrending, 3 for constant detrending (2 was for linear, but was removed)
     
     Returns
     -------
+    a : float
+        Fitted alpha value
+    b : float
+        Fitted beta value
+    g : float
+        Fitted gamma value
+    d : float
+        Fitted delta value
+    sa : float
+        Standard error in the fitted alpha value
+    sb : float
+        Standard error in the fitted beta value
+    sg : float
+        Standard error in the fitted gamma value
+    sd : float
+        Standard error in the fitted delta value
+    chi : float
+        Chi-squared value from the fitting
+    mpe : float
+        Mean percentage error from the fitting
+    cov : numpy array
+        Array of variable covariances
     """
     stddev = []
     impedReal = []
