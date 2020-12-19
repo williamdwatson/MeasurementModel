@@ -47,7 +47,6 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
-#from matplotlib.transforms import Bbox
 from rangeSlider import RangeSlider
 #------------------------------Range Slider----------------------------------
 #  Source: https://github.com/halsafar/rangeslider
@@ -3511,6 +3510,123 @@ class mmF(tk.Frame):
             self.errorDeltaCheckboxAuto.grid(column=8, row=0)
             self.errorDeltaEntryAuto.grid(column=9, row=0, padx=(2, 15))
             self.autoRunButton.configure(command=runAuto)
+            
+            def popup_alpha_auto(event):
+                try:
+                    self.popup_menuA_auto.tk_popup(event.x_root, event.y_root, 0)
+                finally:
+                    self.popup_menuA_auto.grab_release()
+            def paste_alpha_auto():
+                if (self.focus_get() != self.errorAlphaEntryAuto):
+                    self.errorAlphaEntryAuto.insert(tk.END, pyperclip.paste())
+                else:
+                    self.errorAlphaEntryAuto.insert(tk.INSERT, pyperclip.paste())
+            def copy_alpha_auto():
+                if (self.focus_get() != self.errorAlphaEntryAuto):
+                    pyperclip.copy(self.errorAlphaEntryAuto.get())
+                else:
+                    try:
+                        stringToCopy = self.errorAlphaEntryAuto.selection_get()
+                    except Exception:
+                        stringToCopy = self.errorAlphaEntryAuto.get()
+                    pyperclip.copy(stringToCopy)
+            self.popup_menuA_auto = tk.Menu(self.errorAlphaEntryAuto, tearoff=0)
+            self.popup_menuA_auto.add_command(label="Copy", command=copy_alpha_auto)
+            self.popup_menuA_auto.add_command(label="Paste", command=paste_alpha_auto)
+            self.errorAlphaEntryAuto.bind("<Button-3>", popup_alpha_auto)
+            def popup_beta_auto(event):
+                try:
+                    self.popup_menuB_auto.tk_popup(event.x_root, event.y_root, 0)
+                finally:
+                    self.popup_menuB_auto.grab_release()
+            def paste_beta_auto():
+                if (self.focus_get() != self.errorBetaEntryAuto):
+                    self.errorBetaEntryAuto.insert(tk.END, pyperclip.paste())
+                else:
+                    self.errorBetaEntryAuto.insert(tk.INSERT, pyperclip.paste())
+            def copy_beta_auto():
+                if (self.focus_get() != self.errorBetaEntryAuto):
+                    pyperclip.copy(self.errorBetaEntryAuto.get())
+                else:
+                    try:
+                        stringToCopy = self.errorBetaEntryAuto.selection_get()
+                    except Exception:
+                        stringToCopy = self.errorBetaEntryAuto.get()
+                    pyperclip.copy(stringToCopy)
+            self.popup_menuB_auto = tk.Menu(self.errorBetaEntryAuto, tearoff=0)
+            self.popup_menuB_auto.add_command(label="Copy", command=copy_beta_auto)
+            self.popup_menuB_auto.add_command(label="Paste", command=paste_beta_auto)
+            self.errorBetaEntryAuto.bind("<Button-3>", popup_beta_auto)
+            def popup_re_auto(event):
+                try:
+                    self.popup_menuR_auto.tk_popup(event.x_root, event.y_root, 0)
+                finally:
+                    self.popup_menuR_auto.grab_release()
+            def paste_re_auto():
+                if (self.focus_get() != self.errorBetaReEntryAuto):
+                    self.errorBetaReEntryAuto.insert(tk.END, pyperclip.paste())
+                else:
+                    self.errorBetaReEntryAuto.insert(tk.INSERT, pyperclip.paste())
+            def copy_re_auto():
+                if (self.focus_get() != self.errorBetaReEntryAuto):
+                    pyperclip.copy(self.errorBetaReEntryAuto.get())
+                else:
+                    try:
+                        stringToCopy = self.errorBetaReEntryAuto.selection_get()
+                    except Exception:
+                        stringToCopy = self.errorBetaReEntryAuto.get()
+                    pyperclip.copy(stringToCopy)
+            self.popup_menuR_auto = tk.Menu(self.errorBetaReEntryAuto, tearoff=0)
+            self.popup_menuR_auto.add_command(label="Copy", command=copy_re_auto)
+            self.popup_menuR_auto.add_command(label="Paste", command=paste_re_auto)
+            self.errorBetaReEntryAuto.bind("<Button-3>", popup_re_auto)
+            def popup_gamma_auto(event):
+                try:
+                    self.popup_menuG_auto.tk_popup(event.x_root, event.y_root, 0)
+                finally:
+                    self.popup_menuG_auto.grab_release()
+            def paste_gamma_auto():
+                if (self.focus_get() != self.errorGammaEntryAuto):
+                    self.errorGammaEntryAuto.insert(tk.END, pyperclip.paste())
+                else:
+                    self.errorGammaEntryAuto.insert(tk.INSERT, pyperclip.paste())
+            def copy_gamma_auto():
+                if (self.focus_get() != self.errorGammaEntryAuto):
+                    pyperclip.copy(self.errorGammaEntryAuto.get())
+                else:
+                    try:
+                        stringToCopy = self.errorGammaEntryAuto.selection_get()
+                    except Exception:
+                        stringToCopy = self.errorGammaEntryAuto.get()
+                    pyperclip.copy(stringToCopy)
+            self.popup_menuG_auto = tk.Menu(self.errorGammaEntryAuto, tearoff=0)
+            self.popup_menuG_auto.add_command(label="Copy", command=copy_gamma_auto)
+            self.popup_menuG_auto.add_command(label="Paste", command=paste_gamma_auto)
+            self.errorGammaEntryAuto.bind("<Button-3>", popup_gamma_auto)
+            def popup_delta_auto(event):
+                try:
+                    self.popup_menuD_auto.tk_popup(event.x_root, event.y_root, 0)
+                finally:
+                    self.popup_menuD_auto.grab_release()
+            def paste_delta_auto():
+                if (self.focus_get() != self.errorDeltaEntryAuto):
+                    self.errorDeltaEntryAuto.insert(tk.END, pyperclip.paste())
+                else:
+                    self.errorDeltaEntryAuto.insert(tk.INSERT, pyperclip.paste())
+            def copy_delta_auto():
+                if (self.focus_get() != self.errorDeltaEntryAuto):
+                    pyperclip.copy(self.errorDeltaEntryAuto.get())
+                else:
+                    try:
+                        stringToCopy = self.errorDeltaEntryAuto.selection_get()
+                    except Exception:
+                        stringToCopy = self.errorDeltaEntryAuto.get()
+                    pyperclip.copy(stringToCopy)
+            self.popup_menuD_auto = tk.Menu(self.errorDeltaEntryAuto, tearoff=0)
+            self.popup_menuD_auto.add_command(label="Copy", command=copy_delta_auto)
+            self.popup_menuD_auto.add_command(label="Paste", command=paste_delta_auto)
+            self.errorDeltaEntryAuto.bind("<Button-3>", popup_delta_auto)
+            
             self.autoWeighting.bind("<<ComboboxSelected>>", checkWeightAuto)
             self.autoSliderFrame = tk.Frame(self.autoFitWindow, background=self.backgroundColor)
             self.autoRadioLabel = tk.Label(self.autoSliderFrame, text="Fit type: ", bg=self.backgroundColor, fg=self.foregroundColor)
@@ -5874,7 +5990,8 @@ class mmF(tk.Frame):
             self.highestUndeleted.insert(1.0, "Highest remaining frequency: {:.4e}".format(max(self.wdata)))
             self.highestUndeleted.configure(state="disabled")
             self.lowestUndeleted.grid(column=0, row=3, sticky="N")
-            self.highestUndeleted.grid(column=2, row=3, sticky="N")            
+            self.highestUndeleted.grid(column=2, row=3, sticky="N")
+            self.freqWindow.geometry("+100+100")
             
             def on_closing():
                 self.upperSpinboxVariable.set(str(self.upDelete))
@@ -6334,7 +6451,7 @@ class mmF(tk.Frame):
             if (self.focus_get() != self.errorBetaReEntry):
                 self.errorBetaReEntry.insert(tk.END, pyperclip.paste())
             else:
-                self.errorBetaEntry.insert(tk.INSERT, pyperclip.paste())
+                self.errorBetaReEntry.insert(tk.INSERT, pyperclip.paste())
         def copy_re():
             if (self.focus_get() != self.errorBetaReEntry):
                 pyperclip.copy(self.errorBetaReEntry.get())
@@ -6354,7 +6471,7 @@ class mmF(tk.Frame):
             finally:
                 self.popup_menuG.grab_release()
         def paste_gamma():
-            if (self.focus_get() != self.errorBetaEntry):
+            if (self.focus_get() != self.errorGammaEntry):
                 self.errorGammaEntry.insert(tk.END, pyperclip.paste())
             else:
                 self.errorGammaEntry.insert(tk.INSERT, pyperclip.paste())

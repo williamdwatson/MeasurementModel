@@ -147,6 +147,7 @@ class myGUI:
         self.freqUndo = 0                           #Whether or not frequency range is undone with undo button
         self.freqLoadCustom = 0                     #Whether or not frequency rnge stays the same when a new file is loaded (custom tab)
         self.defaultScroll = 1                      #Whether or not to use the mousewheel to scroll through tabs when mouse is over the navigation pane
+        self.defaultPropagate = 0                   #Whether or not to propagate user-entered error structure between standard fitting, auto fitting, and custom fitting
         self.defaultImports = []                    #Default import paths for custom formula        
         
         self.initializeSettings()
@@ -429,23 +430,23 @@ class myGUI:
                 elif (config['settings']['theme'] == 'dark'):
                     self.theme = "dark"
                 else:
-                    raise Exception     #If not light or dark, that's bad
+                    pass #raise Exception     #If not light or dark, that's bad
                 
                 #---Check the color/appearance---
                 if (re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', config['settings']['bar'])):   #Check if the default color is a hex value
                     self.backgroundColor = config['settings']['bar']
                 else:
-                    raise Exception
+                    pass #raise Exception
                 
                 if (re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', config['settings']['highlight'])):   #Check if the default color is a hex value
                     self.highlightColor = config['settings']['highlight']
                 else:
-                    raise Exception
+                    pass #raise Exception
                     
                 if (re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', config['settings']['accent'])):   #Check if the default color is a hex value
                     self.activeColor = config['settings']['accent']
                 else:
-                    raise Exception
+                    pass #raise Exception
                 
                 #---Default directories---
                 self.defaultDirectory = config['settings']['dir']
@@ -467,133 +468,136 @@ class myGUI:
                     self.defaultTab = 6
                 else:
                     self.defaultTab = 0
-                    raise Exception
+                    #raise Exception
                 
                 #---Check if changing tab with scrolling is allowed---
                 self.defaultScroll = int(config['settings']['scroll'])
                 if (self.defaultScroll != 0 and self.defaultScroll != 1):
-                    self.defaultScroll = 1
-                    raise Exception
+                    pass #raise Exception
+                
+                #---Check if the error structure should be propagated throughout the program---
+                try:
+                    self.defaultPropagate = int(config['settings']['propagate'])
+                except Exception:
+                    pass
+                if (self.defaultPropagate != 0 and self.defaultPropagate != 1):
+                    pass #raise Exception
                 
                 self.defaultFormulaDirectory = config['settings']['formulaDir']
                 
                 #---Check if number of comment lines should be detected---
                 self.detectCommentsDefault = int(config['input']['detect'])
                 if (self.detectCommentsDefault != 0 and self.detectCommentsDefault != 1):       #Value must be true or false
-                    self.detectCommentsDefault = 1
-                    raise Exception
+                    pass #raise Exception
                 
                 #---Default number of comment lines---
                 self.commentsDefault = int(config['input']['comments'])
                 if (self.commentsDefault < 0):      #If the number of comments is negative, that's bad
-                    self.commentsDefault = 1
-                    raise Exception
+                    pass #raise Exception
                 
                 #---Default delimiter---
                 if (config['input']['delimiter'] == "Tab" or config['input']['delimiter'] == "Space" or config['input']['delimiter'] == ";" or config['input']['delimiter'] == "," or config['input']['delimiter'] == "|" or config['input']['delimiter'] == ":"):
                     self.delimiterDefault = config['input']['delimiter']
                 else:
-                    raise Exception
+                    pass #raise Exception
                 
                 #---Whether to ask on exit from the input tab---
                 iEA = int(config['input']['askInputExit'])
                 if (iEA != 0 and iEA != 1):     #Value must be true or false
-                    self.inputExitAlert = 0
-                    raise Exception
+                    pass #raise Exception
                 self.inputExitAlert = iEA
                 
                 #---Number of Monte Carlo simulations---
                 self.MCDefault = int(config['model']['mc'])
                 if (self.MCDefault < 1):        #If the number of Monte Carlo simulations is negative, that's bad
-                    self.MCDefault = 1000
-                    raise Exception
+                    pass #raise Exception
                 
                 #---Default fit type
                 if (config['model']['fit'] == "Complex" or config['model']['fit'] == "Real" or config['model']['fit'] == "Imaginary"):
                     self.fitDefault = config['model']['fit']
                 else:
-                    raise Exception
+                    self.fitDefault = "Complex" #raise Exception
                 
                 #---Default weighting---
                 if (config['model']['weight'] == "None" or config['model']['weight'] == "Modulus" or config['model']['weight'] == "Proportional" or config['model']['weight'] == "Error model"):
                     self.weightDefault = config['model']['weight']
                 else:
-                    raise Exception
+                    self.weightDefault = "Modulus" #raise Exception
                 
                 #---Default ellipse color---
                 if (re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', config['model']['ellipse'])):   #Check if the default color is a hex value
                     self.ellipseColor = config['model']['ellipse']
                 else:
-                    raise Exception
+                    pass #raise Exception
                 
                 #---Whether frequency range should be kept on loading a new file
                 self.freqLoad = int(config['model']['freqLoad'])
                 if (self.freqLoad != 0 and self.freqLoad != 1):
                     self.freqLoad = 0
-                    raise Exception
+                    #raise Exception
                 
                 #---Whether "undo" should undo a change in frequency range
                 self.freqUndo = int(config['model']['freqUndo'])
                 if (self.freqUndo != 0 and self.freqUndo != 1):
                     self.freqUndo = 0
-                    raise Exception
+                    #raise Exception
                 
                 #---Whether detrending should be used
                 self.detrendDefault = config['error']['detrend']
                 if (self.detrendDefault != "Off" and self.detrendDefault != "On"):
                     self.detrendDefault = "Off"
-                    raise Exception
+                    #raise Exception
                 
                 #---Default error structure options---
                 self.errorAlphaDefault = int(config['error']['alphaError'])
                 if (self.errorAlphaDefault != 0 and self.errorAlphaDefault != 1):
                     self.errorAlphaDefault = 0
-                    raise Exception
+                    #raise Exception
                 self.errorBetaDefault = int(config['error']['betaError'])
                 if (self.errorBetaDefault != 0 and self.errorBetaDefault != 1):
                     self.errorBetaDefault = 0
-                    raise Exception
+                    #raise Exception
                 self.errorReDefault = int(config['error']['reError'])
                 if (self.errorReDefault != 0 and self.errorREDefault != 1):
                     self.errorReDefault = 0
-                    raise Exception
+                    #raise Exception
                 self.errorGammaDefault = int(config['error']['gammaError'])
                 if (self.errorGammaDefault != 0 and self.errorGammaDefault != 1):
                     self.errorGammaDefault = 1
-                    raise Exception
+                    #raise Exception
                 self.errorDeltaDefault = int(config['error']['deltaError'])
                 if (self.errorDeltaDefault != 0 and self.errorDeltaDefault != 1):
                     self.errorDeltaDefault = 1
-                    raise Exception
+                    #raise Exception
                 
                 #---The default error weighting---
                 if (config['error']['errorWeighting'] == "None" or config['error']['errorWeighting'] == "Variance"):
                     self.errorWeightingDefault = config['error']['errorWeighting']
                 else:
-                    raise Exception
+                    pass #raise Exception
                 
                 #---The default moving average for error---
                 if (config['error']['errorMA'] == "None" or config['error']['errorMA'] == "3 point" or config['error']['errorMA'] == "5 point"):
                     self.errorMADefault = config['error']['errorMA']
                 else:
-                    raise Exception
+                    pass #raise Exception
                 
                 #---Default noise---
                 self.alphaDefault = float(config['model']['alpha'])
                 if (self.alphaDefault < 0):     #If the default assumed noise is negative, that's bad
                     self.alphaDefault = 1
-                    raise Exception
+                    #raise Exception
                 
                 #---Whether to ask on exiting from the custom formula tab if the formula is unsaved---
                 aCE = int(config['custom']['askCustomExit'])
                 if (aCE != 0 and aCE != 1):
-                    raise Exception
+                    pass #raise Exception
                 self.customFormulaExitAlert = aCE
                 
                 self.freqLoadCustom = int(config['custom']['freqLoadCustom'])
                 if (self.freqLoadCustom != 0 and self.freqLoadCustom != 1):
                     self.freqLoadCustom = 0
-                    raise Exception
+                    #raise Exception
                 
                 #---The default import path list---
                 self.defaultImports = config['custom']['imports'].split("*")
@@ -1364,6 +1368,12 @@ class myGUI:
     
     def getScroll(self):
         return self.defaultScroll
+    
+    def setPropagate(self, val):
+        self.defaultPropagate = val
+    
+    def getPropagate(self):
+        return self.defaultPropagate
     
     #---Change the colors/appearance---
     def setBarColor(self, color):

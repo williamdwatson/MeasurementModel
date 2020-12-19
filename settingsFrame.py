@@ -176,6 +176,8 @@ class sF(tk.Frame):
         self.defaultDirectoryButton = ttk.Button(self.tabPaths, text="Browse...", command=self.findNewDirectory)
         self.defaultScrollVariable = tk.IntVar(self, self.topGUI.getScroll())
         self.defaultScroll = ttk.Checkbutton(self.tabOverall, variable=self.defaultScrollVariable, text="Change tab on scroll")
+        self.defaultPropagateErrorVariable = tk.IntVar(self, self.topGUI.getPropagate())
+        self.defaultPropagateError = ttk.Checkbutton(self.tabOverall, variable=self.defaultPropagateErrorVariable, text="Propagate error structure")
         self.barLabel.grid(column=0, row=2, sticky="W", pady=5)
         self.barColorLabel.grid(column=1, row=2)
         self.defaultTabLabel.grid(column=0, row=3, sticky="W")
@@ -184,6 +186,7 @@ class sF(tk.Frame):
         self.defaultDirectoryEntry.grid(column=1, row=5, columnspan=2, sticky="W")
         self.defaultDirectoryButton.grid(column=2, row=5, padx=2, sticky="W")
         self.defaultScroll.grid(column=0, row=6, pady=2, sticky="W")
+        self.defaultPropagateError.grid(column=0, row=7, pady=(0,2), sticky="W")
         barColor_ttp = CreateToolTip(self.barColorLabel, 'Choose color of side and top bars')
         hightlightColor_ttp = CreateToolTip(self.highlightColorLabel, 'Choose color of tabs when hovered over')
         activeColor_ttp = CreateToolTip(self.activeColorLabel, 'Choose color of tabs when active')
@@ -191,6 +194,7 @@ class sF(tk.Frame):
         directory_ttp = CreateToolTip(self.defaultDirectoryEntry, 'Default directory for files')
         directoryBtn_ttp = CreateToolTip(self.defaultDirectoryButton, 'Default directory for files')
         scroll_ttp = CreateToolTip(self.defaultScroll, 'Whether or not to use the scrollwheel to change tabs when mouse is over the navigation pane')
+        propagate_ttp = CreateToolTip(self.defaultPropagateError, 'Whether or not to carry the user-entered error structure over between standard fitting, auto fitting, and custom fitting')
         
         #---Paths tab---
         self.defaultFormulaDirectoryLabel = tk.Label(self.tabPaths, text="Formula directory: ", bg=self.backgroundColor, fg=self.foregroundColor)
@@ -485,6 +489,7 @@ class sF(tk.Frame):
         self.topGUI.setFreqUndo(self.defaultFreqUndoVariable.get())
         self.topGUI.setFreqLoadCustom(self.customFreqLoadVariable.get())
         self.topGUI.setScroll(self.defaultScrollVariable.get())
+        self.topGUI.setPropagate(self.defaultPropagateErrorVariable.get())
         self.topGUI.setDefaultImports(self.importPathListbox.get(0, tk.END))
     
     def resetDefaults(self):
@@ -530,6 +535,7 @@ class sF(tk.Frame):
             self.defaultFreqLoadVariable.set(0)
             self.customFreqLoadVariable.set(0)
             self.defaultScrollVariable.set(1)
+            self.defaultPropagateError.set(0)
             self.defaultFormulaDirectoryEntry.configure(state="normal")
             self.defaultFormulaDirectoryEntry.delete(0,tk.END)
             self.defaultFormulaDirectoryEntry.insert(0, "C:\\")
@@ -538,7 +544,7 @@ class sF(tk.Frame):
             
             #---Save the reset settings using ConfigParser---
             config = configparser.ConfigParser()
-            config['settings'] = {'theme': self.themeChosen, 'bar': self.barColor, 'highlight': self.highlightColor, 'accent': self.activeColor, 'dir': "C:\\", 'tab': self.defaultTabVariable.get(), 'scroll': self.defaultScrollVariable.get(), 'formulaDir': "C:\\"}
+            config['settings'] = {'theme': self.themeChosen, 'bar': self.barColor, 'highlight': self.highlightColor, 'accent': self.activeColor, 'dir': "C:\\", 'tab': self.defaultTabVariable.get(), 'scroll': self.defaultScrollVariable.get(), 'formulaDir': "C:\\", 'propagate': self.defaultPropagateErrorVariable.get()}
             config['input'] = {'detect': self.defaultDetectCommentsCheckboxVariable.get(),'comments': self.defaultCommentsVariable.get(), 'delimiter': self.defaultDelimiterVariable.get(), 'detectDelimiter': self.defaultDetectDelimiterCheckboxVariable.get()}
             config['model'] = {'mc': self.defaultMCVariable.get(), 'fit': self.defaultFitVariable.get(), 'weight': self.defaultWeightingVariable.get(), 'alpha': self.defaultAlphaVariable.get(), 'ellipse': self.ellipseColor, 'freqLoad': self.defaultFreqLoadVariable.get(), 'freqUndo': self.defaultFreqUndoVariable.get()}
             config['error'] = {'detrend': self.defaultDetrendVariable.get(), 'alphaError': self.defaultAlphaCheckboxVariable.get(), 'betaError': self.defaultBetaCheckboxVariable.get(), 'reError': self.defaultReCheckboxVariable.get(), 'gammaError': self.defaultGammaCheckboxVariable.get(), 'deltaError': self.defaultDeltaCheckboxVariable.get(), 'errorWeighting': self.defaultErrorWeightingVariable.get(), 'errorMA': self.defaultMovingAverageVariable.get()}
@@ -690,7 +696,7 @@ class sF(tk.Frame):
             imports = imports[:-1]      #Remove the last character (*)
             
             #---ConfigParser dictionary---
-            config['settings'] = {'theme': self.themeChosen, 'bar': self.barColor, 'highlight': self.highlightColor, 'accent': self.activeColor, 'dir': self.defaultDirectoryEntry.get(), 'tab': self.defaultTabVariable.get(), 'scroll': self.defaultScrollVariable.get(), 'formulaDir': self.defaultFormulaDirectoryEntry.get()}
+            config['settings'] = {'theme': self.themeChosen, 'bar': self.barColor, 'highlight': self.highlightColor, 'accent': self.activeColor, 'dir': self.defaultDirectoryEntry.get(), 'tab': self.defaultTabVariable.get(), 'scroll': self.defaultScrollVariable.get(), 'formulaDir': self.defaultFormulaDirectoryEntry.get(), 'propagate': self.defaultPropagateErrorVariable.get()}
             config['input'] = {'detect': self.defaultDetectCommentsCheckboxVariable.get(), 'comments': numCommentDefault, 'delimiter': self.defaultDelimiterVariable.get(), 'detectDelimiter': self.defaultDetectDelimiterCheckboxVariable.get(), 'askInputExit': self.inputExitAlertVariable.get()}
             config['model'] = {'mc': numMCDefault, 'fit': self.defaultFitVariable.get(), 'weight': self.defaultWeightingVariable.get(), 'alpha': numAlphaDefault, 'ellipse': self.ellipseColor, 'freqLoad': self.defaultFreqLoadVariable.get(), 'freqUndo': self.defaultFreqUndoVariable.get()}
             config['error'] = {'detrend': self.defaultDetrendVariable.get(), 'alphaError': self.defaultAlphaCheckboxVariable.get(), 'betaError': self.defaultBetaCheckboxVariable.get(), 'reError': self.defaultReCheckboxVariable.get(), 'gammaError': self.defaultGammaCheckboxVariable.get(), 'deltaError': self.defaultDeltaCheckboxVariable.get(), 'errorWeighting': self.defaultErrorWeightingVariable.get(), 'errorMA': self.defaultMovingAverageVariable.get()}

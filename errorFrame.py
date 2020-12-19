@@ -38,9 +38,11 @@ import pyperclip
 #----------------------------------------------------------------------------
 
 class FileExtensionError(Exception):
+    """Exception for if the file has an unknown extension"""
     pass
 
 class FileLengthError(Exception):
+    """Exception for if the data in the file is not of the same length"""
     pass
 
 class ThreadedTask(threading.Thread):

@@ -1261,7 +1261,8 @@ class fF(tk.Frame):
                 else:
                     messagebox.showerror("File error", "Error 43:\n The file has an unknown extension")
         
-        def changeFreqs():            
+        def changeFreqs():
+            self.freqWindow.geometry("+100+100")
             if (self.freqWindow.state() == "withdrawn"):
                 self.freqWindow.deiconify()
             else:
