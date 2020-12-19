@@ -1375,6 +1375,112 @@ class myGUI:
     def getPropagate(self):
         return self.defaultPropagate
     
+    #---If propagation of error structure values is turned on, these function will ensure typing in one box changes the corresponding boxes in the proper places---
+    def changeAlpha(self, from_, val):
+        if (self.defaultPropagate):
+            if (from_ == "auto" or from_ == "model"):
+                custom_state = self.formula_frame.errorAlphaEntry.state()
+                self.formula_frame.errorAlphaEntry.configure(state = "normal")
+                self.formula_frame.errorAlphaEntry.delete(0, tk.END)
+                self.formula_frame.errorAlphaEntry.insert(0, val)
+                self.formula_frame.errorAlphaEntry.configure(state = custom_state)
+            if (from_ == "auto" or from_ == "custom"):
+                model_state = self.model_frame.errorAlphaEntry.state()
+                self.model_frame.errorAlphaEntry.configure(state = "normal")
+                self.model_frame.errorAlphaEntry.delete(0, tk.END)
+                self.model_frame.errorAlphaEntry.insert(0, val)
+                self.model_frame.errorAlphaEntry.configure(state = model_state)
+            if (from_ == "model" or from_ == "custom"):
+                auto_state = self.model_frame.errorAlphaEntryAuto.state()
+                self.model_frame.errorAlphaEntryAuto.configure(state = "normal")
+                self.model_frame.errorAlphaEntryAuto.delete(0, tk.END)
+                self.model_frame.errorAlphaEntryAuto.insert(0, val)
+                self.model_frame.errorAlphaEntryAuto.configure(state = auto_state)
+    
+    def changeBeta(self, from_, val):
+        if (self.defaultPropagate):
+            if (from_ == "auto" or from_ == "model"):
+                custom_state = self.formula_frame.errorBetaEntry.state()
+                self.formula_frame.errorBetaEntry.configure(state = "normal")
+                self.formula_frame.errorBetaEntry.delete(0, tk.END)
+                self.formula_frame.errorBetaEntry.insert(0, val)
+                self.formula_frame.errorBetaEntry.configure(state = custom_state)
+            if (from_ == "auto" or from_ == "custom"):
+                model_state = self.model_frame.errorBetaEntry.state()
+                self.model_frame.errorBetaEntry.configure(state = "normal")
+                self.model_frame.errorBetaEntry.delete(0, tk.END)
+                self.model_frame.errorBetaEntry.insert(0, val)
+                self.model_frame.errorBetaEntry.configure(state = model_state)
+            if (from_ == "model" or from_ == "custom"):
+                auto_state = self.model_frame.errorBetaEntryAuto.state()
+                self.model_frame.errorBetaEntryAuto.configure(state = "normal")
+                self.model_frame.errorBetaEntryAuto.delete(0, tk.END)
+                self.model_frame.errorBetaEntryAuto.insert(0, val)
+                self.model_frame.errorBetaEntryAuto.configure(state = auto_state)
+    
+    def changeBetaRe(self, from_, val):
+        if (self.defaultPropagate):
+            if (from_ == "auto" or from_ == "model"):
+                custom_state = self.formula_frame.errorBetaReEntry.state()
+                self.formula_frame.errorBetaReEntry.configure(state = "normal")
+                self.formula_frame.errorBetaReEntry.delete(0, tk.END)
+                self.formula_frame.errorBetaReEntry.insert(0, val)
+                self.formula_frame.errorBetaReEntry.configure(state = custom_state)
+            if (from_ == "auto" or from_ == "custom"):
+                model_state = self.model_frame.errorBetaReEntry.state()
+                self.model_frame.errorBetaReEntry.configure(state = "normal")
+                self.model_frame.errorBetaReEntry.delete(0, tk.END)
+                self.model_frame.errorBetaReEntry.insert(0, val)
+                self.model_frame.errorBetaReEntry.configure(state = model_state)
+            if (from_ == "model" or from_ == "custom"):
+                auto_state = self.model_frame.errorBetaReEntryAuto.state()
+                self.model_frame.errorBetaReEntryAuto.configure(state = "normal")
+                self.model_frame.errorBetaReEntryAuto.delete(0, tk.END)
+                self.model_frame.errorBetaReEntryAuto.insert(0, val)
+                self.model_frame.errorBetaReEntryAuto.configure(state = auto_state)
+    
+    def changeGamma(self, from_, val):
+        if (self.defaultPropagate):
+            if (from_ == "auto" or from_ == "model"):
+                custom_state = self.formula_frame.errorGammaEntry.state()
+                self.formula_frame.errorGammaEntry.configure(state = "normal")
+                self.formula_frame.errorGammaEntry.delete(0, tk.END)
+                self.formula_frame.errorGammaEntry.insert(0, val)
+                self.formula_frame.errorGammaEntry.configure(state = custom_state)
+            if (from_ == "auto" or from_ == "custom"):
+                model_state = self.model_frame.errorGammaEntry.state()
+                self.model_frame.errorGammaEntry.configure(state = "normal")
+                self.model_frame.errorGammaEntry.delete(0, tk.END)
+                self.model_frame.errorGammaEntry.insert(0, val)
+                self.model_frame.errorGammaEntry.configure(state = model_state)
+            if (from_ == "model" or from_ == "custom"):
+                auto_state = self.model_frame.errorGammaEntryAuto.state()
+                self.model_frame.errorGammaEntryAuto.configure(state = "normal")
+                self.model_frame.errorGammaEntryAuto.delete(0, tk.END)
+                self.model_frame.errorGammaEntryAuto.insert(0, val)
+                self.model_frame.errorGammaEntryAuto.configure(state = auto_state)
+    
+    def changeDelta(self, from_, val):
+        if (self.defaultPropagate):
+            if (from_ == "auto" or from_ == "model"):
+                custom_state = self.formula_frame.errorDeltaEntry.state()
+                self.formula_frame.errorDeltaEntry.configure(state = "normal")
+                self.formula_frame.errorDeltaEntry.delete(0, tk.END)
+                self.formula_frame.errorDeltaEntry.insert(0, val)
+                self.formula_frame.errorDeltaEntry.configure(state = custom_state)
+            if (from_ == "auto" or from_ == "custom"):
+                model_state = self.model_frame.errorDeltaEntry.state()
+                self.model_frame.errorDeltaEntry.configure(state = "normal")
+                self.model_frame.errorDeltaEntry.delete(0, tk.END)
+                self.model_frame.errorDeltaEntry.insert(0, val)
+                self.model_frame.errorDeltaEntry.configure(state = model_state)
+            if (from_ == "model" or from_ == "custom"):
+                auto_state = self.model_frame.errorDeltaEntryAuto.state()
+                self.model_frame.errorDeltaEntryAuto.configure(state = "normal")
+                self.model_frame.errorDeltaEntryAuto.delete(0, tk.END)
+                self.model_frame.errorDeltaEntryAuto.insert(0, val)
+                self.model_frame.errorDeltaEntryAuto.configure(state = auto_state)
+    
     #---Change the colors/appearance---
     def setBarColor(self, color):
         self.backgroundColor = color

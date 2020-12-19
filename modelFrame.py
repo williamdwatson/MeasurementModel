@@ -3627,6 +3627,13 @@ class mmF(tk.Frame):
             self.popup_menuD_auto.add_command(label="Paste", command=paste_delta_auto)
             self.errorDeltaEntryAuto.bind("<Button-3>", popup_delta_auto)
             
+            #---Propagate error structure changes---
+            self.errorAlphaEntryAuto.bind("<KeyRelease>", lambda e: self.topGUI.changeAlpha("auto", self.errorAlphaEntryAuto.get()))
+            self.errorBetaEntryAuto.bind("<KeyRelease>", lambda e: self.topGUI.changeBeta("auto", self.errorBetaEntryAuto.get()))
+            self.errorBetaReEntryAuto.bind("<KeyRelease>", lambda e: self.topGUI.changeBetaRe("auto", self.errorBetaReEntryAuto.get()))
+            self.errorGammaEntryAuto.bind("<KeyRelease>", lambda e: self.topGUI.changeGamma("auto", self.errorGammaEntryAuto.get()))
+            self.errorDeltaEntryAuto.bind("<KeyRelease>", lambda e: self.topGUI.changeDelta("auto", self.errorDeltaEntryAuto.get()))
+            
             self.autoWeighting.bind("<<ComboboxSelected>>", checkWeightAuto)
             self.autoSliderFrame = tk.Frame(self.autoFitWindow, background=self.backgroundColor)
             self.autoRadioLabel = tk.Label(self.autoSliderFrame, text="Fit type: ", bg=self.backgroundColor, fg=self.foregroundColor)
@@ -6511,6 +6518,13 @@ class mmF(tk.Frame):
         self.popup_menuD.add_command(label="Copy", command=copy_delta)
         self.popup_menuD.add_command(label="Paste", command=paste_delta)
         self.errorDeltaEntry.bind("<Button-3>", popup_delta)
+        
+        #---Propagate error structure changes---
+        self.errorAlphaEntry.bind("<KeyRelease>", lambda e: self.topGUI.changeAlpha("model", self.errorAlphaEntry.get()))
+        self.errorBetaEntry.bind("<KeyRelease>", lambda e: self.topGUI.changeBeta("model", self.errorBetaEntry.get()))
+        self.errorBetaReEntry.bind("<KeyRelease>", lambda e: self.topGUI.changeBetaRe("model", self.errorBetaReEntry.get()))
+        self.errorGammaEntry.bind("<KeyRelease>", lambda e: self.topGUI.changeGamma("model", self.errorGammaEntry.get()))
+        self.errorDeltaEntry.bind("<KeyRelease>", lambda e: self.topGUI.changeDelta("model", self.errorDeltaEntry.get()))
         
         #---The fitting parameters---
         self.parametersFrame = tk.Frame(self, bg=self.backgroundColor)

@@ -4833,6 +4833,13 @@ class fF(tk.Frame):
         self.popup_menuD.add_command(label="Paste", command=paste_delta)
         self.errorDeltaEntry.bind("<Button-3>", popup_delta)
         
+        #---Propagate error structure changes---
+        self.errorAlphaEntry.bind("<KeyRelease>", lambda e: self.topGUI.changeAlpha("custom", self.errorAlphaEntry.get()))
+        self.errorBetaEntry.bind("<KeyRelease>", lambda e: self.topGUI.changeBeta("custom", self.errorBetaEntry.get()))
+        self.errorBetaReEntry.bind("<KeyRelease>", lambda e: self.topGUI.changeBetaRe("custom", self.errorBetaReEntry.get()))
+        self.errorGammaEntry.bind("<KeyRelease>", lambda e: self.topGUI.changeGamma("custom", self.errorGammaEntry.get()))
+        self.errorDeltaEntry.bind("<KeyRelease>", lambda e: self.topGUI.changeDelta("custom", self.errorDeltaEntry.get()))
+        
         self.customFunctionFrame = tk.Frame(self, bg=self.backgroundColor)
         self.customFunctionContainer = tk.Frame(self.customFunctionFrame, borderwidth=1, relief="sunken")
         self.customFormula = tk.Text(self.customFunctionContainer, width=60, height=10, wrap="none", borderwidth=0, undo=True)
