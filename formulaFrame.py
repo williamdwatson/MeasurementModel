@@ -25,7 +25,7 @@ from tkinter import messagebox
 import tkinter.ttk as ttk
 from tkinter.filedialog import askopenfilename, asksaveasfile, askdirectory
 from tkinter import simpledialog
-import os, sys, ctypes, threading, queue, re, webbrowser
+import os, sys, ctypes, threading, queue, re, webbrowser, base64
 import comtypes.client as cc
 import numpy as np
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
@@ -43,7 +43,8 @@ import pyperclip
 #     License: BSD
 #----------------------------------------------------------------------------
 import matplotlib.patches as patches
-
+from PIL import Image, ImageTk, ImageOps
+from io import BytesIO
 
 class FileExtensionError(Exception):
     pass
@@ -78,7 +79,6 @@ class ThreadedTaskCustom(threading.Thread):
             r, s, sdr, sdi, chi, aic, rF, iF, bP, cW = self.fittingObject.findFit(self.extraI, self.listPer, self.fT, self.nM, self.wght, self.aN, self.formula, self.wdat, self.rdat, self.jdat, self.pN, self.pG, self.pL, self.eP)
             self.queue.put((r, s, sdr, sdi, chi, aic, rF, iF, bP, cW))
         except Exception as inst:
-            print(inst)
             self.queue.put(("@", "@", "@", "@", "@", "@", "@", "@", "@"))
     def get_id(self):
         # From https://www.geeksforgeeks.org/python-different-ways-to-kill-a-thread/
@@ -419,16 +419,28 @@ class fF(tk.Frame):
         self.formulaDescriptionFrame.pack(side=tk.TOP, fill=tk.BOTH, expand=False, padx=5)
         self.formulaDescriptionLatexLabel.pack(side=tk.LEFT)
         self.formulaDescriptionLatexEntry.pack(side=tk.RIGHT, fill=tk.X, expand=True)
+        self.formulaDescriptionLatexPictureFrame = tk.Frame(self.formulaDescriptionWindow, bg=self.backgroundColor)
+        self.formulaPictureFrame = tk.Frame(self.formulaDescriptionLatexPictureFrame, bg=self.backgroundColor)
+        self.loadFormulaImageButton = ttk.Button(self.formulaPictureFrame, text='Load Image', command=self.loadFormulaImage)
+        loadFormulaImage_ttp = CreateToolTip(self.loadFormulaImageButton, 'Choose image')
+        self.loadFormulaImageButton.grid(column=0, row=0, sticky='W', padx=(0, 5))
+        self.removeFormulaImageButton = ttk.Button(self.formulaPictureFrame, text='Remove Image', command=self.removeFormulaImage)
+        self.removeFormulaImageButton.grid(column=1, row=0, sticky='W')
+        removeFormulaImage_ttp = CreateToolTip(self.removeFormulaImageButton, 'Remove image')
+        self.formulaPictureFrame.pack(side=tk.TOP, fill=tk.X, expand=False, padx=5, pady=5)
+        self.formulaPicture = tk.Canvas(self.formulaDescriptionLatexPictureFrame, bg=self.backgroundColor, bd=0, highlightthickness=0)
+        self.formulaPicture.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.latexFig = Figure(figsize=(6, 2), dpi=100)
         self.latexFig.set_facecolor(self.backgroundColor)
         self.latexAx = self.latexFig.add_subplot(111)
-        self.latexCanvas = FigureCanvasTkAgg(self.latexFig, master=self.formulaDescriptionWindow)
-        self.latexCanvas.get_tk_widget().pack(side=tk.BOTTOM, fill=tk.X, expand=True)
+        self.latexCanvas = FigureCanvasTkAgg(self.latexFig, master=self.formulaDescriptionLatexPictureFrame)
+        self.latexCanvas.get_tk_widget().pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
         self.latexCanvas._tkcanvas.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
         self.latexAx.get_xaxis().set_visible(False)
         self.latexAx.get_yaxis().set_visible(False)
         self.latexFig.tight_layout()
         self.latexAx.axis("off")
+        self.formulaDescriptionLatexPictureFrame.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
         self.formulaLatexFrame.pack(side=tk.BOTTOM, fill=tk.X, expand=False, pady=15, padx=5)
         self.popup_menu_description = tk.Menu(self.formulaDescriptionEntry, tearoff=0)
         self.popup_menu_description.add_command(label="Copy", command=copyFormula_description)
@@ -441,7 +453,7 @@ class fF(tk.Frame):
         
         self.loadFormulaWindow = tk.Toplevel(bg=self.backgroundColor)
         self.loadFormulaWindow.withdraw()
-        self.loadFormulaWindow.geometry("{:.0f}x{:.0f}".format(self.topGUI.getScreenWidth()//1.4, self.topGUI.getScreenHeight()//1.5))
+        self.loadFormulaWindow.geometry("{:.0f}x{:.0f}".format(self.topGUI.getScreenWidth()//1.4, self.topGUI.getScreenHeight()//1.2))
         self.loadFormulaWindow.title("Load formula")
         self.loadFormulaWindow.iconbitmap(resource_path('img/elephant3.ico'))
         self.loadFormulaFrame = tk.Frame(self.loadFormulaWindow, bg=self.backgroundColor)
@@ -482,16 +494,18 @@ class fF(tk.Frame):
         else:
             self.loadFormulaCode.configure(background="#FFFFFF")
         self.loadFormulaEquationLabel = tk.Label(self.loadFormulaDescriptionFrame, text="Equation: ", bg=self.backgroundColor, fg=self.foregroundColor)
+        self.load_latexPicture = tk.Canvas(self.loadFormulaDescriptionFrame, bg=self.backgroundColor, bd=0, highlightthickness=0)
+        self.load_latexPicture.pack(side=tk.BOTTOM, fill=tk.X, expand=True)
         self.load_latexFig = Figure(figsize=(6, 2), dpi=100)
         self.load_latexFig.set_facecolor(self.backgroundColor)
         self.load_latexAx = self.load_latexFig.add_subplot(111)
         self.load_latexCanvas = FigureCanvasTkAgg(self.load_latexFig, master=self.loadFormulaDescriptionFrame)
-        self.load_latexCanvas.get_tk_widget().pack(side=tk.BOTTOM, fill=tk.X, expand=True)
+        self.load_latexCanvas.get_tk_widget().pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
         self.load_latexCanvas._tkcanvas.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
         self.loadFormulaDescriptionLabel.pack(side=tk.TOP, expand=False, anchor=tk.W)
-        self.loadFormulaDescription.pack(side=tk.TOP, fill=tk.X, expand=False)
+        self.loadFormulaDescription.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
         self.loadFormulaCodeLabel.pack(side=tk.TOP, expand=False, anchor=tk.W)
-        self.loadFormulaCode.pack(side=tk.TOP, fill=tk.X, expand=False)
+        self.loadFormulaCode.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
         self.loadFormulaEquationLabel.pack(side=tk.TOP, expand=False, anchor=tk.W)
         self.load_latexAx.get_xaxis().set_visible(False)
         self.load_latexAx.get_yaxis().set_visible(False)
@@ -865,6 +879,12 @@ class fF(tk.Frame):
                             fileVersion = 1
                         elif "version: 1.2" in firstLine:
                             fileVersion = 2
+                        elif "version: 1.3" in firstLine:
+                            fileVersion = 3
+                        try:
+                            self.removeFormulaImage()
+                        except Exception:
+                            pass
                         if (fileVersion == 0):
                             fileToLoad = firstLine.split("filename: ")[1][:-1]
                         else:
@@ -936,7 +956,7 @@ class fF(tk.Frame):
                                     break
                                 else:
                                     formulaIn += nextLineIn
-                            elif (fileVersion == 2):
+                            elif (fileVersion == 2 or fileVersion == 3):
                                 if "imports:" in nextLineIn:
                                     break
                                 else:
@@ -970,7 +990,7 @@ class fF(tk.Frame):
                         self.advancedLowerLimitEntry.configure(state="normal")
                         self.advancedUpperLimitEntry.configure(state="normal")
                         imports = ""
-                        if (fileVersion == 2):
+                        if (fileVersion == 2 or fileVersion == 3):
                             while True:
                                 nextLineIn = toLoad.readline()
                                 if "description:" in nextLineIn:
@@ -998,7 +1018,28 @@ class fF(tk.Frame):
                             self.latexAx.axis("off")
                             self.latexCanvas.draw()
                             self.graphLatex()
+                            if fileVersion != 3:
+                                toLoad.readline()
+                        if fileVersion == 3:
                             toLoad.readline()
+                            picture = base64.b64decode(toLoad.readline().rstrip())
+                            toLoad.readline()
+                            if picture.strip() != b"":
+                                self.formulaIm = Image.open(BytesIO(picture))
+                                self.formulaPicture.update()
+                                # Resize the image
+                                max_width, max_height = self.formulaPicture.winfo_width(), self.formulaPicture.winfo_height()
+                                ratio = min(max_width/self.formulaIm.size[0], max_height/self.formulaIm.size[1])
+                                self.formulaImToUse = self.formulaIm.resize((int(self.formulaIm.size[0]*ratio), int(self.formulaIm.size[1]*ratio)), Image.ANTIALIAS)
+                                self.tkimage = ImageTk.PhotoImage(self.formulaImToUse)
+                                self.formulaPicture.create_image(0, 0, image=self.tkimage, anchor="nw", tags="IMG")
+                            else:
+                                try:
+                                    del self.formulaIm
+                                    del self.formulaImToUse
+                                    del self.tkimage
+                                except Exception:
+                                    pass
                         while True:
                             p = toLoad.readline()
                             if not p:
@@ -1256,7 +1297,7 @@ class fF(tk.Frame):
                         self.customFormula.delete("1.0", tk.END)
                         self.customFormula.insert("1.0", formulaIn.rstrip())
                         keyup("")
-                    except Exception:
+                    except Exception as e:
                         messagebox.showerror("File error", "Error 42: \nThere was an error loading or reading the file")
                 else:
                     messagebox.showerror("File error", "Error 43:\n The file has an unknown extension")
@@ -2132,68 +2173,11 @@ class fF(tk.Frame):
         def helpPopup(event):
             webbrowser.open_new(r'file://' + os.path.dirname(os.path.realpath(__file__)) + '\Formula_guide.pdf')
         
-        def graphLatex(e=None):
-            try:
-                tmptext = self.formulaDescriptionLatexEntry.get("1.0", tk.END).rstrip().replace('\n', '').replace('\r', '')   #self.formulaDescriptionLatexVariable.get()
-                tmptext2 = self.formulaDescriptionLatexEntry.get("1.0", tk.END).rstrip().replace('\n', '').replace('\r', '') #self.formulaDescriptionLatexVariable.get()
-                split_text = tmptext.split(r"\\")
-                tmptext = ""
-                first = True
-                for t in split_text:
-                    if first:
-                        tmptext = "$"+t+"$"
-                        first = False
-                    else:
-                        tmptext += "\n" + "$"+t+"$"
-                if tmptext2 == "":
-                   with plt.rc_context({'mathtext.fontset': "cm"}):
-                        self.latexAx.clear()
-                        self.latexAx.axis("off")
-                        self.latexCanvas.draw()
-                elif tmptext2 != '\\' and tmptext2[-1] != '\\':
-                    windowWidth = self.latexAx.get_window_extent().transformed(self.latexFig.dpi_scale_trans.inverted()).width*self.latexFig.dpi
-                    windowHeight = self.latexAx.get_window_extent().transformed(self.latexFig.dpi_scale_trans.inverted()).height*self.latexFig.dpi
-                    with plt.rc_context({'mathtext.fontset': "cm"}):
-                        self.latexAx.clear()
-                        rLatex = self.latexFig.canvas.get_renderer()
-                        latexSize = 30
-                        latexHeight = 0.5
-                        tLatex = self.latexAx.text(0.01, latexHeight, tmptext, transform=self.latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
-                        bb = tLatex.get_window_extent(renderer=rLatex)
-                        while (bb.height > (windowHeight*(1-latexHeight) + 9)):
-                            self.latexAx.clear()
-                            if (latexHeight <= 0.05):
-                                latexHeight = 0
-                                while (bb.height > (windowHeight*(1-latexHeight) + 9)):
-                                    self.latexAx.clear()
-                                    latexSize -=1
-                                    if (latexSize <= 0):
-                                        latexSize = 1
-                                        break
-                                    tLatex = self.latexAx.text(0.01, latexHeight, tmptext, transform=self.latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
-                                    bb = tLatex.get_window_extent(renderer=rLatex)
-                                break
-                            latexHeight -= 0.05
-                            tLatex = self.latexAx.text(0.01, latexHeight, tmptext, transform=self.latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)
-                            bb = tLatex.get_window_extent(renderer=rLatex)
-                        while (bb.width > windowWidth):
-                            self.latexAx.clear()
-                            latexSize -= 1
-                            if (latexSize <= 0):
-                                latexSize = 1
-                                break
-                            tLatex = self.latexAx.text(0.01, latexHeight, tmptext, transform=self.latexAx.transAxes, color=self.foregroundColor, fontsize = latexSize)  
-                            bb = tLatex.get_window_extent(renderer=rLatex)
-                        self.latexAx.axis("off")
-                        self.latexCanvas.draw()
-            except Exception:
-                pass
-        
         def formulaDescriptionPopup(event):
             self.formulaDescriptionWindow.deiconify()
             self.formulaDescriptionWindow.lift()
-            self.formulaDescriptionLatexEntry.bind('<KeyRelease>', graphLatex)
-            self.formulaDescriptionWindow.bind('<Configure>', graphLatex)
+            self.formulaDescriptionLatexEntry.bind('<KeyRelease>', self.graphLatex)
+            self.formulaDescriptionWindow.bind('<Configure>', partial(self.graphLatex, True))
             def on_closing_description():
                 self.formulaDescriptionWindow.withdraw()
             
@@ -2327,7 +2311,6 @@ class fF(tk.Frame):
                 self.chiSquared = chi
             except Exception:
                 percent_to_step = (len(self.listPercent) - 1)/self.listPercent[0]
-                #print(percent_to_step*100)
                 self.prog_bar.config(value=percent_to_step*100)
                 try:
                     self.taskbar.SetProgressValue(self.masterWindowId, (len(self.listPercent) - 1), self.listPercent[0])
@@ -3803,7 +3786,7 @@ class fF(tk.Frame):
                     if (dontMatch):
                         a = messagebox.askokcancel("Values do not match", "The values under \"Edit Parameters\" do not match the current fitted values. Only values under \"Edit Parameters\" will be saved. Continue?")
             if (a):
-                stringToSave = "version: 1.2\n"
+                stringToSave = "version: 1.3\n"
                 if (self.browseEntry.get() == ""):
                     stringToSave += "filename: NONE\n"
                 else:
@@ -3844,6 +3827,15 @@ class fF(tk.Frame):
                 stringToSave += self.formulaDescriptionEntry.get("1.0", tk.END)
                 stringToSave += "latex: \n"
                 stringToSave += self.formulaDescriptionLatexEntry.get("1.0", tk.END).rstrip().replace('\n', '').replace('\r', '') #self.formulaDescriptionLatexVariable.get()
+                stringToSave += '\npicture: \n'
+                try:
+                    buffered = BytesIO()
+                    self.formulaIm.convert('RGB').save(buffered, format='JPEG')
+                    im_data = buffered.getvalue()
+                    image_data = base64.b64encode(im_data).decode()
+                    stringToSave += image_data
+                except Exception as e:
+                    stringToSave += ' '
                 stringToSave += "\nmmparams: \n"
                 for i in range(len(self.paramNameValues)):
                     stringToSave += self.paramNameValues[i].get() + "~=~" + self.paramValueValues[i].get() + "~=~" + self.paramComboboxValues[i].get() + "~=~" + self.upperLimits[i].get() + "~=~" + self.lowerLimits[i].get() + "~=~" + str(self.multistartCheckboxVariables[i].get()) + "~=~" + self.multistartSpacingVariables[i].get() + "~=~" + self.multistartUpperVariables[i].get() + "~=~" + self.multistartLowerVariables[i].get() + "~=~" + self.multistartNumberVariables[i].get() + "~=~" + self.multistartCustomVariables[i].get() + "\n"
@@ -3860,7 +3852,7 @@ class fF(tk.Frame):
                 self.after(1000, lambda : self.saveFormulaButton.configure(text="Save Fitting"))
         
         def saveFormula():
-            stringToSave = "version: 1.2\n"
+            stringToSave = "version: 1.3\n"
             if (self.browseEntry.get() == ""):
                 stringToSave += "filename: NONE\n"
             else:
@@ -3900,7 +3892,16 @@ class fF(tk.Frame):
             stringToSave += "description: \n"
             stringToSave += self.formulaDescriptionEntry.get("1.0", tk.END)
             stringToSave += "latex: \n"
-            stringToSave += self.formulaDescriptionLatexEntry.get("1.0", tk.END).rstrip().replace('\n', '').replace('\r', '') #self.formulaDescriptionLatexVariable.get()
+            stringToSave += self.formulaDescriptionLatexEntry.get("1.0", tk.END).rstrip().replace('\n', '').replace('\r', '')
+            stringToSave += '\npicture: \n'
+            try:
+                buffered = BytesIO()
+                self.formulaIm.convert('RGB').save(buffered, format='JPEG')
+                im_data = buffered.getvalue()
+                image_data = base64.b64encode(im_data).decode()
+                stringToSave += image_data
+            except Exception:
+                stringToSave += ' '
             stringToSave += "\nmmparams: \n"
             for i in range(len(self.paramNameValues)):
                 stringToSave += self.paramNameValues[i].get() + "~=~" + self.paramValueValues[i].get() + "~=~" + self.paramComboboxValues[i].get() + "~=~" + self.upperLimits[i].get() + "~=~" + self.lowerLimits[i].get() + "~=~" + str(self.multistartCheckboxVariables[i].get()) + "~=~" + self.multistartSpacingVariables[i].get() + "~=~" + self.multistartUpperVariables[i].get() + "~=~" + self.multistartLowerVariables[i].get() + "~=~" + self.multistartNumberVariables[i].get() + "~=~" + self.multistartCustomVariables[i].get() + "\n"
@@ -5286,7 +5287,22 @@ class fF(tk.Frame):
             self.paramListboxSelection = num
             self.onSelect(None, n=num)
     
-    def graphLatex(self, e=None):
+    def graphLatex(self, e=None, fromConfigure=False):
+        if fromConfigure:
+            try:
+                self.formulaPicture.delete("IMG")
+            except Exception:
+                pass
+            try:
+                self.formulaPicture.update()
+                # Resize the image
+                max_width, max_height = self.formulaPicture.winfo_width(), self.formulaPicture.winfo_height()
+                ratio = min(max_width/self.formulaIm.size[0], max_height/self.formulaIm.size[1])
+                self.formulaImToUse = self.formulaIm.resize((int(self.formulaIm.size[0]*ratio), int(self.formulaIm.size[1]*ratio)), Image.ANTIALIAS)
+                self.tkimage = ImageTk.PhotoImage(self.formulaImToUse)
+                self.formulaPicture.create_image(0, 0, image=self.tkimage, anchor="nw", tags="IMG")
+            except Exception:
+                pass
         try:
             tmptext = self.formulaDescriptionLatexEntry.get("1.0", tk.END).rstrip().replace('\n', '').replace('\r', '') #self.formulaDescriptionLatexVariable.get()
             tmptext2 = self.formulaDescriptionLatexEntry.get("1.0", tk.END).rstrip().replace('\n', '').replace('\r', '') #self.formulaDescriptionLatexVariable.get()
@@ -5414,6 +5430,12 @@ class fF(tk.Frame):
                     fileVersion = 1
                 elif "version: 1.2" in firstLine:
                     fileVersion = 2
+                elif "version: 1.3" in firstLine:
+                    fileVersion = 3
+                try:
+                    self.removeFormulaImage()
+                except Exception:
+                    pass
                 if (fileVersion == 0):
                     fileToLoad = firstLine.split("filename: ")[1][:-1]
                 else:
@@ -5485,7 +5507,7 @@ class fF(tk.Frame):
                             break
                         else:
                             formulaIn += nextLineIn
-                    elif (fileVersion == 2):
+                    elif (fileVersion == 2 or fileVersion == 3):
                         if "imports:" in nextLineIn:
                             break
                         else:
@@ -5517,7 +5539,7 @@ class fF(tk.Frame):
                 self.advancedLowerLimitEntry.configure(state="normal")
                 self.advancedUpperLimitEntry.configure(state="normal")
                 imports = ""
-                if (fileVersion == 2):
+                if (fileVersion == 2 or fileVersion == 3):
                     while True:
                         nextLineIn = toLoad.readline()
                         if "description:" in nextLineIn:
@@ -5545,7 +5567,28 @@ class fF(tk.Frame):
                     self.latexAx.axis("off")
                     self.latexCanvas.draw()
                     self.graphLatex()
+                    if fileVersion != 3:
+                        toLoad.readline()
+                if fileVersion == 3:
                     toLoad.readline()
+                    picture = base64.b64decode(toLoad.readline().rstrip())
+                    toLoad.readline()
+                    if picture.strip() != b"":
+                        self.formulaIm = Image.open(BytesIO(picture))
+                        self.formulaPicture.update()
+                        # Resize the image
+                        max_width, max_height = self.formulaPicture.winfo_width(), self.formulaPicture.winfo_height()
+                        ratio = min(max_width/self.formulaIm.size[0], max_height/self.formulaIm.size[1])
+                        self.formulaImToUse = self.formulaIm.resize((int(self.formulaIm.size[0]*ratio), int(self.formulaIm.size[1]*ratio)), Image.ANTIALIAS)
+                        self.tkimage = ImageTk.PhotoImage(self.formulaImToUse)
+                        self.formulaPicture.create_image(0, 0, image=self.tkimage, anchor="nw", tags="IMG")
+                    else:
+                        try:
+                            del self.formulaIm
+                            del self.formulaImToUse
+                            del self.tkimage
+                        except Exception:
+                            pass
                 while True:
                     p = toLoad.readline()
                     if not p:
@@ -6216,6 +6259,8 @@ class fF(tk.Frame):
                         fileVersion = 1
                     elif "version: 1.2" in firstLine:
                         fileVersion = 2
+                    elif "version: 1.3" in firstLine:
+                        fileVersion = 3
                     if (fileVersion == 0):
                         fileToLoad = firstLine.split("filename: ")[1][:-1]
                     else:
@@ -6235,14 +6280,14 @@ class fF(tk.Frame):
                                 break
                             else:
                                 formulaIn += nextLineIn
-                        elif (fileVersion == 2):
+                        elif (fileVersion == 2 or fileVersion == 3):
                             if "imports:" in nextLineIn:
                                 break
                             else:
                                 formulaIn += nextLineIn
                     descriptionIn = ""
                     imports = ""
-                    if (fileVersion == 2):
+                    if (fileVersion == 2 or fileVersion == 3):
                         while True:
                             nextLineIn = toLoad.readline()
                             if "description:" in nextLineIn:
@@ -6323,9 +6368,25 @@ class fF(tk.Frame):
                                 self.load_latexCanvas.draw()
                     except Exception:
                         pass
+                    try:
+                        self.load_latexPicture.delete("IMG")
+                    except Exception:
+                        pass
+                    if fileVersion == 3:
+                        toLoad.readline()
+                        picture = base64.b64decode(toLoad.readline().rstrip())
+                        if picture.strip() != b"":
+                            self.loadFormulaIm = Image.open(BytesIO(picture))
+                            self.load_latexPicture.update()
+                            # Resize the image
+                            max_width, max_height = self.load_latexPicture.winfo_width(), self.load_latexPicture.winfo_height()
+                            ratio = min(max_width/self.loadFormulaIm.size[0], max_height/self.loadFormulaIm.size[1])
+                            self.loadFormulaImToUse = self.loadFormulaIm.resize((int(self.loadFormulaIm.size[0]*ratio), int(self.loadFormulaIm.size[1]*ratio)), Image.ANTIALIAS)
+                            self.load_tkimage = ImageTk.PhotoImage(self.loadFormulaImToUse)
+                            self.load_latexPicture.create_image(0, 0, image=self.load_tkimage, anchor="nw", tags="IMG")
                     toLoad.close()
-                except Exception:
-                   messagebox.showerror("File error", "Error 62: \nThere was an error loading or reading the file")
+                except Exception as e:
+                    messagebox.showerror("File error", "Error 62: \nThere was an error loading or reading the file")
             else:
                 self.loadFormulaDescription.configure(state="normal")
                 self.loadFormulaDescription.delete("1.0", tk.END)
@@ -6350,6 +6411,12 @@ class fF(tk.Frame):
                 fileVersion = 1
             elif "version: 1.2" in firstLine:
                 fileVersion = 2
+            elif "version: 1.3" in firstLine:
+                fileVersion = 3
+            try:
+                self.removeFormulaImage()
+            except Exception:
+                pass
             if (fileVersion == 0):
                 fileToLoad = firstLine.split("filename: ")[1][:-1]
             else:
@@ -6421,7 +6488,7 @@ class fF(tk.Frame):
                         break
                     else:
                         formulaIn += nextLineIn
-                elif (fileVersion == 2):
+                elif (fileVersion == 2 or fileVersion == 3):
                     if "imports:" in nextLineIn:
                         break
                     else:
@@ -6454,7 +6521,7 @@ class fF(tk.Frame):
                 self.advancedLowerLimitEntry.configure(state="normal")
                 self.advancedUpperLimitEntry.configure(state="normal")
             imports = ""
-            if (fileVersion == 2):
+            if (fileVersion == 2 or fileVersion == 3):
                 while True:
                     nextLineIn = toLoad.readline()
                     if "description:" in nextLineIn:
@@ -6482,7 +6549,28 @@ class fF(tk.Frame):
                 self.latexAx.axis("off")
                 self.latexCanvas.draw()
                 self.graphLatex()
+                if fileVersion != 3:
+                    toLoad.readline()
+            if fileVersion == 3:
                 toLoad.readline()
+                picture = base64.b64decode(toLoad.readline().rstrip())
+                toLoad.readline()
+                if picture.strip() != b"":
+                    self.formulaIm = Image.open(BytesIO(picture))
+                    self.formulaPicture.update()
+                    # Resize the image
+                    max_width, max_height = self.formulaPicture.winfo_width(), self.formulaPicture.winfo_height()
+                    ratio = min(max_width/self.formulaIm.size[0], max_height/self.formulaIm.size[1])
+                    self.formulaImToUse = self.formulaIm.resize((int(self.formulaIm.size[0]*ratio), int(self.formulaIm.size[1]*ratio)), Image.ANTIALIAS)
+                    self.tkimage = ImageTk.PhotoImage(self.formulaImToUse)
+                    self.formulaPicture.create_image(0, 0, image=self.tkimage, anchor="nw", tags="IMG")
+                else:
+                    try:
+                        del self.formulaIm
+                        del self.formulaImToUse
+                        del self.tkimage
+                    except Exception:
+                        pass
             if (self.loadFormulaParamsVariable.get()):
                 while True:
                     p = toLoad.readline()
@@ -6661,6 +6749,38 @@ class fF(tk.Frame):
         except Exception:
             messagebox.showerror("File error", "Error 42: \nThere was an error loading or reading the file")
     
+    def loadFormulaImage(self, e=None):
+        """
+        Allows the user to choose an image for the formula description
+        """
+        image = tk.filedialog.askopenfilename(initialdir=self.topGUI.getCurrentDirectory(), filetypes = [("All images", "*.bmp *.gif *.jpg *.jpeg *.png *.tif *.tiff"),
+            ("Bitmap (*.bmp)", "*.bmp"), ("GIF (*.gif)", "*.gif"), ("JPEG (*.jpeg, *.jpg)", "*.jpeg *.jpg"), ("PNG (*.png)", "*.png"), ("TIFF (*.tiff, *.tif)", "*.tiff *.tif")], title = "Choose an image", parent=self.formulaDescriptionWindow)
+        if image.strip() != "" and image is not None:
+            try:
+                self.removeFormulaImage()
+            except Exception:
+                pass
+            self.formulaIm = ImageOps.exif_transpose(Image.open(image))
+            self.formulaPicture.update()
+            # Resize the image
+            max_width, max_height = self.formulaPicture.winfo_width(), self.formulaPicture.winfo_height()
+            ratio = min(max_width/self.formulaIm.size[0], max_height/self.formulaIm.size[1])
+            self.formulaImToUse = self.formulaIm.resize((int(self.formulaIm.size[0]*ratio), int(self.formulaIm.size[1]*ratio)), Image.ANTIALIAS)
+            self.tkimage = ImageTk.PhotoImage(self.formulaImToUse)
+            self.formulaPicture.create_image(0, 0, image=self.tkimage, anchor="nw", tags="IMG")
+
+    def removeFormulaImage(self, e=None):
+        """
+        Removes the image from the formula description
+        """
+        try:
+            self.formulaPicture.delete("IMG")
+            del self.formulaIm
+            del self.formulaImToUse
+            del self.tkimage
+        except Exception:
+            pass
+        
     def loadFormulaCommand(self, e=None):
         item = self.loadFormulaTree.selection()[0]  
         item_text = self.loadFormulaTree.item(item,"text")
@@ -6681,6 +6801,12 @@ class fF(tk.Frame):
                 fileVersion = 1
             elif "version: 1.2" in firstLine:
                 fileVersion = 2
+            elif "version: 1.3" in firstLine:
+                fileVersion = 3
+            try:
+                self.removeFormulaImage()
+            except Exception as e:
+                pass
             if (fileVersion == 0):
                 fileToLoad = firstLine.split("filename: ")[1][:-1]
             else:
@@ -6752,7 +6878,7 @@ class fF(tk.Frame):
                         break
                     else:
                         formulaIn += nextLineIn
-                elif (fileVersion == 2):
+                elif (fileVersion == 2 or fileVersion == 3):
                     if "imports:" in nextLineIn:
                         break
                     else:
@@ -6785,7 +6911,7 @@ class fF(tk.Frame):
                 self.advancedLowerLimitEntry.configure(state="normal")
                 self.advancedUpperLimitEntry.configure(state="normal")
             imports = ""
-            if (fileVersion == 2):
+            if (fileVersion == 2 or fileVersion == 3):
                 while True:
                     nextLineIn = toLoad.readline()
                     if "description:" in nextLineIn:
@@ -6813,7 +6939,28 @@ class fF(tk.Frame):
                 self.latexAx.axis("off")
                 self.latexCanvas.draw()
                 self.graphLatex()
+                if fileVersion != 3:
+                    toLoad.readline()
+            if fileVersion == 3:
                 toLoad.readline()
+                picture = base64.b64decode(toLoad.readline().rstrip())
+                toLoad.readline()
+                if picture.strip() != b"":
+                    self.formulaIm = Image.open(BytesIO(picture))
+                    self.formulaPicture.update()
+                    # Resize the image
+                    max_width, max_height = self.formulaPicture.winfo_width(), self.formulaPicture.winfo_height()
+                    ratio = min(max_width/self.formulaIm.size[0], max_height/self.formulaIm.size[1])
+                    self.formulaImToUse = self.formulaIm.resize((int(self.formulaIm.size[0]*ratio), int(self.formulaIm.size[1]*ratio)), Image.ANTIALIAS)
+                    self.tkimage = ImageTk.PhotoImage(self.formulaImToUse)
+                    self.formulaPicture.create_image(0, 0, image=self.tkimage, anchor="nw", tags="IMG")
+                else:
+                    try:
+                        del self.formulaIm
+                        del self.formulaImToUse
+                        del self.tkimage
+                    except Exception:
+                        pass
             if (self.loadFormulaParamsVariable.get()):
                 while True:
                     p = toLoad.readline()
