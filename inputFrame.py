@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Created on Wed Jun 20 15:23:25 2018
 
@@ -30,8 +29,8 @@ import pyperclip
 #     By: Al Sweigart
 #     License: BSD
 #----------------------------------------------------------------------------
-import os
-import sys
+import os, sys
+from utils import resource_path
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
@@ -250,17 +249,6 @@ class CustomText(tk.Text):
 
 class iF(tk.Frame):
     def __init__(self, parent, topOne):
-
-        def resource_path(relative_path):
-            """ Get absolute path to resource, works for dev and for PyInstaller """
-            try:
-                # PyInstaller creates a temp folder and stores path in _MEIPASS
-                base_path = sys._MEIPASS
-            except Exception:
-                base_path = os.path.abspath(".")
-        
-            return os.path.join(base_path, relative_path)
-        
         self.topGUI = topOne
         self.parent = parent
         self.nyPlots = []
@@ -271,11 +259,11 @@ class iF(tk.Frame):
         self.freq_data = []
         self.fileText = ""
         self.currentFile = ""
-        self.savedNeeded = False
-        if (self.topGUI.getTheme() == "dark"):
+        self.saveNeeded = False
+        if (self.topGUI.theme == "dark"):
             self.backgroundColor = "#424242"
             self.foregroundColor = "white"
-        elif (self.topGUI.getTheme() == "light"):
+        elif (self.topGUI.theme == "light"):
             self.backgroundColor = "white"
             self.foregroundColor = "black"
         tk.Frame.__init__(self, parent, background=self.backgroundColor)
@@ -367,14 +355,14 @@ class iF(tk.Frame):
             n, filetext = OpenFile()
             if (n != '+'):
                 directory = os.path.dirname(n)
-                self.topGUI.setCurrentDirectory(directory)
+                self.topGUI.currentDirectory = directory
                 self.inputFileText.configure(state="normal")
                 self.inputFileText.delete(0,tk.END)
                 self.inputFileText.insert(0, n)
                 self.inputFileText.configure(state="readonly")
                 self.browseTextBtn.configure(state="normal")
                 self.fileText = filetext
-                if (self.topGUI.getDetectComments() == 1 and n.lower().endswith(".dta")):   #For Gamry's .DTA files
+                if (self.topGUI.detectCommentsDefault == 1 and n.lower().endswith(".dta")):   #For Gamry's .DTA files
                     numLinesOfComments = 0
                     for i, line in enumerate(filetext.splitlines()):
                         if 'ZCURVE' in line:
@@ -385,7 +373,7 @@ class iF(tk.Frame):
                     self.freqColVariable.set("3")
                     self.realColVariable.set("4")
                     self.imagColVariable.set("5")
-                elif (self.topGUI.getDetectComments() == 1 and n.lower().endswith(".mpt")):     #For BioLogic .mpt files
+                elif (self.topGUI.detectCommentsDefault == 1 and n.lower().endswith(".mpt")):     #For BioLogic .mpt files
                     lines = filetext.splitlines()
                     self.commentVariable.set(lines[1].split(":")[1])
                     self.delimiterVariable.set("Tab")
@@ -393,7 +381,7 @@ class iF(tk.Frame):
                     self.realColVariable.set("2")
                     self.imagColVariable.set("3")
                     self.imagUnitVariable.set("-1")
-                elif (self.topGUI.getDetectComments() == 1 and n.lower().endswith(".mpr")):     #For BioLogic .mpr files
+                elif (self.topGUI.detectCommentsDefault == 1 and n.lower().endswith(".mpr")):     #For BioLogic .mpr files
                     lines = filetext.splitlines()
                     self.commentVariable.set("0")
                     self.delimiterVariable.set("Tab")
@@ -401,7 +389,7 @@ class iF(tk.Frame):
                     self.realColVariable.set("2")
                     self.imagColVariable.set("3")
                     self.imagUnitVariable.set("-1")
-                elif (self.topGUI.getDetectComments() == 1 and n.lower().endswith(".z")):         #For Solatron? .z files
+                elif (self.topGUI.detectCommentsDefault == 1 and n.lower().endswith(".z")):         #For Solatron? .z files
                     numLinesOfComments = 0
                     lines = filetext.splitlines()
                     if ("zplot" in lines[0].lower()):
@@ -424,7 +412,7 @@ class iF(tk.Frame):
                             self.delimiterVariable.set(",")
                         elif (whatDelimiter == "\t"):
                             self.delimiterVariable.set("Tab")
-                elif (self.topGUI.getDetectComments() == 1 and n.lower().endswith(".txt")):         #For CH Instruments files
+                elif (self.topGUI.detectCommentsDefault == 1 and n.lower().endswith(".txt")):         #For CH Instruments files
                     lines = filetext.splitlines()
                     if ("chi" in lines[4].lower()):
                         for i, line in enumerate(lines):
@@ -473,7 +461,7 @@ class iF(tk.Frame):
                                 numLinesOfComments += 1
                                 continue
                             else:
-                                if (self.topGUI.getDetectDelimiter() == 1):
+                                if (self.topGUI.detectDelimiterDefault == 1):
                                     whatDelimiter = detect_delimiter.detect(line)
                                     if (whatDelimiter == ","):
                                         self.delimiterVariable.set(",")
@@ -489,7 +477,7 @@ class iF(tk.Frame):
                                         self.delimiterVariable.set(":")
                                 break #reached the end of comment lines
                         self.commentVariable.set(numLinesOfComments)
-                elif (self.topGUI.getDetectComments() == 1 and n.lower().endswith(".par")):               #For VersaStudio .par files    
+                elif (self.topGUI.detectCommentsDefault == 1 and n.lower().endswith(".par")):               #For VersaStudio .par files    
                     lines = filetext.splitlines()
                     for i, line in enumerate(lines):
                         if ("<Segment" in line):
@@ -499,7 +487,7 @@ class iF(tk.Frame):
                     self.freqColVariable.set("10")
                     self.realColVariable.set("15")
                     self.imagColVariable.set("16")
-                elif (self.topGUI.getDetectComments() == 1):
+                elif (self.topGUI.detectCommentsDefault == 1):
                     numLinesOfComments = 0
                     whatDelimiter = "no"
                     for line in filetext.splitlines():
@@ -512,7 +500,7 @@ class iF(tk.Frame):
                             numLinesOfComments += 1
                             continue
                         else:
-                            if (self.topGUI.getDetectDelimiter() == 1):
+                            if (self.topGUI.detectDelimiterDefault == 1):
                                 whatDelimiter = detect_delimiter.detect(line)
                                 if (whatDelimiter == ","):
                                     self.delimiterVariable.set(",")
@@ -665,7 +653,7 @@ class iF(tk.Frame):
         
         #---Add frequency to delete from Nyquist plot---
         def addFreqNyquist():
-            if (self.topGUI.getTheme() == "dark"):
+            if (self.topGUI.theme == "dark"):
                 dataColor = "cyan"
             else:
                 dataColor = "tab:blue"
@@ -881,7 +869,7 @@ class iF(tk.Frame):
                     self.numDataDeleted.configure(text="Number of data deleted: " + str(numDeleted))
                     self.loadData.configure(text="Reload Data")
                     self.currentFile = self.inputFileText.get()
-                    self.savedNeeded = True
+                    self.saveNeeded = True
                     self.addFreqNyquistInput.clf()
                     self.addFreqNyquistPlot.withdraw()
                 except IndexError:
@@ -899,16 +887,16 @@ class iF(tk.Frame):
                 continueThoughDiff = messagebox.askokcancel("Different files", "The current file under \"Browse\" has not been loaded, and so will not be saved. If you continue, only the currently loaded data will be saved.")
             if (continueThoughDiff):
                 defaultSaveName, ext = os.path.splitext(os.path.basename(self.inputFileText.get()))
-                saveName = asksaveasfile(mode='w', defaultextension=".mmfile", initialfile=defaultSaveName, initialdir=self.topGUI.getCurrentDirectory(), filetypes=[("Measurement model file", ".mmfile")])
+                saveName = asksaveasfile(mode='w', defaultextension=".mmfile", initialfile=defaultSaveName, initialdir=self.topGUI.currentDirectory, filetypes=[("Measurement model file", ".mmfile")])
                 directory = os.path.dirname(str(saveName))
-                self.topGUI.setCurrentDirectory(directory)
+                self.topGUI.currentDirectory = directory
                 if saveName is None:     #If save is cancelled
                     return
                 saveName.write("Frequency\tReal\tImaginary\n")
                 for i in range(len(self.freq_data)):
                     saveName.write(str(self.freq_data[i]) + "\t" + str(self.real_data[i]) + "\t" + str(self.imag_data[i]) + "\n")
                 saveName.close()
-                self.savedNeeded = False
+                self.saveNeeded = False
                 self.saveButton.configure(text="Saved")
                 self.after(1000, lambda : self.saveButton.configure(text="Save as"))
             
@@ -919,15 +907,15 @@ class iF(tk.Frame):
                 continueThoughDiff = messagebox.askokcancel("Different files", "The current file under \"Browse\" has not been loaded, and so will not be saved. If you continue, only the currently loaded data will be saved.")
             if (continueThoughDiff):
                 defaultSaveName, ext = os.path.splitext(os.path.basename(self.inputFileText.get()))
-                saveName = asksaveasfile(mode='w', defaultextension=".mmfile", initialfile=defaultSaveName, initialdir=self.topGUI.getCurrentDirectory(), filetypes=[("Measurement model file", ".mmfile")])
+                saveName = asksaveasfile(mode='w', defaultextension=".mmfile", initialfile=defaultSaveName, initialdir=self.topGUI.currentDirectory, filetypes=[("Measurement model file", ".mmfile")])
                 directory = os.path.dirname(str(saveName))
-                self.topGUI.setCurrentDirectory(directory)
+                self.topGUI.currentDirectory = directory
                 if saveName is None:     #If save is cancelled
                     return
                 saveName.write("Frequency\tReal\tImaginary\n")
                 for i in range(len(self.freq_data)):
                     saveName.write(str(self.freq_data[i]) + "\t" + str(self.real_data[i]) + "\t" + str(self.imag_data[i]) + "\n")
-                self.savedNeeded = False
+                self.saveNeeded = False
                 saveName.close()
                 self.topGUI.enterMeasureModel(saveName.name)
 
@@ -950,7 +938,7 @@ class iF(tk.Frame):
                 a.xaxis.set_ticks_position("both")
                 a.xaxis.set_tick_params(direction="in", color=self.foregroundColor)     #Make the ticks point inwards
                 plotColor = "tab:blue"
-                if (self.topGUI.getTheme() == "dark"):
+                if (self.topGUI.theme == "dark"):
                     plotColor = "cyan"
                 else:
                     plotColor = "tab:blue"
@@ -1004,9 +992,9 @@ class iF(tk.Frame):
             self.linenumbers.setFillColor(self.foregroundColor)
             
         s = ttk.Style()
-        if (self.topGUI.getTheme() == "dark"):
+        if (self.topGUI.theme == "dark"):
             s.configure('TCheckbutton', background='#424242', foreground="white")
-        elif (self.topGUI.getTheme() == "light"):
+        elif (self.topGUI.theme == "light"):
             s.configure('TCheckbutton', background='white', foreground="black")
             s.configure('TLabelFrame', background='#424242', foreground="#FFFFFF")
         s.configure('TCombobox', background='white')
@@ -1032,12 +1020,12 @@ class iF(tk.Frame):
         #---Number of comment lines---
         self.commentFrame = tk.Frame(self, bg=self.backgroundColor)
         self.commentLabel = tk.Label(self.commentFrame, text="Number of comment lines:", bg=self.backgroundColor, fg=self.foregroundColor)  
-        self.commentVariable = tk.StringVar(self, self.topGUI.getComments())
+        self.commentVariable = tk.StringVar(self, self.topGUI.commentsDefault)
         vcmd1 = (self.register(validateComment), '%P')
         self.commentNum = ttk.Entry(self.commentFrame, textvariable=self.commentVariable, width=3, validate="all", validatecommand=vcmd1)
         self.commentNum.bind("<FocusIn>", lambda e: self.commentNum.selection_range(0, tk.END))
         self.delimiterLabel = tk.Label(self.commentFrame, text="     Delimiter:", bg=self.backgroundColor, fg=self.foregroundColor)
-        self.delimiterVariable = tk.StringVar(self, self.topGUI.getDelimiter())
+        self.delimiterVariable = tk.StringVar(self, self.topGUI.delimiterDefault)
         self.delimiterCombobox = ttk.Combobox(self.commentFrame, textvariable=self.delimiterVariable, value=("Tab", "Space", ";", ",", "|", ":"), exportselection=0, state="readonly", width=6)
         self.commentLabel.grid(column=0, row=0, sticky="W")
         self.commentNum.grid(column=1, row=0, padx=5, sticky="W")
@@ -1200,9 +1188,6 @@ class iF(tk.Frame):
         self.closeAllPopupsButton.grid(column=0, row=9, sticky="W", pady=10)
         closeAllPopups_ttp = CreateToolTip(self.closeAllPopupsButton, 'Close all open popup windows')
     
-    def needToSave(self):
-        return self.savedNeeded
-    
     def setThemeLight(self):
         self.foregroundColor = "#000000"
         self.backgroundColor = "#FFFFFF"
@@ -1293,15 +1278,15 @@ class iF(tk.Frame):
             continueThoughDiff = messagebox.askokcancel("Different files", "The current file under \"Browse\" has not been loaded, and so will not be saved. If you continue, only the currently loaded data will be saved.")
         if (continueThoughDiff):
             defaultSaveName, ext = os.path.splitext(os.path.basename(self.inputFileText.get()))
-            saveName = asksaveasfile(mode='w', defaultextension=".mmfile", initialfile=defaultSaveName, initialdir=self.topGUI.getCurrentDirectory(), filetypes=[("Measurement model file", ".mmfile")])
+            saveName = asksaveasfile(mode='w', defaultextension=".mmfile", initialfile=defaultSaveName, initialdir=self.topGUI.currentDirectory, filetypes=[("Measurement model file", ".mmfile")])
             directory = os.path.dirname(str(saveName))
-            self.topGUI.setCurrentDirectory(directory)
+            self.topGUI.currentDirectory = directory
             if saveName is None:     #If save is cancelled
                 return
             for i in range(len(self.freq_data)):
                 saveName.write(str(self.freq_data[i]) + "\t" + str(self.real_data[i]) + "\t" + str(self.imag_data[i]) + "\n")
             saveName.close()
-            self.savedNeeded = False
+            self.saveNeeded = False
             self.saveButton.configure(text="Saved")
             self.after(1000, lambda : self.saveButton.configure(text="Save as"))
     
@@ -1332,14 +1317,14 @@ class iF(tk.Frame):
         n, filetext = self.OpenFileNoPrompt(fileName)
         fname, fext = os.path.splitext(fileName)
         directory = os.path.dirname(str(fileName))
-        self.topGUI.setCurrentDirectory(directory)
+        self.topGUI.currentDirectory = directory
         self.inputFileText.configure(state="normal")
         self.inputFileText.delete(0,tk.END)
         self.inputFileText.insert(0, n)
         self.inputFileText.configure(state="readonly")
         self.browseTextBtn.configure(state="normal")
         self.fileText = filetext
-        if (self.topGUI.getDetectComments() == 1):
+        if (self.topGUI.detectCommentsDefault == 1):
             numLinesOfComments = 0
             whatDelimiter = "no"
             for line in filetext.splitlines():
@@ -1351,7 +1336,7 @@ class iF(tk.Frame):
                     numLinesOfComments += 1
                     continue
                 else:
-                    if (self.topGUI.getDetectDelimiter() == 1):
+                    if (self.topGUI.detectDelimiterDefault == 1):
                         whatDelimiter = detect_delimiter.detect(line)
                         if (whatDelimiter == ","):
                             self.delimiterVariable.set(",")

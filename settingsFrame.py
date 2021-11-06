@@ -88,24 +88,24 @@ class sF(tk.Frame):
         self.parent = parent
         self.topGUI = topOne
         #---Appearance---
-        if (self.topGUI.getTheme() == "dark"):
+        if (self.topGUI.theme == "dark"):
             self.backgroundColor = "#424242"
             self.foregroundColor = "#FFFFFF"
             s = ttk.Style()
             s.configure('TCheckbutton', background='#424242', foreground="#FFFFFF")
             s.configure('TNotebook', background='#424242')
-        elif (self.topGUI.getTheme() == "light"):
+        elif (self.topGUI.theme == "light"):
             self.backgroundColor = "#FFFFFF"
             self.foregroundColor = "#000000"
             s = ttk.Style()
             s.configure('TCheckbutton', background='#FFFFFF', foreground="#000000")
             s.configure('TNotebook', background='#FFFFFF')
-        self.barColor = self.topGUI.getBarColor()
-        self.activeColor = self.topGUI.getAccentColor()
-        self.highlightColor = self.topGUI.getHighlightColor()
-        self.themeChosen = self.topGUI.getTheme()
-        self.ellipseColor = self.topGUI.getEllipseColor()
-        self.defaultImports = self.topGUI.getDefaultImports()
+        self.barColor = self.topGUI.backgroundColor
+        self.activeColor = self.topGUI.activeColor
+        self.highlightColor = self.topGUI.highlightColor
+        self.themeChosen = self.topGUI.theme
+        self.ellipseColor = self.topGUI.ellipseColor
+        self.defaultImports = self.topGUI.defaultImports
         
         tk.Frame.__init__(self, parent, background=self.backgroundColor)
         
@@ -128,10 +128,10 @@ class sF(tk.Frame):
         #---General tab---
         self.themeLabel = tk.Label(self.tabOverall, text="Theme: ", fg=self.foregroundColor, bg=self.backgroundColor)
         self.themeFrame = tk.Frame(self.tabOverall, background=self.backgroundColor)
-        if (self.topGUI.getTheme() == "dark"):
+        if (self.topGUI.theme == "dark"):
             self.lightLabel = tk.Label(self.themeFrame, text=" Light ", fg="black", bg="white", cursor="hand2", borderwidth=3, relief="raised")
             self.darkLabel = tk.Label(self.themeFrame, text=" Dark ", fg="white", bg="#424242", cursor="hand2", borderwidth=3, relief="sunken")
-        elif (self.topGUI.getTheme() == "light"):
+        elif (self.topGUI.theme == "light"):
             self.lightLabel = tk.Label(self.themeFrame, text=" Light ", fg="black", bg="white", cursor="hand2", borderwidth=3, relief="sunken")
             self.darkLabel = tk.Label(self.themeFrame, text=" Dark ", fg="white", bg="#424242", cursor="hand2", borderwidth=3, relief="raised")
 
@@ -158,25 +158,25 @@ class sF(tk.Frame):
         self.activeColorLabel.bind("<Button-1>", self.pickActiveColor)
         self.defaultTabLabel = tk.Label(self.tabOverall, text="Starting tab: ", fg=self.foregroundColor, bg=self.backgroundColor)
         self.defaultTabVariable = tk.StringVar(self, "Input file")
-        if (self.topGUI.getDefaultTab() == 1):
+        if self.topGUI.defaultTab == 1:
             self.defaultTabVariable.set("Measurement model")
-        elif (self.topGUI.getDefaultTab() == 2):
+        elif self.topGUI.defaultTab == 2:
             self.defaultTabVariable.set("Error file preparation")
-        elif (self.topGUI.getDefaultTab() == 3):
+        elif self.topGUI.defaultTab == 3:
             self.defaultTabVariable.set("Error analysis")
-        elif (self.topGUI.getDefaultTab() == 4):
+        elif self.topGUI.defaultTab == 4:
             self.defaultTabVariable.set("Custom fitting")
-        elif (self.topGUI.getDefaultTab() == 5):
+        elif self.topGUI.defaultTab == 5:
             self.defaultTabVariable.set("Settings")
-        elif (self.topGUI.getDefaultTab() == 6):
+        elif self.topGUI.defaultTab == 6:
             self.defaultTabVariable.set("Help and about")
         self.defaultTab = ttk.Combobox(self.tabOverall, textvariable=self.defaultTabVariable, width=20, value=("Input file", "Measurement model", "Error file preparation", "Error analysis", "Custom fitting", "Settings", "Help and about"), exportselection=0, state="readonly")
         self.defaultDirectoryLabel = tk.Label(self.tabPaths, text="File directory: ", fg=self.foregroundColor, bg=self.backgroundColor)
         self.defaultDirectoryEntry = ttk.Entry(self.tabPaths, state="readonly", width=40)
         self.defaultDirectoryButton = ttk.Button(self.tabPaths, text="Browse...", command=self.findNewDirectory)
-        self.defaultScrollVariable = tk.IntVar(self, self.topGUI.getScroll())
+        self.defaultScrollVariable = tk.IntVar(self, self.topGUI.defaultScroll)
         self.defaultScroll = ttk.Checkbutton(self.tabOverall, variable=self.defaultScrollVariable, text="Change tab on scroll")
-        self.defaultPropagateErrorVariable = tk.IntVar(self, self.topGUI.getPropagate())
+        self.defaultPropagateErrorVariable = tk.IntVar(self, self.topGUI.defaultPropagate)
         self.defaultPropagateError = ttk.Checkbutton(self.tabOverall, variable=self.defaultPropagateErrorVariable, text="Propagate error structure")
         self.barLabel.grid(column=0, row=2, sticky="W", pady=5)
         self.barColorLabel.grid(column=1, row=2)
@@ -205,11 +205,11 @@ class sF(tk.Frame):
         
         self.defaultDirectoryEntry.configure(state="normal")
         self.defaultDirectoryEntry.delete(0,tk.END)
-        self.defaultDirectoryEntry.insert(0, self.topGUI.getDefaultDirectory())
+        self.defaultDirectoryEntry.insert(0, self.topGUI.defaultDirectory)
         self.defaultDirectoryEntry.configure(state="readonly")
         self.defaultFormulaDirectoryEntry.configure(state="normal")
         self.defaultFormulaDirectoryEntry.delete(0,tk.END)
-        self.defaultFormulaDirectoryEntry.insert(0, self.topGUI.getDefaultFormulaDirectory())
+        self.defaultFormulaDirectoryEntry.insert(0, self.topGUI.defaultFormulaDirectory)
         self.defaultFormulaDirectoryEntry.configure(state="readonly")
         
         self.importPathLabel = tk.Label(self.tabPaths, text="Import paths: ", fg=self.foregroundColor, bg=self.backgroundColor)
@@ -240,22 +240,22 @@ class sF(tk.Frame):
         self.popup_menu_importPath.add_command(label="Remove directory", command=self.importDirectoryRemove)
 
         self.importPathListbox.bind("<Button-3>", self.popup_inputFiles)
-        for val in self.topGUI.getDefaultImports():
+        for val in self.topGUI.defaultImports:
             if (len(val) > 0):
                 self.importPathListbox.insert(tk.END, val)
         
         #---Input tab---
-        self.defaultDetectCommentsCheckboxVariable = tk.IntVar(self, self.topGUI.getDetectComments())
+        self.defaultDetectCommentsCheckboxVariable = tk.IntVar(self, self.topGUI.detectCommentsDefault)
         self.defaultDetectCommentsCheckbox = ttk.Checkbutton(self.tabInput, variable=self.defaultDetectCommentsCheckboxVariable, text="Detect number of comment lines", command=self.defaultCommentsCommand)
         self.defaultComments = tk.Label(self.tabInput, text="Number of comment lines: ", bg=self.backgroundColor, fg=self.foregroundColor)
-        self.defaultCommentsVariable = tk.StringVar(self, self.topGUI.getComments())
+        self.defaultCommentsVariable = tk.StringVar(self, self.topGUI.commentsDefault)
         self.defaultCommentsEntry = ttk.Entry(self.tabInput, textvariable=self.defaultCommentsVariable, width=6, exportselection=0)
         self.defaultDelimiter = tk.Label(self.tabInput, text="Delimiter: ", bg=self.backgroundColor, fg=self.foregroundColor)
-        self.defaultDelimiterVariable = tk.StringVar(self, self.topGUI.getDelimiter())
+        self.defaultDelimiterVariable = tk.StringVar(self, self.topGUI.delimiterDefault)
         self.defaultDelimiterCombobox = ttk.Combobox(self.tabInput, textvariable=self.defaultDelimiterVariable, value=("Tab", "Space", ";", ",", "|", ":"), exportselection=0, state="readonly", width=6)
-        self.defaultDetectDelimiterCheckboxVariable = tk.IntVar(self, self.topGUI.getDetectDelimiter())
+        self.defaultDetectDelimiterCheckboxVariable = tk.IntVar(self, self.topGUI.detectDelimiterDefault)
         self.defaultDetectDelimiterCheckbox = ttk.Checkbutton(self.tabInput, variable=self.defaultDetectDelimiterCheckboxVariable, text="Detect delimiter")
-        self.inputExitAlertVariable = tk.IntVar(self, self.topGUI.getInputExitAlert())
+        self.inputExitAlertVariable = tk.IntVar(self, self.topGUI.inputExitAlert)
         self.inputExitAlertCheckbox = ttk.Checkbutton(self.tabInput, variable=self.inputExitAlertVariable, text="Alert on close if unsaved")
         self.defaultDetectCommentsCheckbox.grid(column=0, row=0, columnspan=2, sticky="W")
         self.defaultComments.grid(column=0, row=1, pady=2, sticky="W")
@@ -272,22 +272,22 @@ class sF(tk.Frame):
         
         #---Model tab---
         self.defaultMC = tk.Label(self.tabModel, text="Number of simulations: ", fg=self.foregroundColor, bg=self.backgroundColor)
-        self.defaultMCVariable = tk.StringVar(self, self.topGUI.getMC())
+        self.defaultMCVariable = tk.StringVar(self, self.topGUI.MCDefault)
         self.defaultMCEntry = ttk.Entry(self.tabModel, textvariable=self.defaultMCVariable, width=6, exportselection=0)
         self.defaultFit = tk.Label(self.tabModel, text="Fit type: ", fg=self.foregroundColor, bg=self.backgroundColor)
-        self.defaultFitVariable = tk.StringVar(self, self.topGUI.getFit())
+        self.defaultFitVariable = tk.StringVar(self, self.topGUI.fitDefault)
         self.defaultFitCombobox = ttk.Combobox(self.tabModel, textvariable=self.defaultFitVariable, value=("Real", "Imaginary", "Complex"), exportselection=0, state="readonly", width=15)
         self.defaultWeighting = tk.Label(self.tabModel, text="Weighting type: ", fg=self.foregroundColor, bg=self.backgroundColor)
-        self.defaultWeightingVariable = tk.StringVar(self, self.topGUI.getWeight())
+        self.defaultWeightingVariable = tk.StringVar(self, self.topGUI.weightDefault)
         self.defaultWeightingCombobox = ttk.Combobox(self.tabModel, textvariable=self.defaultWeightingVariable, value=("None", "Modulus", "Proportional", "Error model"), exportselection=0, state="readonly", width=15)
         self.defaultAlpha = tk.Label(self.tabModel, text="Assumed noise level (α): ", bg=self.backgroundColor, fg=self.foregroundColor)
-        self.defaultAlphaVariable = tk.StringVar(self, self.topGUI.getAlpha())
+        self.defaultAlphaVariable = tk.StringVar(self, self.topGUI.alphaDefault)
         self.defaultAlphaEntry = ttk.Entry(self.tabModel, textvariable=self.defaultAlphaVariable, width=6, exportselection=0)
         self.defaultEllipse = tk.Label(self.tabModel, text="Error lines/ellipse color: ", fg=self.foregroundColor, bg=self.backgroundColor)
         self.defaultEllipseColorLabel = tk.Label(self.tabModel, bg=self.ellipseColor, borderwidth=2, relief="solid", cursor="hand2", width=5)
         self.defaultEllipseColorLabel.bind("<Button-1>", self.pickEllipseColor)
-        self.defaultFreqLoadVariable = tk.IntVar(self, self.topGUI.getFreqLoad())
-        self.defaultFreqUndoVariable = tk.IntVar(self, self.topGUI.getFreqUndo())
+        self.defaultFreqLoadVariable = tk.IntVar(self, self.topGUI.freqLoad)
+        self.defaultFreqUndoVariable = tk.IntVar(self, self.topGUI.freqUndo)
         self.defaultFreqLoad = ttk.Checkbutton(self.tabModel, variable=self.defaultFreqLoadVariable, text="Keep frequency range on loading new file")
         self.defaultFreqUndo = ttk.Checkbutton(self.tabModel, variable=self.defaultFreqUndoVariable, text="Undo frequency range with undo button")
         self.defaultMC.grid(column=0, row=0, sticky="W")
@@ -312,24 +312,24 @@ class sF(tk.Frame):
         
         #---Errors tab---
         self.defaultParamChoices = tk.Label(self.tabError, text="Error Model Parameters: ", fg=self.foregroundColor, bg=self.backgroundColor)
-        self.defaultAlphaCheckboxVariable = tk.IntVar(self, self.topGUI.getErrorAlpha())
+        self.defaultAlphaCheckboxVariable = tk.IntVar(self, self.topGUI.errorAlphaDefault)
         self.defaultAlphaCheckbox = ttk.Checkbutton(self.tabError, variable=self.defaultAlphaCheckboxVariable, text="\u03B1")
-        self.defaultBetaCheckboxVariable = tk.IntVar(self, self.topGUI.getErrorBeta())
+        self.defaultBetaCheckboxVariable = tk.IntVar(self, self.topGUI.errorBetaDefault)
         self.defaultBetaCheckbox = ttk.Checkbutton(self.tabError, variable=self.defaultBetaCheckboxVariable, command=self.checkBeta, text="\u03B2")
-        self.defaultReCheckboxVariable = tk.IntVar(self, self.topGUI.getErrorRe())
+        self.defaultReCheckboxVariable = tk.IntVar(self, self.topGUI.errorReDefault)
         self.defaultReCheckbox = ttk.Checkbutton(self.tabError, variable=self.defaultReCheckboxVariable, command=self.checkRe, text="Re")
-        self.defaultGammaCheckboxVariable = tk.IntVar(self, self.topGUI.getErrorGamma())
+        self.defaultGammaCheckboxVariable = tk.IntVar(self, self.topGUI.errorGammaDefault)
         self.defaultGammaCheckbox = ttk.Checkbutton(self.tabError, variable=self.defaultGammaCheckboxVariable, text="\u03B3")
-        self.defaultDeltaCheckboxVariable = tk.IntVar(self, self.topGUI.getErrorDelta())
+        self.defaultDeltaCheckboxVariable = tk.IntVar(self, self.topGUI.errorDeltaDefault)
         self.defaultDeltaCheckbox = ttk.Checkbutton(self.tabError, variable=self.defaultDeltaCheckboxVariable, text="\u03B4")
         self.defaultErrorWeighting = tk.Label(self.tabError, text="Variance: ", bg=self.backgroundColor, fg=self.foregroundColor)
-        self.defaultErrorWeightingVariable = tk.StringVar(self, self.topGUI.getErrorWeighting())
+        self.defaultErrorWeightingVariable = tk.StringVar(self, self.topGUI.errorWeightingDefault)
         self.defaultErrorWeightingCombobox = ttk.Combobox(self.tabError, textvariable=self.defaultErrorWeightingVariable, value=("None", "Variance"), exportselection=0, state="readonly", width=15)
         self.defaultMovingAverage = tk.Label(self.tabError, text="Moving Average: ", bg=self.backgroundColor, fg=self.foregroundColor)
-        self.defaultMovingAverageVariable = tk.StringVar(self, self.topGUI.getMovingAverage())
+        self.defaultMovingAverageVariable = tk.StringVar(self, self.topGUI.errorMADefault)
         self.defaultMovingAverageCombobox = ttk.Combobox(self.tabError, textvariable=self.defaultMovingAverageVariable, value=("None", "3 point", "5 point"), exportselection=0, state="readonly", width=15)
         self.defaultDetrendLabel = tk.Label(self.tabError, text="Detrend: ", bg=self.backgroundColor, fg=self.foregroundColor)
-        self.defaultDetrendVariable = tk.StringVar(self, self.topGUI.getDetrend())
+        self.defaultDetrendVariable = tk.StringVar(self, self.topGUI.detrendDefault)
         self.defaultDetrendCombobox = ttk.Combobox(self.tabError, textvariable=self.defaultDetrendVariable, value=("Off", "On"), exportselection=0, state="readonly", width=15)
         self.defaultParamChoices.grid(column=0, row=0, sticky="W")
         self.defaultAlphaCheckbox.grid(column=1, row=0, sticky="W")
@@ -353,9 +353,9 @@ class sF(tk.Frame):
         detrend_ttp = CreateToolTip(self.defaultDetrendCombobox, 'Whether or not detrending should be done by default')
         
         #---Custom tab---
-        self.customFormulaExitAlertVariable = tk.IntVar(self, self.topGUI.getCustomFormulaExitAlert())
+        self.customFormulaExitAlertVariable = tk.IntVar(self, self.topGUI.customFormulaExitAlert)
         self.customFormulaExitAlertCheckbox = ttk.Checkbutton(self.tabCustom, variable=self.customFormulaExitAlertVariable, text="Alert on close if unsaved")
-        self.customFreqLoadVariable = tk.IntVar(self, self.topGUI.getFreqLoadCustom())
+        self.customFreqLoadVariable = tk.IntVar(self, self.topGUI.freqLoadCustom)
         self.customFreqLoad = ttk.Checkbutton(self.tabCustom, variable=self.customFreqLoadVariable, text="Keep frequency range on loading new file")
         self.customFormulaExitAlertCheckbox.grid(column=0, row=1, pady=2, sticky="W", columnspan=3)
         self.customFreqLoad.grid(column=0, row=2, sticky="W", columnspan=3)
@@ -423,7 +423,6 @@ class sF(tk.Frame):
             s = ttk.Style()
             s.configure('TCheckbutton', background='#FFFFFF', foreground="#000000")
             s.configure('TNotebook', background='#FFFFFF')
-            self.topGUI.setThemeLight()
             self.defaultFormulaDirectoryLabel.configure(background="#FFFFFF", foreground="#000000")
             self.importPathButtonFrame.configure(background="#FFFFFF")
             self.importPathLabel.configure(background="#FFFFFF", foreground="#000000")
@@ -466,31 +465,31 @@ class sF(tk.Frame):
             s = ttk.Style()
             s.configure('TCheckbutton', background='#424242', foreground="#FFFFFF")
             s.configure('TNotebook', background='#424242')
-            self.topGUI.setThemeDark()
             self.defaultFormulaDirectoryLabel.configure(background="#424242", foreground="#FFFFFF")
             self.importPathButtonFrame.configure(background="#424242")
             self.importPathLabel.configure(background="#424242", foreground="#FFFFFF")
             self.importPathListboxFrame.configure(background="#424242")
         
-        self.topGUI.setBarColor(self.barColor)
+        self.topGUI.theme = self.themeChosen
+        self.topGUI.backgroundColor = self.barColor
         self.barColorLabel.configure(bg=self.barColor)
-        self.topGUI.setHighlightColor(self.highlightColor)
+        self.topGUI.highlightColor = self.highlightColor
         self.highlightColorLabel.configure(bg=self.highlightColor)
-        self.topGUI.setActiveColor(self.activeColor)
+        self.topGUI.activeColor = self.activeColor
         self.activeColorLabel.configure(bg=self.activeColor)
-        self.topGUI.setEllipseColor(self.ellipseColor)
+        self.topGUI.ellipseColor = self.ellipseColor
         self.defaultEllipseColorLabel.configure(bg=self.ellipseColor)
         self.topGUI.setCurrentDirectory(self.defaultDirectoryEntry.get())
-        self.topGUI.setDefaultDirectory(self.defaultDirectoryEntry.get())
-        self.topGUI.setDefaultFormulaDirectory(self.defaultFormulaDirectoryEntry.get())
-        self.topGUI.setInputExitAlert(self.inputExitAlertVariable.get())
-        self.topGUI.setCustomFormulaExitAlert(self.customFormulaExitAlertVariable.get())
-        self.topGUI.setFreqLoad(self.defaultFreqLoadVariable.get())
-        self.topGUI.setFreqUndo(self.defaultFreqUndoVariable.get())
-        self.topGUI.setFreqLoadCustom(self.customFreqLoadVariable.get())
-        self.topGUI.setScroll(self.defaultScrollVariable.get())
-        self.topGUI.setPropagate(self.defaultPropagateErrorVariable.get())
-        self.topGUI.setDefaultImports(self.importPathListbox.get(0, tk.END))
+        self.topGUI.defaultDirectory = self.defaultDirectoryEntry.get()
+        self.topGUI.defaultFormulaDirectory = self.defaultFormulaDirectoryEntry.get()
+        self.topGUI.inputExitAlert = self.inputExitAlertVariable.get()
+        self.topGUI.customFormulaExitAlert = self.customFormulaExitAlertVariable.get()
+        self.topGUI.freqLoad = self.defaultFreqLoadVariable.get()
+        self.topGUI.freqUndo = self.defaultFreqUndoVariable.get()
+        self.topGUI.freqLoadCustom = self.customFreqLoadVariable.get()
+        self.topGUI.defaultScroll = self.defaultScrollVariable.get()
+        self.topGUI.defaultPropagate = self.defaultPropagateErrorVariable.get()
+        self.topGUI.defaultImports = self.importPathListbox.get(0, tk.END)
     
     def resetDefaults(self):
         """
@@ -617,7 +616,7 @@ class sF(tk.Frame):
     
     #---Directory selection popups---
     def findNewDirectory(self):
-        folder = askdirectory(initialdir=self.topGUI.getCurrentDirectory())
+        folder = askdirectory(initialdir=self.topGUI.currentDirectory)
         folder_str = str(folder)
         if len(folder_str) == 0:
             pass
@@ -628,7 +627,7 @@ class sF(tk.Frame):
             self.defaultDirectoryEntry.configure(state="readonly")
     
     def findNewFormulaDirectory(self):
-        folder = askdirectory(initialdir=self.topGUI.getCurrentDirectory())
+        folder = askdirectory(initialdir=self.topGUI.currentDirectory)
         folder_str = str(folder)
         if len(folder_str) == 0:
             pass
@@ -639,7 +638,7 @@ class sF(tk.Frame):
             self.defaultFormulaDirectoryEntry.configure(state="readonly")
     
     def importDirectoryBrowse(self, e=None):
-        folder = askdirectory(initialdir=self.topGUI.getCurrentDirectory())
+        folder = askdirectory(initialdir=self.topGUI.currentDirectory)
         folder_str = str(folder)
         if (len(folder_str) > 1):
             self.importPathListbox.insert(tk.END, folder_str)

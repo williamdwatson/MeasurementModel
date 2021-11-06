@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Created on Wed Jul 25 15:47:07 2018
 
@@ -20,12 +19,13 @@ Created on Wed Jul 25 15:47:07 2018
 """
 
 #---Import necessary libraries/modules---
-import ctypes, sys, os, re, multiprocessing, webbrowser, configparser
+import ctypes, sys, os, re, multiprocessing, webbrowser, configparser, json
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import messagebox
 import inputFrame, helpFrame, modelFrame, errorFileFrame, errorFrame, settingsFrame, formulaFrame
 from PIL import ImageTk, Image
+from utils import check_hex_color, convert_to_type, hex_to_RGB, resource_path, use_dark
 
 class CreateToolTip(object):
     """
@@ -97,65 +97,18 @@ class myGUI:
     
     def __init__(self, master, args):
         
-        def resource_path(relative_path):
-            """ Get absolute path to resource, works for dev and for PyInstaller """
-            try:
-                # PyInstaller creates a temp folder and stores path in _MEIPASS
-                base_path = sys._MEIPASS
-            except Exception:
-                base_path = os.path.abspath(".")
-        
-            return os.path.join(base_path, relative_path)
-        
         """" Windows taskbar code from: https://www.neowin.net/forum/topic/716968-using-apis-in-a-objectaction-format/#comment-590434472,
             https://stackoverflow.com/questions/1736394/using-windows-7-taskbar-features-in-pyqt/1744503#1744503,
             and https://github.com/tqdm/tqdm/issues/442 """
         
         self.master = master
-        #---Appearance defaults---
-        self.theme = "light"    #Default theme
-        self.backgroundColor = '#333333'    #Default bar color (gray20)
-        self.highlightColor = '#999999'     #Default color on mouseover (lighter gray)
-        self.activeColor = '#737373'        #Default color when tab is active (light gray)
-                                            #6B6B6B - gray for text entries with dark theme
-
-        #---Application defaults for other classes; used in getters/setters at the end of this file---
-        self.detectCommentsDefault = 1      #Whether or not to detect comments
-        self.detectDelimiterDefault = 1     #Whether or not to detect delimiters
-        self.commentsDefault = 0            #The default number of comment lines
-        self.delimiterDefault = "Tab"       #The default delimiter; options are "Space", "Tab", ";", "|", ":", and ","
-        self.MCDefault = 1000               #The default number of Monte Carlo simulations ; a positive integer
-        self.fitDefault = "Complex"         #The default fit type; options are "Complex", "Real", and "Imaginary"
-        self.weightDefault = "Modulus"      #The default weighting type; options are "None", "Modulus", "Proportional", and "Error Model"
-        self.alphaDefault = 1               #Default noise
-        self.errorAlphaDefault = 0          #Default error structure choices
-        self.errorBetaDefault = 0
-        self.errorReDefault = 0
-        self.errorGammaDefault = 1
-        self.errorDeltaDefault = 1
-        self.errorWeightingDefault = "Variance"     #Default weighting for error structure fitting; options are "Variance" and "None"
-        self.errorMADefault = "5 point"             #Default moving average for variance weighting; options are "5 point", "3 point", and "None"
-        self.detrendDefault = "Off"                 #Default detrending; options are "Off" and "On"
-        self.ellipseColor = "#FF0000"               #Default ellipse color
-        self.currentDirectory = "C:\\"              #The current directory; used in various other classes, but not a default setting
-        self.defaultDirectory = "C:\\"              #The default directory
-        self.defaultFormulaDirectory = "C:\\"       #The default directory for .mmformula files
-        self.inputExitAlert = 0                     #Whether or not to alert before closing the input tab
-        self.customFormulaExitAlert = 0             #Whether or not to alert before closing the custom fitting tab
-        self.defaultTab = 0                         #The default tab when the program is opened
-        self.freqLoad = 0                           #Whether or not frequency range stays the same when a new file is loaded (mm tab)
-        self.freqUndo = 0                           #Whether or not frequency range is undone with undo button
-        self.freqLoadCustom = 0                     #Whether or not frequency rnge stays the same when a new file is loaded (custom tab)
-        self.defaultScroll = 1                      #Whether or not to use the mousewheel to scroll through tabs when mouse is over the navigation pane
-        self.defaultPropagate = 0                   #Whether or not to propagate user-entered error structure between standard fitting, auto fitting, and custom fitting
-        self.defaultImports = []                    #Default import paths for custom formula        
+        #---Load and set defaults---
+        with open(resource_path('defaults.json'), 'r') as defaults_file:
+            defaults = json.load(defaults_file)
+        for k, v in defaults.items():
+            setattr(self, '_{}'.format(k) if k in ('theme', 'ellipseColor' 'backgroundColor', 'defaultScroll') else k, v)
         
-        self.initializeSettings()
-        
-        self.residualsFileList = [] #In case residuals files are being opened
-        self.errorsFileList = []    #In case error files are being opened
-        self.argFile = ""
-        
+        self.initializeSettings()        
         self.interpretArgs(args)
         
         master.title("Measurement Model")                       #The program title
@@ -163,10 +116,8 @@ class myGUI:
         master.iconbitmap(resource_path('img/elephant3.ico'))   #GUI icon
         
         #---Change the background color depeding on the theme---
-        if (self.theme == "dark"):
-            master.configure(background='#424242')
-        elif (self.theme == "light"):
-            master.configure(background='white')
+        master.configure(background='#424242' if self._theme == 'dark' else 'white')
+
         master.grid_rowconfigure(1, weight=1)       #The second row will expand to fill the space
         master.grid_columnconfigure(2, weight=1)    #The second column will expand to fill the space
         master.bind_all("<F1>", self.helpDown)      #If <F1> is pressed anywhere, it goes to the help tab
@@ -175,10 +126,10 @@ class myGUI:
         #SpringGreen2 - #00ee76
         #SpringGreen3 - #00cd66
         #gray20 - #333333
+
+        barColorRGB = hex_to_RGB(self._backgroundColor)
         
-        barColorNoHash = self.backgroundColor.lstrip('#')   #Remove the '#' from the hex value
-        barColorRGB = tuple(int(barColorNoHash[i:i+2], 16) for i in (0, 2 ,4))  #Contrast checking formula from https://stackoverflow.com/questions/3942878/how-to-decide-font-color-in-white-or-black-depending-on-background-color
-        self.frameLabelColor = "#000000" if (barColorRGB[0]*0.299 + barColorRGB[1]*0.587 + barColorRGB[2]*0.114) > 186 else "#FFFFFF"    #If the background is too light, the title text is black; otherwise it's white
+        self.frameLabelColor = "#000000" if use_dark(barColorRGB) else "#FFFFFF"    #If the background is too light, the title text is black; otherwise it's white
         
         topLabel = "File Tools and Conversion"              #If the default tab is 0; can be changed in the settings tab
         if (self.defaultTab == 1):
@@ -193,13 +144,13 @@ class myGUI:
             topLabel = "Settings"
         elif (self.defaultTab == 6):
             topLabel = "Help and About"
-        self.top_frame = tk.Frame(root, bg=self.backgroundColor, height=50)     #The frame for the tab title
+        self.top_frame = tk.Frame(root, bg=self._backgroundColor, height=50)     #The frame for the tab title
         self.top_frame.grid_columnconfigure(0, weight=1)
-        self.frame_label = tk.Label(self.top_frame, text=topLabel, font=("Arial", 15), bg=self.backgroundColor, fg=self.frameLabelColor) #The title that tells the user which tab they are in
+        self.frame_label = tk.Label(self.top_frame, text=topLabel, font=("Arial", 15), bg=self._backgroundColor, fg=self.frameLabelColor) #The title that tells the user which tab they are in
         self.frame_label.grid(column=0, row=0, pady=2)
         self.top_frame.grid(row=0, column=0, columnspan=3, sticky="EW")
         
-        self.left_frame = tk.Frame(root, bg=self.backgroundColor, width=140, height=190)    #The frame for the navigation icons
+        self.left_frame = tk.Frame(root, bg=self._backgroundColor, width=140, height=190)    #The frame for the navigation icons
         self.left_frame.columnconfigure(1, weight=1)
         self.left_frame.rowconfigure(4, weight=1)        #Makes the help label go to the bottom of the window
         self.left_frame.grid(row=1, column = 1, sticky="nsew")
@@ -245,7 +196,7 @@ class myGUI:
             self.fileOpen = tk.Label(self.left_frame, image = self.imgFile3, cursor="hand2", width=100, height=75)
         else:
             self.fileOpen = tk.Label(self.left_frame, image = self.imgFile, cursor="hand2", width=100, height=75)
-        self.fileOpen.configure(background=self.backgroundColor)
+        self.fileOpen.configure(background=self._backgroundColor)
         self.fileOpen.bind('<Button-1>', self.inputFileDown)
         self.fileOpen.bind('<ButtonRelease-1>', self.inputFileUp)
         self.fileOpen.bind('<Enter>', lambda e: self.fileOpen.configure(image=self.imgFile2 if self.currentTab != 0 else self.imgFile4))
@@ -255,7 +206,7 @@ class myGUI:
             self.runModel = tk.Label(self.left_frame, image = self.imgModel3, cursor="hand2", width=100, height=75)
         else:
             self.runModel = tk.Label(self.left_frame, image = self.imgModel, cursor="hand2", width=100, height=75)
-        self.runModel.configure(background=self.backgroundColor)
+        self.runModel.configure(background=self._backgroundColor)
         self.runModel.bind('<Button-1>', self.measureModelDown)
         self.runModel.bind('<ButtonRelease-1>', self.measureModelUp)
         self.runModel.bind('<Enter>', lambda e: self.runModel.configure(image=self.imgModel2 if self.currentTab != 1 else self.imgModel4))
@@ -265,7 +216,7 @@ class myGUI:
             self.errorFileLabel = tk.Label(self.left_frame, image=self.imgErrorFile3, cursor="hand2", width=100, height=75)
         else:
             self.errorFileLabel = tk.Label(self.left_frame, image=self.imgErrorFile, cursor="hand2", width=100, height=75)
-        self.errorFileLabel.configure(background=self.backgroundColor)
+        self.errorFileLabel.configure(background=self._backgroundColor)
         self.errorFileLabel.bind('<Button-1>', self.errorFileDown)
         self.errorFileLabel.bind('<ButtonRelease-1>', self.errorFileUp)
         self.errorFileLabel.bind('<Enter>', lambda e: self.errorFileLabel.configure(image=self.imgErrorFile2 if self.currentTab != 2 else self.imgErrorFile4))
@@ -275,7 +226,7 @@ class myGUI:
             self.errorLabel = tk.Label(self.left_frame, image=self.imgError3, cursor="hand2", width=100, height=75)
         else:
             self.errorLabel = tk.Label(self.left_frame, image=self.imgError, cursor="hand2", width=100, height=75)
-        self.errorLabel.configure(background=self.backgroundColor)
+        self.errorLabel.configure(background=self._backgroundColor)
         self.errorLabel.bind('<Button-1>', self.errorDown)
         self.errorLabel.bind('<ButtonRelease-1>', self.errorUp)
         self.errorLabel.bind('<Enter>', lambda e: self.errorLabel.configure(image=self.imgError2 if self.currentTab != 3 else self.imgError4))
@@ -285,7 +236,7 @@ class myGUI:
             self.formulaLabel = tk.Label(self.left_frame, image = self.imgFormula3, cursor="hand2", width=100, height=75)
         else:
             self.formulaLabel = tk.Label(self.left_frame, image = self.imgFormula, cursor="hand2", width=100, height=75)
-        self.formulaLabel.configure(background=self.backgroundColor)
+        self.formulaLabel.configure(background=self._backgroundColor)
         self.formulaLabel.bind('<Button-1>', self.formulaDown)
         self.formulaLabel.bind('<ButtonRelease-1>', self.formulaUp)
         self.formulaLabel.bind('<Enter>', lambda e: self.formulaLabel.configure(image=self.imgFormula2 if self.currentTab != 6 else self.imgFormula4))
@@ -295,7 +246,7 @@ class myGUI:
             self.settingsLabel = tk.Label(self.left_frame, image=self.imgSettings3, cursor="hand2", width=100, height=75)
         else:
             self.settingsLabel = tk.Label(self.left_frame, image=self.imgSettings, cursor="hand2", width=100, height=75)
-        self.settingsLabel.configure(back=self.backgroundColor)
+        self.settingsLabel.configure(back=self._backgroundColor)
         self.settingsLabel.bind('<Button-1>', self.settingsDown)
         self.settingsLabel.bind('<ButtonRelease-1>', self.settingsUp)
         self.settingsLabel.bind('<Enter>', lambda e: self.settingsLabel.configure(image=self.imgSettings2 if self.currentTab != 4 else self.imgSettings4))
@@ -305,7 +256,7 @@ class myGUI:
             self.helpLabel = tk.Label(self.left_frame, image=self.imgHelp3, cursor="hand2", width=100, height=75)
         else:
             self.helpLabel = tk.Label(self.left_frame, image=self.imgHelp, cursor="hand2", width=100, height=75)
-        self.helpLabel.configure(background=self.backgroundColor)
+        self.helpLabel.configure(background=self._backgroundColor)
         self.helpLabel.bind('<Button-1>', self.helpDown)
         self.helpLabel.bind('<ButtonRelease-1>', self.helpUp)
         self.helpLabel.bind('<Enter>', lambda e: self.helpLabel.configure(image=self.imgHelp2 if self.currentTab != 5 else self.imgHelp4))
@@ -320,7 +271,7 @@ class myGUI:
         self.settingsLabel.grid(column=0, row=5, sticky="S")
         self.helpLabel.grid(column=0, row=6, sticky="S")
         
-        if (self.defaultScroll == 1):
+        if self._defaultScroll == 1:
             self.left_frame.bind("<MouseWheel>", lambda e: self.on_mouse_wheel(e, -1))
             self.fileOpen.bind("<MouseWheel>", lambda e: self.on_mouse_wheel(e, 0))
             self.runModel.bind("<MouseWheel>", lambda e: self.on_mouse_wheel(e, 1))
@@ -359,17 +310,17 @@ class myGUI:
         #---Set up the canvases needed to display the small colored bar next to the current tab's icon---
         self.master.update()
         self.master.update_idletasks()
-        self.canvasFrame = tk.Frame(root, bg=self.backgroundColor)
+        self.canvasFrame = tk.Frame(root, bg=self._backgroundColor)
         self.canvasFrame.columnconfigure(0, weight=1)
         self.canvasFrame.rowconfigure(4, weight=1)
         self.canvasWidth = 5
-        self.inputCanvas = tk.Canvas(self.canvasFrame, background=self.backgroundColor, bd=0, highlightthickness=0, relief='ridge', width=self.canvasWidth, height=self.fileOpen.winfo_height())
-        self.runCanvas = tk.Canvas(self.canvasFrame, background=self.backgroundColor, bd=0, highlightthickness=0, relief='ridge', width=self.canvasWidth, height=self.runModel.winfo_height())
-        self.errorFileCanvas = tk.Canvas(self.canvasFrame, background=self.backgroundColor, bd=0, highlightthickness=0, relief='ridge', width=self.canvasWidth, height=self.errorFileLabel.winfo_height())
-        self.errorCanvas = tk.Canvas(self.canvasFrame, background=self.backgroundColor, bd=0, highlightthickness=0, relief='ridge', width=self.canvasWidth, height=self.errorLabel.winfo_height())
-        self.formulaCanvas= tk.Canvas(self.canvasFrame, background=self.backgroundColor, bd=0, highlightthickness=0, relief='ridge', width=self.canvasWidth, height=self.errorFileLabel.winfo_height())
-        self.settingsCanvas = tk.Canvas(self.canvasFrame, background=self.backgroundColor, bd=0, highlightthickness=0, relief='ridge', width=self.canvasWidth, height=self.settingsLabel.winfo_height())
-        self.helpCanvas = tk.Canvas(self.canvasFrame, background=self.backgroundColor, bd=0, highlightthickness=0, relief='ridge', width=self.canvasWidth, height=self.helpLabel.winfo_height())
+        self.inputCanvas = tk.Canvas(self.canvasFrame, background=self._backgroundColor, bd=0, highlightthickness=0, relief='ridge', width=self.canvasWidth, height=self.fileOpen.winfo_height())
+        self.runCanvas = tk.Canvas(self.canvasFrame, background=self._backgroundColor, bd=0, highlightthickness=0, relief='ridge', width=self.canvasWidth, height=self.runModel.winfo_height())
+        self.errorFileCanvas = tk.Canvas(self.canvasFrame, background=self._backgroundColor, bd=0, highlightthickness=0, relief='ridge', width=self.canvasWidth, height=self.errorFileLabel.winfo_height())
+        self.errorCanvas = tk.Canvas(self.canvasFrame, background=self._backgroundColor, bd=0, highlightthickness=0, relief='ridge', width=self.canvasWidth, height=self.errorLabel.winfo_height())
+        self.formulaCanvas= tk.Canvas(self.canvasFrame, background=self._backgroundColor, bd=0, highlightthickness=0, relief='ridge', width=self.canvasWidth, height=self.errorFileLabel.winfo_height())
+        self.settingsCanvas = tk.Canvas(self.canvasFrame, background=self._backgroundColor, bd=0, highlightthickness=0, relief='ridge', width=self.canvasWidth, height=self.settingsLabel.winfo_height())
+        self.helpCanvas = tk.Canvas(self.canvasFrame, background=self._backgroundColor, bd=0, highlightthickness=0, relief='ridge', width=self.canvasWidth, height=self.helpLabel.winfo_height())
         
         if (self.defaultTab == 0):
             self.inputCanvas.configure(background="#0066FF")
@@ -396,8 +347,8 @@ class myGUI:
         self.helpCanvas.grid(column=0, row=6, sticky="S")
         
         #---Check the input file arguments and pass it to the appropriate tab---
-        if (self.argFile != ""):
-            fname, fext = os.path.splitext(self.argFile)
+        if self.argFile != "":
+            fext = os.path.splitext(self.argFile)[-1]
             if (fext == ".mmfile"):
                 self.enterMeasureModel(self.argFile)
             elif (fext == ".mmfitting"):
@@ -419,34 +370,34 @@ class myGUI:
     
     #---Initialize settings---
     def initializeSettings(self):
-        if (os.path.exists(os.getenv('LOCALAPPDATA')+r"\MeasurementModel\settings.ini")):   #Check if the settings file exists under LOCALAPPDATA
+        if os.path.exists(os.getenv('LOCALAPPDATA')+r"\MeasurementModel\settings.ini"):   #Check if the settings file exists under LOCALAPPDATA
             try:
                 config = configparser.ConfigParser()                                        #Begin the config parser to read settings.ini
                 config.read(os.getenv('LOCALAPPDATA')+r"\MeasurementModel\settings.ini")    #Read the file
                 
                 #---Check the theme---
-                if (config['settings']['theme'] == 'light'):
-                    self.theme = "light"
-                elif (config['settings']['theme'] == 'dark'):
-                    self.theme = "dark"
+                if config['settings']['theme'] == 'light':
+                    self._theme = "light"
+                elif config['settings']['theme'] == 'dark':
+                    self._theme = "dark"
                 else:
-                    pass #raise Exception     #If not light or dark, that's bad
+                    pass     #If not light or dark, that's bad
                 
                 #---Check the color/appearance---
-                if (re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', config['settings']['bar'])):   #Check if the default color is a hex value
-                    self.backgroundColor = config['settings']['bar']
+                if check_hex_color(config['settings']['bar']):
+                    self._backgroundColor = config['settings']['bar']
                 else:
-                    pass #raise Exception
+                    pass
                 
-                if (re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', config['settings']['highlight'])):   #Check if the default color is a hex value
+                if check_hex_color(config['settings']['highlight']):
                     self.highlightColor = config['settings']['highlight']
                 else:
-                    pass #raise Exception
+                    pass
                     
-                if (re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', config['settings']['accent'])):   #Check if the default color is a hex value
+                if check_hex_color(config['settings']['accent']):
                     self.activeColor = config['settings']['accent']
                 else:
-                    pass #raise Exception
+                    pass
                 
                 #---Default directories---
                 self.defaultDirectory = config['settings']['dir']
@@ -468,136 +419,126 @@ class myGUI:
                     self.defaultTab = 6
                 else:
                     self.defaultTab = 0
-                    #raise Exception
                 
                 #---Check if changing tab with scrolling is allowed---
-                self.defaultScroll = int(config['settings']['scroll'])
-                if (self.defaultScroll != 0 and self.defaultScroll != 1):
-                    pass #raise Exception
+                self._defaultScroll = convert_to_type(config['settings']['scroll'], 0)
+                if self._defaultScroll != 0 and self._defaultScroll != 1:
+                    self._defaultScroll = 0
                 
                 #---Check if the error structure should be propagated throughout the program---
-                try:
-                    self.defaultPropagate = int(config['settings']['propagate'])
-                except Exception:
-                    pass
-                if (self.defaultPropagate != 0 and self.defaultPropagate != 1):
-                    pass #raise Exception
+                self.defaultPropagate = convert_to_type(config['settings']['propagate'], 0)
+                if self.defaultPropagate != 0 and self.defaultPropagate != 1:
+                    self.defaultPropagate = 0
                 
                 self.defaultFormulaDirectory = config['settings']['formulaDir']
                 
                 #---Check if number of comment lines should be detected---
-                self.detectCommentsDefault = int(config['input']['detect'])
-                if (self.detectCommentsDefault != 0 and self.detectCommentsDefault != 1):       #Value must be true or false
-                    pass #raise Exception
+                self.detectCommentsDefault = convert_to_type(config['input']['detect'], 1)
+                if self.detectCommentsDefault != 0 and self.detectCommentsDefault != 1:       #Value must be true or false
+                    self.detectCommentsDefault = 1
                 
                 #---Default number of comment lines---
                 self.commentsDefault = int(config['input']['comments'])
                 if (self.commentsDefault < 0):      #If the number of comments is negative, that's bad
-                    pass #raise Exception
+                    self.commentsDefault = 0
                 
                 #---Default delimiter---
-                if (config['input']['delimiter'] == "Tab" or config['input']['delimiter'] == "Space" or config['input']['delimiter'] == ";" or config['input']['delimiter'] == "," or config['input']['delimiter'] == "|" or config['input']['delimiter'] == ":"):
+                if config['input']['delimiter'] in ('Tab', 'Space', ';', ',', '|', ':'):
                     self.delimiterDefault = config['input']['delimiter']
                 else:
-                    pass #raise Exception
+                    self.delimiterDefault = ','
                 
                 #---Whether to ask on exit from the input tab---
-                iEA = int(config['input']['askInputExit'])
-                if (iEA != 0 and iEA != 1):     #Value must be true or false
-                    pass #raise Exception
+                iEA = convert_to_type(config['input']['askInputExit'], 1)
+                if iEA != 0 and iEA != 1:     #Value must be true or false
+                    iEA = 1
                 self.inputExitAlert = iEA
                 
                 #---Number of Monte Carlo simulations---
-                self.MCDefault = int(config['model']['mc'])
-                if (self.MCDefault < 1):        #If the number of Monte Carlo simulations is negative, that's bad
-                    pass #raise Exception
+                self.MCDefault = convert_to_type(config['model']['mc'], 1)
+                if self.MCDefault < 1:        #If the number of Monte Carlo simulations is negative, that's bad
+                    self.MCDefault = 1
                 
                 #---Default fit type
                 if (config['model']['fit'] == "Complex" or config['model']['fit'] == "Real" or config['model']['fit'] == "Imaginary"):
                     self.fitDefault = config['model']['fit']
                 else:
-                    self.fitDefault = "Complex" #raise Exception
+                    self.fitDefault = "Complex"
                 
                 #---Default weighting---
                 if (config['model']['weight'] == "None" or config['model']['weight'] == "Modulus" or config['model']['weight'] == "Proportional" or config['model']['weight'] == "Error model"):
                     self.weightDefault = config['model']['weight']
                 else:
-                    self.weightDefault = "Modulus" #raise Exception
+                    self.weightDefault = "Modulus"
                 
                 #---Default ellipse color---
-                if (re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', config['model']['ellipse'])):   #Check if the default color is a hex value
-                    self.ellipseColor = config['model']['ellipse']
+                if check_hex_color(config['model']['ellipse']):   #Check if the default color is a hex value
+                    self._ellipseColor = config['model']['ellipse']
                 else:
-                    pass #raise Exception
+                    self._ellipseColor = 'red'
                 
                 #---Whether frequency range should be kept on loading a new file
-                self.freqLoad = int(config['model']['freqLoad'])
+                self.freqLoad = convert_to_type(config['model']['freqLoad'], 0)
                 if (self.freqLoad != 0 and self.freqLoad != 1):
                     self.freqLoad = 0
-                    #raise Exception
                 
                 #---Whether "undo" should undo a change in frequency range
-                self.freqUndo = int(config['model']['freqUndo'])
+                self.freqUndo = convert_to_type(config['model']['freqUndo'], 0)
                 if (self.freqUndo != 0 and self.freqUndo != 1):
                     self.freqUndo = 0
-                    #raise Exception
                 
                 #---Whether detrending should be used
                 self.detrendDefault = config['error']['detrend']
                 if (self.detrendDefault != "Off" and self.detrendDefault != "On"):
                     self.detrendDefault = "Off"
-                    #raise Exception
                 
                 #---Default error structure options---
-                self.errorAlphaDefault = int(config['error']['alphaError'])
+                self.errorAlphaDefault = convert_to_type(config['error']['alphaError'], 0)
                 if (self.errorAlphaDefault != 0 and self.errorAlphaDefault != 1):
                     self.errorAlphaDefault = 0
-                    #raise Exception
-                self.errorBetaDefault = int(config['error']['betaError'])
+                   
+                self.errorBetaDefault = convert_to_type(config['error']['betaError'], 0)
                 if (self.errorBetaDefault != 0 and self.errorBetaDefault != 1):
                     self.errorBetaDefault = 0
-                    #raise Exception
-                self.errorReDefault = int(config['error']['reError'])
+                   
+                self.errorReDefault = convert_to_type(config['error']['reError'], 0)
                 if (self.errorReDefault != 0 and self.errorREDefault != 1):
                     self.errorReDefault = 0
-                    #raise Exception
-                self.errorGammaDefault = int(config['error']['gammaError'])
+                   
+                self.errorGammaDefault = convert_to_type(config['error']['gammaError'], 1)
                 if (self.errorGammaDefault != 0 and self.errorGammaDefault != 1):
                     self.errorGammaDefault = 1
-                    #raise Exception
-                self.errorDeltaDefault = int(config['error']['deltaError'])
+                   
+                self.errorDeltaDefault = convert_to_type(config['error']['deltaError'], 1)
                 if (self.errorDeltaDefault != 0 and self.errorDeltaDefault != 1):
                     self.errorDeltaDefault = 1
-                    #raise Exception
                 
                 #---The default error weighting---
-                if (config['error']['errorWeighting'] == "None" or config['error']['errorWeighting'] == "Variance"):
+                if config['error']['errorWeighting'] == "None" or config['error']['errorWeighting'] == "Variance":
                     self.errorWeightingDefault = config['error']['errorWeighting']
                 else:
-                    pass #raise Exception
+                    self.errorWeightingDefault = 'Variance'
                 
                 #---The default moving average for error---
-                if (config['error']['errorMA'] == "None" or config['error']['errorMA'] == "3 point" or config['error']['errorMA'] == "5 point"):
+                if config['error']['errorMA'] == "None" or config['error']['errorMA'] == "3 point" or config['error']['errorMA'] == "5 point":
                     self.errorMADefault = config['error']['errorMA']
                 else:
-                    pass #raise Exception
+                    self.errorMADefault = '5 point'
                 
                 #---Default noise---
-                self.alphaDefault = float(config['model']['alpha'])
-                if (self.alphaDefault < 0):     #If the default assumed noise is negative, that's bad
-                    self.alphaDefault = 1
-                    #raise Exception
+                self.alphaDefault = convert_to_type(config['model']['alpha'], 0.0, float)
+                if self.alphaDefault < 0:     #If the default assumed noise is negative, that's bad
+                    self.alphaDefault = 0
                 
                 #---Whether to ask on exiting from the custom formula tab if the formula is unsaved---
-                aCE = int(config['custom']['askCustomExit'])
-                if (aCE != 0 and aCE != 1):
-                    pass #raise Exception
+                aCE = convert_to_type(config['custom']['askCustomExit'], 1)
+                if aCE != 0 and aCE != 1:
+                    aCE = 1
                 self.customFormulaExitAlert = aCE
                 
-                self.freqLoadCustom = int(config['custom']['freqLoadCustom'])
+                self.freqLoadCustom = convert_to_type(config['custom']['freqLoadCustom'], 0)
                 if (self.freqLoadCustom != 0 and self.freqLoadCustom != 1):
                     self.freqLoadCustom = 0
-                    #raise Exception
                 
                 #---The default import path list---
                 self.defaultImports = config['custom']['imports'].split("*")
@@ -606,35 +547,35 @@ class myGUI:
                 pass              #Ignore the error
     
     def interpretArgs(self, args):
-        if (len(args) > 1):         #If there's an argument coming in (the first argument is always the file name)
-            if (len(args) > 2):     #If there's multiple arguments
+        if len(args) > 1:         #If there's an argument coming in (the first argument is always the file name)
+            if len(args) > 2:     #If there's multiple arguments
                 try:
                     whatExt = ""    #For the extension of an incoming file
                     for i in range(1, len(args)):
                         if (not os.path.exists(args[i])):
                             raise Exception
-                        fname, fext = os.path.splitext(args[i])                 #Split the argument into its name and extension
-                        if (fext != ".mmresiduals" and fext != ".mmerrors"):    #Check if an input file isn't a residual or error file
+                        fext = os.path.splitext(args[i])[-1]                 #Split the argument into its name and extension
+                        if fext != ".mmresiduals" and fext != ".mmerrors":   #Check if an input file isn't a residual or error file
                             messagebox.showerror("File error", "Error: 2\nTo open multiple files, all of them must be either .mmresiduals or .mmerrors.")
                             self.residualsFileList.clear()
                             self.errorsFileList.clear()
                             break
-                        elif (whatExt != "" and whatExt != fext):                  #Check if the extra files don't match the previous files' extensions
+                        elif whatExt != "" and whatExt != fext:              #Check if the extra files don't match the previous files' extensions
                             messagebox.showerror("File error", "Error: 2\nTo open multiple files, all of them must be either .mmresiduals or .mmerrors.")  
                             self.residualsFileList.clear()
                             self.errorsFileList.clear()
                             break
-                        elif (fext == ".mmresiduals"):
+                        elif fext == ".mmresiduals":
                             self.residualsFileList.append(args[i])
                             whatExt = fext
-                        elif (fext == ".mmerrors"):
+                        elif fext == ".mmerrors":
                             self.errorsFileList.append(args[i])
                             whatExt = fext
                 except Exception:
                     messagebox.showerror("File error", "Error: 3\nError opening files")
             else:       #If there's only one input file
                 try:    #Check if the file exists
-                    if (not os.path.exists(args[1])):
+                    if not os.path.exists(args[1]):
                         raise Exception
                     self.argFile = args[1]
                 except Exception:
@@ -674,19 +615,19 @@ class myGUI:
             if (event.delta > 0):
                 self.settingsDown(None)
         
-        if (overTab == 0):
+        if overTab == 0:
             self.fileOpen.configure(image=self.imgFile2 if self.currentTab != 0 else self.imgFile4)
-        elif (overTab == 1):
+        elif overTab == 1:
             self.runModel.configure(image=self.imgModel2 if self.currentTab != 1 else self.imgModel4)
-        elif (overTab == 2):
+        elif overTab == 2:
             self.errorFileLabel.configure(image=self.imgErrorFile2 if self.currentTab != 2 else self.imgErrorFile4)
-        elif (overTab == 3):
+        elif overTab == 3:
             self.errorLabel.configure(image=self.imgError2 if self.currentTab != 3 else self.imgError4)
-        elif (overTab == 4):
+        elif overTab == 4:
             self.settingsLabel.configure(image=self.imgSettings2 if self.currentTab != 4 else self.imgSettings4)
-        elif (overTab == 5):
+        elif overTab == 5:
             self.helpLabel.configure(image=self.imgHelp2 if self.currentTab != 5 else self.imgHelp4)
-        elif (overTab == 6):
+        elif overTab == 6:
             self.formulaLabel.configure(image=self.imgFormula2 if self.currentTab != 6 else self.imgFormula4)
     
     #---The functions for what happens when one of the links in the navigation pane is clicked--- 
@@ -700,19 +641,19 @@ class myGUI:
         self.errorLabel.configure(image=self.imgError)
         self.settingsLabel.configure(image=self.imgSettings)
         self.formulaLabel.configure(image=self.imgFormula)
-        self.runCanvas.configure(background=self.backgroundColor)
-        self.errorFileCanvas.configure(background=self.backgroundColor)
-        self.errorCanvas.configure(background=self.backgroundColor)
-        self.helpCanvas.configure(background=self.backgroundColor)
-        self.settingsCanvas.configure(background=self.backgroundColor)
-        self.formulaCanvas.configure(background=self.backgroundColor)
-        self.help_frame.grid_remove()                                #Remove the other tabs
+        self.runCanvas.configure(background=self._backgroundColor)
+        self.errorFileCanvas.configure(background=self._backgroundColor)
+        self.errorCanvas.configure(background=self._backgroundColor)
+        self.helpCanvas.configure(background=self._backgroundColor)
+        self.settingsCanvas.configure(background=self._backgroundColor)
+        self.formulaCanvas.configure(background=self._backgroundColor)
+        self.help_frame.grid_remove()                                           #Remove the other tabs
         self.model_frame.grid_remove()
         self.error_file_frame.grid_remove()
         self.error_frame.grid_remove()
         self.settings_frame.grid_remove()
         self.formula_frame.grid_remove()
-        self.frame_label.configure(text="File Tools and Conversion")        #Change the title
+        self.frame_label.configure(text="File Tools and Conversion")            #Change the title
         self.input_frame.grid(row=1, column=2, sticky="NW", padx=20, pady=20)   #Grid the new tab
         self.error_file_frame.unbindIt()
         self.settings_frame.unbindIt()
@@ -732,12 +673,12 @@ class myGUI:
         self.errorLabel.configure(image=self.imgError)
         self.settingsLabel.configure(image=self.imgSettings)
         self.formulaLabel.configure(image=self.imgFormula)
-        self.inputCanvas.configure(background=self.backgroundColor)
-        self.errorFileCanvas.configure(background=self.backgroundColor)
-        self.errorCanvas.configure(background=self.backgroundColor)
-        self.helpCanvas.configure(background=self.backgroundColor)
-        self.settingsCanvas.configure(background=self.backgroundColor)
-        self.formulaCanvas.configure(background=self.backgroundColor)
+        self.inputCanvas.configure(background=self._backgroundColor)
+        self.errorFileCanvas.configure(background=self._backgroundColor)
+        self.errorCanvas.configure(background=self._backgroundColor)
+        self.helpCanvas.configure(background=self._backgroundColor)
+        self.settingsCanvas.configure(background=self._backgroundColor)
+        self.formulaCanvas.configure(background=self._backgroundColor)
         self.runModel.focus_get()
         self.input_frame.grid_remove()
         self.error_file_frame.grid_remove()
@@ -764,12 +705,12 @@ class myGUI:
         self.errorLabel.configure(image=self.imgError)
         self.settingsLabel.configure(image=self.imgSettings)
         self.formulaLabel.configure(image=self.imgFormula)
-        self.runCanvas.configure(background=self.backgroundColor)
-        self.inputCanvas.configure(background=self.backgroundColor)
-        self.errorCanvas.configure(background=self.backgroundColor)
-        self.helpCanvas.configure(background=self.backgroundColor)
-        self.settingsCanvas.configure(background=self.backgroundColor)
-        self.formulaCanvas.configure(background=self.backgroundColor)
+        self.runCanvas.configure(background=self._backgroundColor)
+        self.inputCanvas.configure(background=self._backgroundColor)
+        self.errorCanvas.configure(background=self._backgroundColor)
+        self.helpCanvas.configure(background=self._backgroundColor)
+        self.settingsCanvas.configure(background=self._backgroundColor)
+        self.formulaCanvas.configure(background=self._backgroundColor)
         self.errorFileLabel.focus_get()
         self.input_frame.grid_remove()
         self.model_frame.grid_remove()
@@ -796,12 +737,12 @@ class myGUI:
         self.errorCanvas.configure(background="#0066FF")
         self.settingsLabel.configure(image=self.imgSettings)
         self.formulaLabel.configure(image=self.imgFormula)
-        self.runCanvas.configure(background=self.backgroundColor)
-        self.errorFileCanvas.configure(background=self.backgroundColor)
-        self.inputCanvas.configure(background=self.backgroundColor)
-        self.helpCanvas.configure(background=self.backgroundColor)
-        self.settingsCanvas.configure(background=self.backgroundColor)
-        self.formulaCanvas.configure(background=self.backgroundColor)
+        self.runCanvas.configure(background=self._backgroundColor)
+        self.errorFileCanvas.configure(background=self._backgroundColor)
+        self.inputCanvas.configure(background=self._backgroundColor)
+        self.helpCanvas.configure(background=self._backgroundColor)
+        self.settingsCanvas.configure(background=self._backgroundColor)
+        self.formulaCanvas.configure(background=self._backgroundColor)
         self.input_frame.grid_remove()
         self.model_frame.grid_remove()
         self.error_file_frame.grid_remove()
@@ -827,12 +768,12 @@ class myGUI:
         self.settingsLabel.configure(image=self.imgSettings)
         self.formulaLabel.configure(image=self.imgFormula3)
         self.formulaCanvas.configure(background="#0066FF")
-        self.runCanvas.configure(background=self.backgroundColor)
-        self.errorFileCanvas.configure(background=self.backgroundColor)
-        self.errorCanvas.configure(background=self.backgroundColor)
-        self.helpCanvas.configure(background=self.backgroundColor)
-        self.settingsCanvas.configure(background=self.backgroundColor)
-        self.inputCanvas.configure(background=self.backgroundColor)
+        self.runCanvas.configure(background=self._backgroundColor)
+        self.errorFileCanvas.configure(background=self._backgroundColor)
+        self.errorCanvas.configure(background=self._backgroundColor)
+        self.helpCanvas.configure(background=self._backgroundColor)
+        self.settingsCanvas.configure(background=self._backgroundColor)
+        self.inputCanvas.configure(background=self._backgroundColor)
         self.input_frame.grid_remove()
         self.model_frame.grid_remove()
         self.error_file_frame.grid_remove()
@@ -850,7 +791,7 @@ class myGUI:
         
     def settingsDown(self, event):
         self.currentTab = 4
-        self.fileOpen.configure(background=self.backgroundColor)
+        self.fileOpen.configure(background=self._backgroundColor)
         self.fileOpen.configure(image=self.imgFile)
         self.runModel.configure(image=self.imgModel)
         self.errorFileLabel.configure(image=self.imgErrorFile)
@@ -859,12 +800,12 @@ class myGUI:
         self.settingsLabel.configure(image=self.imgSettings3)
         self.settingsCanvas.configure(background="#0066FF")
         self.formulaLabel.configure(image=self.imgFormula)
-        self.runCanvas.configure(background=self.backgroundColor)
-        self.errorFileCanvas.configure(background=self.backgroundColor)
-        self.errorCanvas.configure(background=self.backgroundColor)
-        self.helpCanvas.configure(background=self.backgroundColor)
-        self.inputCanvas.configure(background=self.backgroundColor)
-        self.formulaCanvas.configure(background=self.backgroundColor)
+        self.runCanvas.configure(background=self._backgroundColor)
+        self.errorFileCanvas.configure(background=self._backgroundColor)
+        self.errorCanvas.configure(background=self._backgroundColor)
+        self.helpCanvas.configure(background=self._backgroundColor)
+        self.inputCanvas.configure(background=self._backgroundColor)
+        self.formulaCanvas.configure(background=self._backgroundColor)
         self.input_frame.grid_remove()
         self.model_frame.grid_remove()
         self.error_file_frame.grid_remove()
@@ -890,12 +831,12 @@ class myGUI:
         self.errorLabel.configure(image=self.imgError)
         self.settingsLabel.configure(image=self.imgSettings)
         self.formulaLabel.configure(image=self.imgFormula)
-        self.runCanvas.configure(background=self.backgroundColor)
-        self.errorFileCanvas.configure(background=self.backgroundColor)
-        self.errorCanvas.configure(background=self.backgroundColor)
-        self.inputCanvas.configure(background=self.backgroundColor)
-        self.settingsCanvas.configure(background=self.backgroundColor)
-        self.formulaCanvas.configure(background=self.backgroundColor)
+        self.runCanvas.configure(background=self._backgroundColor)
+        self.errorFileCanvas.configure(background=self._backgroundColor)
+        self.errorCanvas.configure(background=self._backgroundColor)
+        self.inputCanvas.configure(background=self._backgroundColor)
+        self.settingsCanvas.configure(background=self._backgroundColor)
+        self.formulaCanvas.configure(background=self._backgroundColor)
         self.helpLabel.focus_get()
         self.input_frame.grid_remove()
         self.model_frame.grid_remove()
@@ -966,12 +907,12 @@ class myGUI:
         self.errorLabel.configure(image=self.imgError)
         self.settingsLabel.configure(image=self.imgSettings)
         self.formulaLabel.configure(image=self.imgFormula)
-        self.runCanvas.configure(background=self.backgroundColor)
-        self.errorFileCanvas.configure(background=self.backgroundColor)
-        self.errorCanvas.configure(background=self.backgroundColor)
-        self.helpCanvas.configure(background=self.backgroundColor)
-        self.settingsCanvas.configure(background=self.backgroundColor)
-        self.formulaCanvas.configure(background=self.backgroundColor)
+        self.runCanvas.configure(background=self._backgroundColor)
+        self.errorFileCanvas.configure(background=self._backgroundColor)
+        self.errorCanvas.configure(background=self._backgroundColor)
+        self.helpCanvas.configure(background=self._backgroundColor)
+        self.settingsCanvas.configure(background=self._backgroundColor)
+        self.formulaCanvas.configure(background=self._backgroundColor)
         self.help_frame.grid_remove()
         self.model_frame.grid_remove()
         self.error_file_frame.grid_remove()
@@ -993,12 +934,12 @@ class myGUI:
         self.settingsLabel.configure(image=self.imgSettings)
         self.formulaLabel.configure(image=self.imgFormula)
         self.runCanvas.configure(background="#0066FF")
-        self.helpCanvas.configure(background=self.backgroundColor)
-        self.errorFileCanvas.configure(background=self.backgroundColor)
-        self.errorCanvas.configure(background=self.backgroundColor)
-        self.inputCanvas.configure(background=self.backgroundColor)
-        self.settingsCanvas.configure(background=self.backgroundColor)
-        self.formulaCanvas.configure(background=self.backgroundColor)
+        self.helpCanvas.configure(background=self._backgroundColor)
+        self.errorFileCanvas.configure(background=self._backgroundColor)
+        self.errorCanvas.configure(background=self._backgroundColor)
+        self.inputCanvas.configure(background=self._backgroundColor)
+        self.settingsCanvas.configure(background=self._backgroundColor)
+        self.formulaCanvas.configure(background=self._backgroundColor)
         self.input_frame.grid_remove()
         self.help_frame.grid_remove()
         self.settings_frame.grid_remove()
@@ -1020,12 +961,12 @@ class myGUI:
         self.settingsLabel.configure(image=self.imgSettings)
         self.formulaLabel.configure(image=self.imgFormula)
         self.runCanvas.configure(background="#0066FF")
-        self.helpCanvas.configure(background=self.backgroundColor)
-        self.errorFileCanvas.configure(background=self.backgroundColor)
-        self.errorCanvas.configure(background=self.backgroundColor)
-        self.inputCanvas.configure(background=self.backgroundColor)
-        self.settingsCanvas.configure(background=self.backgroundColor)
-        self.formulaCanvas.configure(background=self.backgroundColor)
+        self.helpCanvas.configure(background=self._backgroundColor)
+        self.errorFileCanvas.configure(background=self._backgroundColor)
+        self.errorCanvas.configure(background=self._backgroundColor)
+        self.inputCanvas.configure(background=self._backgroundColor)
+        self.settingsCanvas.configure(background=self._backgroundColor)
+        self.formulaCanvas.configure(background=self._backgroundColor)
         self.runModel.focus_get()
         self.input_frame.grid_remove()
         self.help_frame.grid_remove()
@@ -1048,12 +989,12 @@ class myGUI:
         self.errorLabel.configure(image=self.imgError)
         self.settingsLabel.configure(image=self.imgSettings)
         self.formulaLabel.configure(image=self.imgFormula)
-        self.runCanvas.configure(background=self.backgroundColor)
-        self.helpCanvas.configure(background=self.backgroundColor)
-        self.errorCanvas.configure(background=self.backgroundColor)
-        self.inputCanvas.configure(background=self.backgroundColor)
-        self.settingsCanvas.configure(background=self.backgroundColor)
-        self.formulaCanvas.configure(background=self.backgroundColor)
+        self.runCanvas.configure(background=self._backgroundColor)
+        self.helpCanvas.configure(background=self._backgroundColor)
+        self.errorCanvas.configure(background=self._backgroundColor)
+        self.inputCanvas.configure(background=self._backgroundColor)
+        self.settingsCanvas.configure(background=self._backgroundColor)
+        self.formulaCanvas.configure(background=self._backgroundColor)
         self.model_frame.grid_remove()
         self.input_frame.grid_remove()
         self.help_frame.grid_remove()
@@ -1075,12 +1016,12 @@ class myGUI:
         self.errorLabel.configure(image=self.imgError)
         self.settingsLabel.configure(image=self.imgSettings)
         self.formulaLabel.configure(image=self.imgFormula)
-        self.runCanvas.configure(background=self.backgroundColor)
-        self.helpCanvas.configure(background=self.backgroundColor)
-        self.errorCanvas.configure(background=self.backgroundColor)
-        self.inputCanvas.configure(background=self.backgroundColor)
-        self.settingsCanvas.configure(background=self.backgroundColor)
-        self.formulaCanvas.configure(background=self.backgroundColor)
+        self.runCanvas.configure(background=self._backgroundColor)
+        self.helpCanvas.configure(background=self._backgroundColor)
+        self.errorCanvas.configure(background=self._backgroundColor)
+        self.inputCanvas.configure(background=self._backgroundColor)
+        self.settingsCanvas.configure(background=self._backgroundColor)
+        self.formulaCanvas.configure(background=self._backgroundColor)
         self.model_frame.grid_remove()
         self.input_frame.grid_remove()
         self.help_frame.grid_remove()
@@ -1102,12 +1043,12 @@ class myGUI:
         self.errorCanvas.configure(background="#0066FF")
         self.settingsLabel.configure(image=self.imgSettings)
         self.formulaLabel.configure(image=self.imgFormula)
-        self.runCanvas.configure(background=self.backgroundColor)
-        self.errorFileCanvas.configure(background=self.backgroundColor)
-        self.helpCanvas.configure(background=self.backgroundColor)
-        self.inputCanvas.configure(background=self.backgroundColor)
-        self.settingsCanvas.configure(background=self.backgroundColor)
-        self.formulaCanvas.configure(background=self.backgroundColor)
+        self.runCanvas.configure(background=self._backgroundColor)
+        self.errorFileCanvas.configure(background=self._backgroundColor)
+        self.helpCanvas.configure(background=self._backgroundColor)
+        self.inputCanvas.configure(background=self._backgroundColor)
+        self.settingsCanvas.configure(background=self._backgroundColor)
+        self.formulaCanvas.configure(background=self._backgroundColor)
         self.model_frame.grid_remove()
         self.input_frame.grid_remove()
         self.help_frame.grid_remove()
@@ -1129,12 +1070,12 @@ class myGUI:
         self.errorCanvas.configure(background="#0066FF")
         self.settingsLabel.configure(image=self.imgSettings)
         self.formulaLabel.configure(image=self.imgFormula)
-        self.runCanvas.configure(background=self.backgroundColor)
-        self.errorFileCanvas.configure(background=self.backgroundColor)
-        self.helpCanvas.configure(background=self.backgroundColor)
-        self.inputCanvas.configure(background=self.backgroundColor)
-        self.settingsCanvas.configure(background=self.backgroundColor)
-        self.formulaCanvas.configure(background=self.backgroundColor)
+        self.runCanvas.configure(background=self._backgroundColor)
+        self.errorFileCanvas.configure(background=self._backgroundColor)
+        self.helpCanvas.configure(background=self._backgroundColor)
+        self.inputCanvas.configure(background=self._backgroundColor)
+        self.settingsCanvas.configure(background=self._backgroundColor)
+        self.formulaCanvas.configure(background=self._backgroundColor)
         self.model_frame.grid_remove()
         self.input_frame.grid_remove()
         self.help_frame.grid_remove()
@@ -1156,12 +1097,12 @@ class myGUI:
         self.settingsLabel.configure(image=self.imgSettings)
         self.formulaLabel.configure(image=self.imgFormula3)
         self.formulaCanvas.configure(background="#0066FF")
-        self.runCanvas.configure(background=self.backgroundColor)
-        self.errorFileCanvas.configure(background=self.backgroundColor)
-        self.errorCanvas.configure(background=self.backgroundColor)
-        self.inputCanvas.configure(background=self.backgroundColor)
-        self.settingsCanvas.configure(background=self.backgroundColor)
-        self.helpCanvas.configure(background=self.backgroundColor)
+        self.runCanvas.configure(background=self._backgroundColor)
+        self.errorFileCanvas.configure(background=self._backgroundColor)
+        self.errorCanvas.configure(background=self._backgroundColor)
+        self.inputCanvas.configure(background=self._backgroundColor)
+        self.settingsCanvas.configure(background=self._backgroundColor)
+        self.helpCanvas.configure(background=self._backgroundColor)
         self.input_frame.grid_remove()
         self.model_frame.grid_remove()
         self.error_file_frame.grid_remove()
@@ -1182,12 +1123,12 @@ class myGUI:
         self.settingsLabel.configure(image=self.imgSettings)
         self.formulaLabel.configure(image=self.imgFormula3)
         self.formulaCanvas.configure(background="#0066FF")
-        self.runCanvas.configure(background=self.backgroundColor)
-        self.errorFileCanvas.configure(background=self.backgroundColor)
-        self.errorCanvas.configure(background=self.backgroundColor)
-        self.inputCanvas.configure(background=self.backgroundColor)
-        self.settingsCanvas.configure(background=self.backgroundColor)
-        self.helpCanvas.configure(background=self.backgroundColor)
+        self.runCanvas.configure(background=self._backgroundColor)
+        self.errorFileCanvas.configure(background=self._backgroundColor)
+        self.errorCanvas.configure(background=self._backgroundColor)
+        self.inputCanvas.configure(background=self._backgroundColor)
+        self.settingsCanvas.configure(background=self._backgroundColor)
+        self.helpCanvas.configure(background=self._backgroundColor)
         self.input_frame.grid_remove()
         self.model_frame.grid_remove()
         self.error_file_frame.grid_remove()
@@ -1200,367 +1141,184 @@ class myGUI:
     
     #---To check if an "Are you sure you want to close" prompt is needed---
     def canCloseInput(self):
-        if (self.currentTab != 0):  #If the current tab isn't the input tab, don't ask
+        if self.currentTab != 0:  #If the current tab isn't the input tab, don't ask
             return True
         else:
-            if (self.input_frame.needToSave() and self.inputExitAlert):             #If there is a need to save and alerting is turned on
+            if self.input_frame.saveNeeded and self.inputExitAlert:             #If there is a need to save and alerting is turned on
                 return False
             else:
                 return True
     
     def canCloseCustom(self):
-        if (self.currentTab != 6):  #If the current tab isn't the custom formula tab, don't ask
+        if self.currentTab != 6:  #If the current tab isn't the custom formula tab, don't ask
             return True
         else:
-            if (self.formula_frame.needToSave() and self.customFormulaExitAlert):   #If there is a need to save and alerting is turned on
+            if self.formula_frame.saveNeeded and self.customFormulaExitAlert:   #If there is a need to save and alerting is turned on
                 return False
             else:
                 return True
     
+    def changeParam(self, which, from_, val):
+        """
+        If propagation of error structure values is turned on, this will ensure typing in one box changes the corresponding boxes in the proper places
+        
+        Parameters
+        ----------
+        which : str
+            Which parameter is being changed, either "Alpha", "Beta", "BetaRe", "Gamma", or "Delta"
+        from_ : str
+            Which tab it's being changed from, either "auto", "model", or "custom"
+        val : str
+            New parameter value
+        """
+        if self.defaultPropagate:
+            if from_ == "auto" or from_ == "model":
+                state = self.formula_frame.errorAlphaEntry.state()
+                which = getattr(self.formula_frame, 'error{}Entry'.format(which))
+                which.configure(state="normal")
+                which.delete(0, tk.END)
+                which.insert(0, val)
+                which.configure(state=state)
+            if from_ == "auto" or from_ == "custom":
+                state = self.model_frame.errorAlphaEntry.state()
+                which = getattr(self.model_frame, 'error{}Entry'.format(which))
+                which.configure(state="normal")
+                which.delete(0, tk.END)
+                which.insert(0, val)
+                which.configure(state=state)
+            if from_ == "model" or from_ == "custom":
+                state = self.model_frame.errorAlphaEntryAuto.state()
+                which = getattr(self.model_frame, 'error{}EntryAuto'.format(which))
+                which.configure(state="normal")
+                which.delete(0, tk.END)
+                which.insert(0, val)
+                which.configure(state=state)
+
     #---Get display width and/or height---
     def getScreenWidth(self):
         return self.master.winfo_screenwidth()
     
     def getScreenHeight(self):
         return self.master.winfo_screenheight()
+
+    @property
+    def defaultScroll(self):
+        return self._defaultScroll
     
-    #---Getters and setters for various settings---    
-    def getTheme(self):
-        return self.theme
-    
-    def getBarColor(self):
-        return self.backgroundColor
-    
-    def getAccentColor(self):
-        return self.activeColor
-    
-    def getHighlightColor(self):
-        return self.highlightColor
-    
-    def getDetectComments(self):
-        return self.detectCommentsDefault
-    
-    def getComments(self):
-        return self.commentsDefault
-    
-    def getDetectDelimiter(self):
-        return self.detectDelimiterDefault
-    
-    def getDelimiter(self):
-        return self.delimiterDefault
-    
-    def getMC(self):
-        return self.MCDefault
-    
-    def getFit(self):
-        return self.fitDefault
-    
-    def getWeight(self):
-        return self.weightDefault
-    
-    def getAlpha(self):
-        return self.alphaDefault
-    
-    def getErrorAlpha(self):
-        return self.errorAlphaDefault
-    
-    def getErrorBeta(self):
-        return self.errorBetaDefault
-    
-    def getErrorRe(self):
-        return self.errorReDefault
-    
-    def getErrorGamma(self):
-        return self.errorGammaDefault
-    
-    def getErrorDelta(self):
-        return self.errorDeltaDefault
-    
-    def getErrorWeighting(self):
-        return self.errorWeightingDefault
-    
-    def getDetrend(self):
-        return self.detrendDefault
-    
-    def getMovingAverage(self):
-        return self.errorMADefault
-    
-    def getEllipseColor(self):
-        return self.ellipseColor
-    
-    def getCurrentDirectory(self):
-        return self.currentDirectory
-    
-    def setCurrentDirectory(self, directory):
-        self.currentDirectory = directory
-    
-    def getDefaultDirectory(self):
-        return self.defaultDirectory
-    
-    def setDefaultDirectory(self, directory):
-        self.defaultDirectory = directory
-    
-    def getDefaultFormulaDirectory(self):
-        return self.defaultFormulaDirectory
-    
-    def setDefaultFormulaDirectory(self, directory):
-        self.defaultFormulaDirectory = directory
-    
-    def getInputExitAlert(self):
-        return self.inputExitAlert
-    
-    def setInputExitAlert(self, val):
-        self.inputExitAlert = val
-    
-    def getCustomFormulaExitAlert(self):
-        return self.customFormulaExitAlert
-    
-    def setCustomFormulaExitAlert(self, val):
-        self.customFormulaExitAlert = val
-    
-    def getDefaultTab(self):
-        return self.defaultTab
-    
-    def setFreqLoad(self, val):
-        self.freqLoad = val
-    
-    def getFreqLoad(self):
-        return self.freqLoad
-    
-    def setFreqUndo(self, val):
-        self.freqUndo = val
-        
-    def getFreqUndo(self):
-        return self.freqUndo
-    
-    def setFreqLoadCustom(self, val):
-        self.freqLoadCustom = val
-    
-    def getFreqLoadCustom(self):
-        return self.freqLoadCustom
-    
-    def setDefaultImports(self, val):
-        self.defaultImports = val
-    
-    def getDefaultImports(self):
-        return self.defaultImports
-    
-    def setScroll(self, val):
-        if (val == 1):
-            self.left_frame.bind("<MouseWheel>", lambda e: self.on_mouse_wheel(e, -1))
-            self.fileOpen.bind("<MouseWheel>", lambda e: self.on_mouse_wheel(e, 0))
-            self.runModel.bind("<MouseWheel>", lambda e: self.on_mouse_wheel(e, 1))
-            self.errorFileLabel.bind("<MouseWheel>", lambda e: self.on_mouse_wheel(e, 2))
-            self.errorLabel.bind("<MouseWheel>", lambda e: self.on_mouse_wheel(e, 3))
-            self.formulaLabel.bind("<MouseWheel>", lambda e: self.on_mouse_wheel(e, 6))
-            self.settingsLabel.bind("<MouseWheel>", lambda e: self.on_mouse_wheel(e, 4))
-            self.helpLabel.bind("<MouseWheel>", lambda e: self.on_mouse_wheel(e, 5))
-        else:
-            self.left_frame.unbind("<MouseWheel>")
-            self.fileOpen.unbind("<MouseWheel>")
-            self.runModel.unbind("<MouseWheel>")
-            self.errorFileLabel.unbind("<MouseWheel>")
-            self.errorLabel.unbind("<MouseWheel>")
-            self.formulaLabel.unbind("<MouseWheel>")
-            self.settingsLabel.unbind("<MouseWheel>")
-            self.helpLabel.unbind("<MouseWheel>")
-        self.defaultScroll = val
-    
-    def getScroll(self):
-        return self.defaultScroll
-    
-    def setPropagate(self, val):
-        self.defaultPropagate = val
-    
-    def getPropagate(self):
-        return self.defaultPropagate
-    
-    #---If propagation of error structure values is turned on, these function will ensure typing in one box changes the corresponding boxes in the proper places---
-    def changeAlpha(self, from_, val):
-        if (self.defaultPropagate):
-            if (from_ == "auto" or from_ == "model"):
-                custom_state = self.formula_frame.errorAlphaEntry.state()
-                self.formula_frame.errorAlphaEntry.configure(state = "normal")
-                self.formula_frame.errorAlphaEntry.delete(0, tk.END)
-                self.formula_frame.errorAlphaEntry.insert(0, val)
-                self.formula_frame.errorAlphaEntry.configure(state = custom_state)
-            if (from_ == "auto" or from_ == "custom"):
-                model_state = self.model_frame.errorAlphaEntry.state()
-                self.model_frame.errorAlphaEntry.configure(state = "normal")
-                self.model_frame.errorAlphaEntry.delete(0, tk.END)
-                self.model_frame.errorAlphaEntry.insert(0, val)
-                self.model_frame.errorAlphaEntry.configure(state = model_state)
-            if (from_ == "model" or from_ == "custom"):
-                auto_state = self.model_frame.errorAlphaEntryAuto.state()
-                self.model_frame.errorAlphaEntryAuto.configure(state = "normal")
-                self.model_frame.errorAlphaEntryAuto.delete(0, tk.END)
-                self.model_frame.errorAlphaEntryAuto.insert(0, val)
-                self.model_frame.errorAlphaEntryAuto.configure(state = auto_state)
-    
-    def changeBeta(self, from_, val):
-        if (self.defaultPropagate):
-            if (from_ == "auto" or from_ == "model"):
-                custom_state = self.formula_frame.errorBetaEntry.state()
-                self.formula_frame.errorBetaEntry.configure(state = "normal")
-                self.formula_frame.errorBetaEntry.delete(0, tk.END)
-                self.formula_frame.errorBetaEntry.insert(0, val)
-                self.formula_frame.errorBetaEntry.configure(state = custom_state)
-            if (from_ == "auto" or from_ == "custom"):
-                model_state = self.model_frame.errorBetaEntry.state()
-                self.model_frame.errorBetaEntry.configure(state = "normal")
-                self.model_frame.errorBetaEntry.delete(0, tk.END)
-                self.model_frame.errorBetaEntry.insert(0, val)
-                self.model_frame.errorBetaEntry.configure(state = model_state)
-            if (from_ == "model" or from_ == "custom"):
-                auto_state = self.model_frame.errorBetaEntryAuto.state()
-                self.model_frame.errorBetaEntryAuto.configure(state = "normal")
-                self.model_frame.errorBetaEntryAuto.delete(0, tk.END)
-                self.model_frame.errorBetaEntryAuto.insert(0, val)
-                self.model_frame.errorBetaEntryAuto.configure(state = auto_state)
-    
-    def changeBetaRe(self, from_, val):
-        if (self.defaultPropagate):
-            if (from_ == "auto" or from_ == "model"):
-                custom_state = self.formula_frame.errorBetaReEntry.state()
-                self.formula_frame.errorBetaReEntry.configure(state = "normal")
-                self.formula_frame.errorBetaReEntry.delete(0, tk.END)
-                self.formula_frame.errorBetaReEntry.insert(0, val)
-                self.formula_frame.errorBetaReEntry.configure(state = custom_state)
-            if (from_ == "auto" or from_ == "custom"):
-                model_state = self.model_frame.errorBetaReEntry.state()
-                self.model_frame.errorBetaReEntry.configure(state = "normal")
-                self.model_frame.errorBetaReEntry.delete(0, tk.END)
-                self.model_frame.errorBetaReEntry.insert(0, val)
-                self.model_frame.errorBetaReEntry.configure(state = model_state)
-            if (from_ == "model" or from_ == "custom"):
-                auto_state = self.model_frame.errorBetaReEntryAuto.state()
-                self.model_frame.errorBetaReEntryAuto.configure(state = "normal")
-                self.model_frame.errorBetaReEntryAuto.delete(0, tk.END)
-                self.model_frame.errorBetaReEntryAuto.insert(0, val)
-                self.model_frame.errorBetaReEntryAuto.configure(state = auto_state)
-    
-    def changeGamma(self, from_, val):
-        if (self.defaultPropagate):
-            if (from_ == "auto" or from_ == "model"):
-                custom_state = self.formula_frame.errorGammaEntry.state()
-                self.formula_frame.errorGammaEntry.configure(state = "normal")
-                self.formula_frame.errorGammaEntry.delete(0, tk.END)
-                self.formula_frame.errorGammaEntry.insert(0, val)
-                self.formula_frame.errorGammaEntry.configure(state = custom_state)
-            if (from_ == "auto" or from_ == "custom"):
-                model_state = self.model_frame.errorGammaEntry.state()
-                self.model_frame.errorGammaEntry.configure(state = "normal")
-                self.model_frame.errorGammaEntry.delete(0, tk.END)
-                self.model_frame.errorGammaEntry.insert(0, val)
-                self.model_frame.errorGammaEntry.configure(state = model_state)
-            if (from_ == "model" or from_ == "custom"):
-                auto_state = self.model_frame.errorGammaEntryAuto.state()
-                self.model_frame.errorGammaEntryAuto.configure(state = "normal")
-                self.model_frame.errorGammaEntryAuto.delete(0, tk.END)
-                self.model_frame.errorGammaEntryAuto.insert(0, val)
-                self.model_frame.errorGammaEntryAuto.configure(state = auto_state)
-    
-    def changeDelta(self, from_, val):
-        if (self.defaultPropagate):
-            if (from_ == "auto" or from_ == "model"):
-                custom_state = self.formula_frame.errorDeltaEntry.state()
-                self.formula_frame.errorDeltaEntry.configure(state = "normal")
-                self.formula_frame.errorDeltaEntry.delete(0, tk.END)
-                self.formula_frame.errorDeltaEntry.insert(0, val)
-                self.formula_frame.errorDeltaEntry.configure(state = custom_state)
-            if (from_ == "auto" or from_ == "custom"):
-                model_state = self.model_frame.errorDeltaEntry.state()
-                self.model_frame.errorDeltaEntry.configure(state = "normal")
-                self.model_frame.errorDeltaEntry.delete(0, tk.END)
-                self.model_frame.errorDeltaEntry.insert(0, val)
-                self.model_frame.errorDeltaEntry.configure(state = model_state)
-            if (from_ == "model" or from_ == "custom"):
-                auto_state = self.model_frame.errorDeltaEntryAuto.state()
-                self.model_frame.errorDeltaEntryAuto.configure(state = "normal")
-                self.model_frame.errorDeltaEntryAuto.delete(0, tk.END)
-                self.model_frame.errorDeltaEntryAuto.insert(0, val)
-                self.model_frame.errorDeltaEntryAuto.configure(state = auto_state)
+    @defaultScroll.setter
+    def defaultScroll(self, val):
+        self._defaultScroll = val
+        try:
+            if val == 1:
+                self.left_frame.bind("<MouseWheel>", lambda e: self.on_mouse_wheel(e, -1))
+                self.fileOpen.bind("<MouseWheel>", lambda e: self.on_mouse_wheel(e, 0))
+                self.runModel.bind("<MouseWheel>", lambda e: self.on_mouse_wheel(e, 1))
+                self.errorFileLabel.bind("<MouseWheel>", lambda e: self.on_mouse_wheel(e, 2))
+                self.errorLabel.bind("<MouseWheel>", lambda e: self.on_mouse_wheel(e, 3))
+                self.formulaLabel.bind("<MouseWheel>", lambda e: self.on_mouse_wheel(e, 6))
+                self.settingsLabel.bind("<MouseWheel>", lambda e: self.on_mouse_wheel(e, 4))
+                self.helpLabel.bind("<MouseWheel>", lambda e: self.on_mouse_wheel(e, 5))
+            else:
+                self.left_frame.unbind("<MouseWheel>")
+                self.fileOpen.unbind("<MouseWheel>")
+                self.runModel.unbind("<MouseWheel>")
+                self.errorFileLabel.unbind("<MouseWheel>")
+                self.errorLabel.unbind("<MouseWheel>")
+                self.formulaLabel.unbind("<MouseWheel>")
+                self.settingsLabel.unbind("<MouseWheel>")
+                self.helpLabel.unbind("<MouseWheel>")
+        except AttributeError:
+            pass
     
     #---Change the colors/appearance---
-    def setBarColor(self, color):
-        self.backgroundColor = color
-        self.left_frame.configure(bg=color)
-        self.top_frame.configure(bg=color)
-        self.frame_label.configure(bg=color)
-        self.fileOpen.configure(background=self.backgroundColor)
-        self.runModel.configure(background=self.backgroundColor)
-        self.helpLabel.configure(background=self.backgroundColor)
-        self.errorLabel.configure(background=self.backgroundColor)
-        self.errorFileLabel.configure(background=self.backgroundColor)
-        self.formulaLabel.configure(background=self.backgroundColor)
-        self.settingsLabel.configure(background=self.backgroundColor)
-        self.canvasFrame.configure(background=self.backgroundColor)
-        self.inputCanvas.configure(background=self.backgroundColor)
-        self.runCanvas.configure(background=self.backgroundColor)
-        self.helpCanvas.configure(background=self.backgroundColor)
-        self.errorCanvas.configure(background=self.backgroundColor)
-        self.errorFileCanvas.configure(background=self.backgroundColor)
-        self.formulaCanvas.configure(background=self.backgroundColor)
-        barColorNoHash = self.backgroundColor.lstrip('#')
-        barColorRGB = tuple(int(barColorNoHash[i:i+2], 16) for i in (0, 2 ,4))      #See earlier comment for citation/explanation
-        self.frameLabelColor = "#000000" if (barColorRGB[0]*0.299 + barColorRGB[1]*0.587 + barColorRGB[2]*0.114) > 186 else "#FFFFFF"   #See earlier comment for citation
-        self.frame_label.configure(fg=self.frameLabelColor)
+    @property
+    def backgroundColor(self):
+        return self._backgroundColor
     
-    def setHighlightColor(self, color):
-        self.highlightColor = color
+    @backgroundColor.setter
+    def backgroundColor(self, color):
+        self._backgroundColor = color
+        try:
+            self.left_frame.configure(bg=color)
+            self.top_frame.configure(bg=color)
+            self.frame_label.configure(bg=color)
+            self.fileOpen.configure(background=self._backgroundColor)
+            self.runModel.configure(background=self._backgroundColor)
+            self.helpLabel.configure(background=self._backgroundColor)
+            self.errorLabel.configure(background=self._backgroundColor)
+            self.errorFileLabel.configure(background=self._backgroundColor)
+            self.formulaLabel.configure(background=self._backgroundColor)
+            self.settingsLabel.configure(background=self._backgroundColor)
+            self.canvasFrame.configure(background=self._backgroundColor)
+            self.inputCanvas.configure(background=self._backgroundColor)
+            self.runCanvas.configure(background=self._backgroundColor)
+            self.helpCanvas.configure(background=self._backgroundColor)
+            self.errorCanvas.configure(background=self._backgroundColor)
+            self.errorFileCanvas.configure(background=self._backgroundColor)
+            self.formulaCanvas.configure(background=self._backgroundColor)
+            barColorRGB = hex_to_RGB(self._backgroundColor)
+            self.frameLabelColor = "#000000" if use_dark(barColorRGB) > 186 else "#FFFFFF"
+            self.frame_label.configure(fg=self.frameLabelColor)
+        except AttributeError:
+            pass
     
-    def setActiveColor(self, color):
-        self.activeColor = color
-        
-    def setEllipseColor(self, color):
-        self.ellipseColor = color
-        self.model_frame.setEllipseColor(color)
-        self.formula_frame.setEllipseColor(color)
+    @property
+    def ellipseColor(self):
+        return self._ellipseColor
+
+    @ellipseColor.setter
+    def ellipseColor(self, color):
+        self._ellipseColor = color
+        try:
+            self.model_frame.ellipseColor = color
+            self.formula_frame.ellipseColor = color
+        except AttributeError:
+            pass
     
-    def setThemeLight(self):
-        self.theme = "light"
-        self.master.configure(background="#FFFFFF")
-        self.input_frame.setThemeLight()
-        self.help_frame.setThemeLight()
-        self.error_frame.setThemeLight()
-        self.model_frame.setThemeLight()
-        self.error_file_frame.setThemeLight()
-        self.formula_frame.setThemeLight()
+    @property
+    def theme(self):
+        return self._theme
     
-    def setThemeDark(self):
-        self.theme = "dark"
-        self.master.configure(background="#424242")
-        self.input_frame.setThemeDark()
-        self.help_frame.setThemeDark()
-        self.error_frame.setThemeDark()
-        self.model_frame.setThemeDark()
-        self.error_file_frame.setThemeDark()
-        self.formula_frame.setThemeDark()
+    @theme.setter
+    def theme(self, new):
+        self._theme = new
+        try:
+            if new == 'light':
+                self.master.configure(background="#FFFFFF")
+                self.input_frame.setThemeLight()
+                self.help_frame.setThemeLight()
+                self.error_frame.setThemeLight()
+                self.model_frame.setThemeLight()
+                self.error_file_frame.setThemeLight()
+                self.formula_frame.setThemeLight()
+            else:
+                self.master.configure(background="#424242")
+                self.input_frame.setThemeDark()
+                self.help_frame.setThemeDark()
+                self.error_frame.setThemeDark()
+                self.model_frame.setThemeDark()
+                self.error_file_frame.setThemeDark()
+                self.formula_frame.setThemeDark()
+        except AttributeError:
+            pass
 
     def closeAllPopups(self, e=None):
+        """
+        Closes all popups from each tab
+        """
         self.input_frame.closeWindows()
         self.error_file_frame.closeWindows()
         self.model_frame.closeWindows()
         self.error_frame.closeWindows()
         self.formula_frame.closeWindows()
 
-if (__name__ == "__main__"):            #If the code is being run as the main module
+if __name__ == "__main__":            #If the code is being run as the main module
     multiprocessing.freeze_support()    #Allows multiprocessing to work on Windows
     try:
         if 'win' in sys.platform:       #Makes the program sharper on Windows
             ctypes.windll.shcore.SetProcessDpiAwareness(1)
     except Exception:
         pass
-    
-    def resource_path(relative_path):
-        """ Get absolute path to resource, works for dev and for PyInstaller """
-        try:
-            # PyInstaller creates a temp folder and stores path in _MEIPASS
-            base_path = sys._MEIPASS
-        except Exception:
-            base_path = os.path.abspath(".")
-    
-        return os.path.join(base_path, relative_path)
     
     root = tk.Tk()                  #The root window
     root.withdraw()                 #Hide the root window for the copyright notice to apppear
@@ -1584,6 +1342,7 @@ You should have received a copy of the GNU General Public License along with thi
     
     #---If Start program is clicked in the splash screen, enter the main program---
     def on_start_splash():
+        """ Destroy the splash screen and open the program """
         splashScreen.destroy()
         root.deiconify()
         root.lift()
@@ -1592,6 +1351,7 @@ You should have received a copy of the GNU General Public License along with thi
     
     #---If Cancel is clicked in the splash screen, close the program---
     def on_cancel_splash():
+        """ Destroy the splash screen and close the program """
         splashScreen.destroy()
         root.destroy()
     
@@ -1607,9 +1367,10 @@ You should have received a copy of the GNU General Public License along with thi
     okButton.focus_set()
     splashScreen.resizable(False, False)
     
-    def on_closing():                               #Check what's happening on closing
-        if (not gui.canCloseInput() or not gui.canCloseCustom()):   #If there is a need to save and alerting is turned on, ask before closing
-            if (messagebox.askokcancel("Exit?", "You have not saved. Do you still wish to exit?")):
+    def on_closing():
+        """ Check what's happening on closing """
+        if not gui.canCloseInput() or not gui.canCloseCustom():   #If there is a need to save and alerting is turned on, ask before closing
+            if messagebox.askokcancel("Exit?", "You have not saved. Do you still wish to exit?"):
                 gui.model_frame.cancelThreads()     #Close running threads before exit
                 gui.formula_frame.cancelThreads()
                 root.destroy()

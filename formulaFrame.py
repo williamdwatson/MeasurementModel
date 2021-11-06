@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Created on Fri Sep 27 10:29:23 2019
 
@@ -45,6 +44,7 @@ import pyperclip
 import matplotlib.patches as patches
 from PIL import Image, ImageTk, ImageOps
 from io import BytesIO
+from utils import resource_path
 
 class FileExtensionError(Exception):
     pass
@@ -200,17 +200,6 @@ class CreateToolTip(object):
 
 class fF(tk.Frame):
     def __init__(self, parent, topOne):
-        
-        def resource_path(relative_path):
-            """ Get absolute path to resource, works for dev and for PyInstaller """
-            try:
-                # PyInstaller creates a temp folder and stores path in _MEIPASS
-                base_path = sys._MEIPASS
-            except Exception:
-                base_path = os.path.abspath(".")
-        
-            return os.path.join(base_path, relative_path)
-        
         #From David Hasselberg, https://stackoverflow.com/questions/36219613/make-tkinter-prompt-inherit-parent-windows-icon
         class StringDialog(simpledialog._QueryString):  #Modification of simpledialog to include an icon
             def body(self, master):
@@ -223,14 +212,14 @@ class fF(tk.Frame):
         
         self.parent = parent
         self.topGUI = topOne
-        if (self.topGUI.getTheme() == "dark"):
+        if (self.topGUI.theme == "dark"):
             self.backgroundColor = "#424242"
             self.foregroundColor = "white"
-        elif (self.topGUI.getTheme() == "light"):
+        elif (self.topGUI.theme == "light"):
             self.backgroundColor = "white"
             self.foregroundColor = "black"
         tk.Frame.__init__(self, parent, background=self.backgroundColor)
-        self.ellipseColor = self.topGUI.getEllipseColor()
+        self.ellipseColor = self.topGUI.ellipseColor
         self.saveNeeded = False
         
         self.wdataRaw = []
@@ -333,7 +322,7 @@ class fF(tk.Frame):
             finally:
                 self.popup_menu_importPath.grab_release()
         self.importPathListbox.bind("<Button-3>", popup_inputFiles)
-        for val in self.topGUI.getDefaultImports():
+        for val in self.topGUI.defaultImports:
             if (len(val) > 0):
                 self.importPathListbox.insert(tk.END, val)
         
@@ -401,7 +390,7 @@ class fF(tk.Frame):
         self.formulaDescriptionFrame = tk.Frame(self.formulaDescriptionWindow, bg=self.backgroundColor)
         self.formulaDescriptionContainer = tk.Frame(self.formulaDescriptionFrame, borderwidth=1, relief="sunken")
         self.formulaDescriptionEntry = tk.Text(self.formulaDescriptionContainer, width=60, height=4, wrap="none", borderwidth=0, undo=True, fg=self.foregroundColor)
-        if (self.topGUI.getTheme() == "dark"):
+        if (self.topGUI.theme == "dark"):
             self.formulaDescriptionEntry.configure(background="#6B6B6B")
         else:
             self.formulaDescriptionEntry.configure(background="#FFFFFF")
@@ -459,7 +448,7 @@ class fF(tk.Frame):
         self.loadFormulaFrame = tk.Frame(self.loadFormulaWindow, bg=self.backgroundColor)
         self.loadFormulaDirectoryFrame = tk.Frame(self.loadFormulaFrame, bg=self.backgroundColor)
         self.loadFormulaDirectoryEntry = ttk.Entry(self.loadFormulaDirectoryFrame, width=40, state="normal")
-        self.loadFormulaDirectoryEntry.insert(0, self.topGUI.getDefaultFormulaDirectory())
+        self.loadFormulaDirectoryEntry.insert(0, self.topGUI.defaultFormulaDirectory)
         self.loadFormulaDirectoryEntry.configure(state="readonly")
         self.loadFormulaDirectoryLabel = tk.Label(self.loadFormulaDirectoryFrame, text="Directory: ", bg=self.backgroundColor, fg=self.foregroundColor)
         self.loadFormulaDirectoryButton = ttk.Button(self.loadFormulaDirectoryFrame, text="Browse..")
@@ -477,19 +466,19 @@ class fF(tk.Frame):
         self.loadFormulaYSB.pack(side=tk.RIGHT, fill=tk.Y, expand=False)
         self.loadFormulaDirectoryFrame.pack(side=tk.TOP, fill=tk.X, pady=(0, 5), expand=False)
         self.loadFormulaFrameTwo.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
-        abspath = os.path.abspath(self.topGUI.getDefaultFormulaDirectory())
+        abspath = os.path.abspath(self.topGUI.defaultFormulaDirectory)
         self.insert_node('', abspath, abspath)
         self.loadFormulaTree.bind('<<TreeviewOpen>>', self.open_node)
         self.loadFormulaDescriptionFrame = tk.Frame(self.loadFormulaWindow, bg=self.backgroundColor)
         self.loadFormulaDescriptionLabel = tk.Label(self.loadFormulaDescriptionFrame, text="Description: ", bg=self.backgroundColor, fg=self.foregroundColor)
         self.loadFormulaDescription = scrolledtext.ScrolledText(self.loadFormulaDescriptionFrame, height=3, fg=self.foregroundColor, state="disabled")
-        if (self.topGUI.getTheme() == "dark"):
+        if (self.topGUI.theme == "dark"):
             self.loadFormulaDescription.configure(background="#6B6B6B")
         else:
             self.loadFormulaDescription.configure(background="#FFFFFF")
         self.loadFormulaCodeLabel = tk.Label(self.loadFormulaDescriptionFrame, text="Code: ", bg=self.backgroundColor, fg=self.foregroundColor)
         self.loadFormulaCode = scrolledtext.ScrolledText(self.loadFormulaDescriptionFrame, height=10, fg=self.foregroundColor, state="disabled")
-        if (self.topGUI.getTheme() == "dark"):
+        if (self.topGUI.theme == "dark"):
             self.loadFormulaCode.configure(background="#6B6B6B")
         else:
             self.loadFormulaCode.configure(background="#FFFFFF")
@@ -712,7 +701,7 @@ class fF(tk.Frame):
         valfreqLow = (self.register(validateFreqLow), '%P')
         
         def OpenFile():
-            name = askopenfilename(initialdir=self.topGUI.getCurrentDirectory(), filetypes = [("Measurement model file", "*.mmfile *.mmcustom"), ("Measurement model data (*.mmfile)", "*.mmfile"), ("Measurement model custom fitting (*.mmcustom)", "*.mmcustom")], title = "Choose a file")
+            name = askopenfilename(initialdir=self.topGUI.currentDirectory, filetypes = [("Measurement model file", "*.mmfile *.mmcustom"), ("Measurement model data (*.mmfile)", "*.mmfile"), ("Measurement model custom fitting (*.mmcustom)", "*.mmcustom")], title = "Choose a file")
             try:
                 with open(name,'r') as UseFile:
                     return name
@@ -752,7 +741,7 @@ class fF(tk.Frame):
             if (n != '+'):
                 fname, fext = os.path.splitext(n)
                 directory = os.path.dirname(str(n))
-                self.topGUI.setCurrentDirectory(directory)
+                self.topGUI.currentDirectory = directory
                 if (fext == ".mmfile"):
                     try:
                         with open(n,'r') as UseFile:
@@ -783,7 +772,7 @@ class fF(tk.Frame):
                                     self.jdataRaw[i] = self.jdataRaw[i+1]
                                     self.jdataRaw[i+1] = tempJ
                                     doneSorting = False
-                        if (self.topGUI.getFreqLoadCustom() == 1):
+                        if self.topGUI.freqLoadCustom == 1:
                             try:
                                 if (self.upDelete == 0):
                                     self.wdata = self.wdataRaw.copy()[self.lowDelete:]
@@ -831,7 +820,7 @@ class fF(tk.Frame):
                             self.figFreq.clear()
                             dataColor = "tab:blue"
                             deletedColor = "#A9CCE3"
-                            if (self.topGUI.getTheme() == "dark"):
+                            if (self.topGUI.theme == "dark"):
                                 dataColor = "cyan"
                             else:
                                 dataColor = "tab:blue"
@@ -1192,7 +1181,7 @@ class fF(tk.Frame):
                                 self.figFreq.clear()
                                 dataColor = "tab:blue"
                                 deletedColor = "#A9CCE3"
-                                if (self.topGUI.getTheme() == "dark"):
+                                if (self.topGUI.theme == "dark"):
                                     dataColor = "cyan"
                                 else:
                                     dataColor = "tab:blue"
@@ -1310,7 +1299,7 @@ class fF(tk.Frame):
                 self.freqWindow.lift()
             dataColor = "tab:blue"
             deletedColor = "#A9CCE3"
-            if (self.topGUI.getTheme() == "dark"):
+            if (self.topGUI.theme == "dark"):
                 dataColor = "cyan"
             else:
                 dataColor = "tab:blue"
@@ -1853,7 +1842,7 @@ class fF(tk.Frame):
                 a = messagebox.askokcancel("Remove parameters", "Loading parameters will remove existing parameters. Continue?", parent=self.paramPopup)
             if a:
                 def OpenFileParam():
-                    name = askopenfilename(initialdir=self.topGUI.getCurrentDirectory(), filetypes = [("Custom fitting file", "*.mmcustom"), ("Measurement model custom fitting (*.mmcustom)", "*.mmcustom")], title = "Choose a file", parent=self.paramPopup)
+                    name = askopenfilename(initialdir=self.topGUI.currentDirectory, filetypes = [("Custom fitting file", "*.mmcustom"), ("Measurement model custom fitting (*.mmcustom)", "*.mmcustom")], title = "Choose a file", parent=self.paramPopup)
                     try:
                         with open(name,'r') as UseFile:
                             return name
@@ -1863,7 +1852,7 @@ class fF(tk.Frame):
                 if (n != '+'):
                     fname, fext = os.path.splitext(n)
                     directory = os.path.dirname(str(n))
-                    self.topGUI.setCurrentDirectory(directory)
+                    self.topGUI.currentDirectory = directory
                     if (fext == ".mmcustom"):
                         try:
                             toLoad = open(n)
@@ -2184,7 +2173,7 @@ class fF(tk.Frame):
             self.formulaDescriptionWindow.protocol("WM_DELETE_WINDOW", on_closing_description)
         
         def importDirectoryBrowse():
-            folder = askdirectory(parent=self.importPathWindow, initialdir=self.topGUI.getCurrentDirectory())
+            folder = askdirectory(parent=self.importPathWindow, initialdir=self.topGUI.currentDirectory)
             folder_str = str(folder)
             if (len(folder_str) > 1):
                 self.importPathListbox.insert(tk.END, folder_str)
@@ -3061,7 +3050,7 @@ class fF(tk.Frame):
                     larger.xaxis.set_tick_params(direction="in", which="both", color=self.foregroundColor)
                     dataColor = "tab:blue"
                     fitColor = "orange"
-                    if (self.topGUI.getTheme() == "dark"):
+                    if (self.topGUI.theme == "dark"):
                         dataColor = "cyan"
                         fitColor = "gold"
                     else:
@@ -3354,7 +3343,7 @@ class fF(tk.Frame):
                 self.f.set_facecolor(self.backgroundColor)
                 dataColor = "tab:blue"
                 fitColor = "orange"
-                if (self.topGUI.getTheme() == "dark"):
+                if (self.topGUI.theme == "dark"):
                     dataColor = "cyan"
                     fitColor = "gold"
                 else:
@@ -3562,7 +3551,7 @@ class fF(tk.Frame):
             self.nyCanvas.mpl_connect('button_press_event', onclick)
             self.nyCanvas._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
             def saveAllPlots():
-                folder = askdirectory(parent=self.resultPlot, initialdir=self.topGUI.getCurrentDirectory())
+                folder = askdirectory(parent=self.resultPlot, initialdir=self.topGUI.currentDirectory)
                 folder_str = str(folder)
                 if (len(folder_str) == 0):
                     pass
@@ -3574,7 +3563,7 @@ class fF(tk.Frame):
                     pltSaveFig.set_facecolor(self.backgroundColor)
                     dataColor = "tab:blue"
                     fitColor = "orange"
-                    if (self.topGUI.getTheme() == "dark"):
+                    if (self.topGUI.theme == "dark"):
                         dataColor = "cyan"
                         fitColor = "gold"
                     else:
@@ -3842,7 +3831,7 @@ class fF(tk.Frame):
                 defaultSaveName, ext = os.path.splitext(os.path.basename(self.browseEntry.get()))
                 saveName = asksaveasfile(mode='w', defaultextension=".mmcustom", initialfile=defaultSaveName, filetypes=[("Measurement model custom fitting", ".mmcustom")])
                 directory = os.path.dirname(str(saveName))
-                self.topGUI.setCurrentDirectory(directory)
+                self.topGUI.currentDirectory = directory
                 if saveName is None:     #If save is cancelled
                     return
                 saveName.write(stringToSave)
@@ -3908,7 +3897,7 @@ class fF(tk.Frame):
             defaultSaveName, ext = os.path.splitext(os.path.basename(self.browseEntry.get()))
             saveName = asksaveasfile(mode='w', defaultextension=".mmformula", initialdir=self.loadFormulaDirectoryEntry.get(), initialfile=self.loadedFormula, filetypes=[("Measurement model custom formula", ".mmformula")])
             directory = os.path.dirname(str(saveName))
-            self.topGUI.setCurrentDirectory(directory)
+            self.topGUI.currentDirectory = directory
             if saveName is None:     #If save is cancelled
                 return
             saveName.write(stringToSave)
@@ -3926,7 +3915,7 @@ class fF(tk.Frame):
             defaultSaveName, ext = os.path.splitext(os.path.basename(self.browseEntry.get()))
             saveName = asksaveasfile(mode='w', defaultextension=".mmresiduals", initialfile=defaultSaveName, filetypes=[("Measurement model residuals", ".mmresiduals")])
             directory = os.path.dirname(str(saveName))
-            self.topGUI.setCurrentDirectory(directory)
+            self.topGUI.currentDirectory = directory
             if saveName is None:     #If save is cancelled
                 return
             saveName.write(stringToSave)
@@ -3963,7 +3952,7 @@ class fF(tk.Frame):
             defaultSaveName += "_custom"            
             saveName = asksaveasfile(title="Save All Results", mode='w', defaultextension=".txt", initialfile=defaultSaveName, filetypes=[("Text file (*.txt)", ".txt")])
             directory = os.path.dirname(str(saveName))
-            self.topGUI.setCurrentDirectory(directory)
+            self.topGUI.currentDirectory = directory
             if saveName is None:
                 return
             saveName.write(stringToSave)
@@ -4148,7 +4137,7 @@ class fF(tk.Frame):
                 return
             filename, file_extension = os.path.splitext(str(saveName))
             directory = os.path.dirname(str(saveName))
-            self.topGUI.setCurrentDirectory(directory)
+            self.topGUI.currentDirectory = directory
             if "txt" in file_extension:
                 stringToSave = "Frequency\tReal\tImaginary"
                 for i in range(len(self.sim_freqs)):
@@ -4209,7 +4198,7 @@ class fF(tk.Frame):
                 self.simPlotFigs.append(sim_pltFig)
                 sim_pltFig.set_facecolor(self.backgroundColor)
                 dataColor = "tab:blue"
-                if (self.topGUI.getTheme() == "dark"):
+                if (self.topGUI.theme == "dark"):
                     dataColor = "cyan"
                 else:
                     dataColor = "tab:blue"
@@ -4314,7 +4303,7 @@ class fF(tk.Frame):
                         larger.xaxis.set_tick_params(direction="in", which="both", color=self.foregroundColor)
                         whichPlot = "a"
                         dataColor = "tab:blue"
-                        if (self.topGUI.getTheme() == "dark"):
+                        if (self.topGUI.theme == "dark"):
                             dataColor = "cyan"
                         else:
                             dataColor = "tab:blue"
@@ -4479,7 +4468,7 @@ class fF(tk.Frame):
             sim_nyCanvas._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
             
             def sim_saveAllPlots(e=None):
-                folder = askdirectory(parent=simPlot, initialdir=self.topGUI.getCurrentDirectory())
+                folder = askdirectory(parent=simPlot, initialdir=self.topGUI.currentDirectory)
                 folder_str = str(folder)
                 if (len(folder_str) == 0):
                     pass
@@ -4489,7 +4478,7 @@ class fF(tk.Frame):
                         return
                     sim_saveNyCanvasButton.configure(text="Saving")
                     dataColor = "tab:blue"
-                    if (self.topGUI.getTheme() == "dark"):
+                    if (self.topGUI.theme == "dark"):
                         dataColor = "cyan"
                     else:
                         dataColor = "tab:blue"
@@ -4642,13 +4631,13 @@ class fF(tk.Frame):
         self.formulaDescriptionLink = tk.Label(self.fittingButtonFrame, text="Formula description", bg=self.backgroundColor, fg="blue", cursor="hand2")
         self.importPathLink = tk.Label(self.fittingButtonFrame, text="Import paths", bg=self.backgroundColor, fg="blue", cursor="hand2")
         self.helpLabel = tk.Label(self.fittingButtonFrame, text="Help", bg=self.backgroundColor, fg="blue", cursor="hand2")
-        if (self.topGUI.getTheme() == "dark"):
+        if (self.topGUI.theme == "dark"):
             self.helpLabel.configure(fg="skyblue")
             self.importPathLink.configure(fg="skyblue")
         self.helpLabel.bind("<Button-1>", helpPopup)
         self.formulaDescriptionLink.bind("<Button-1>", formulaDescriptionPopup)
         self.importPathLink.bind("<Button-1>", importPathPopup)
-        if (self.topGUI.getTheme() == "dark"):
+        if (self.topGUI.theme == "dark"):
             self.formulaDescriptionLink.configure(fg="skyblue")
         self.loadCodeButton = ttk.Button(self.fittingButtonFrame, text="Load Formula", command=loadCode)
         self.weightingLabel = tk.Label(self.fittingButtonFrame, text="Weighting:", bg=self.backgroundColor, fg=self.foregroundColor)
@@ -4835,11 +4824,11 @@ class fF(tk.Frame):
         self.errorDeltaEntry.bind("<Button-3>", popup_delta)
         
         #---Propagate error structure changes---
-        self.errorAlphaEntry.bind("<KeyRelease>", lambda e: self.topGUI.changeAlpha("custom", self.errorAlphaEntry.get()))
-        self.errorBetaEntry.bind("<KeyRelease>", lambda e: self.topGUI.changeBeta("custom", self.errorBetaEntry.get()))
-        self.errorBetaReEntry.bind("<KeyRelease>", lambda e: self.topGUI.changeBetaRe("custom", self.errorBetaReEntry.get()))
-        self.errorGammaEntry.bind("<KeyRelease>", lambda e: self.topGUI.changeGamma("custom", self.errorGammaEntry.get()))
-        self.errorDeltaEntry.bind("<KeyRelease>", lambda e: self.topGUI.changeDelta("custom", self.errorDeltaEntry.get()))
+        self.errorAlphaEntry.bind("<KeyRelease>", lambda e: self.topGUI.changeParam('Alpha', "custom", self.errorAlphaEntry.get()))
+        self.errorBetaEntry.bind("<KeyRelease>", lambda e: self.topGUI.changeParam('Beta', "custom", self.errorBetaEntry.get()))
+        self.errorBetaReEntry.bind("<KeyRelease>", lambda e: self.topGUI.changeParam('BetaRe', "custom", self.errorBetaReEntry.get()))
+        self.errorGammaEntry.bind("<KeyRelease>", lambda e: self.topGUI.changeParam('Gamma', "custom", self.errorGammaEntry.get()))
+        self.errorDeltaEntry.bind("<KeyRelease>", lambda e: self.topGUI.changeParam('Delta', "custom", self.errorDeltaEntry.get()))
         
         self.customFunctionFrame = tk.Frame(self, bg=self.backgroundColor)
         self.customFunctionContainer = tk.Frame(self.customFunctionFrame, borderwidth=1, relief="sunken")
@@ -5362,7 +5351,7 @@ class fF(tk.Frame):
     def formulaEnter(self, n):
         fname, fext = os.path.splitext(n)
         directory = os.path.dirname(str(n))
-        self.topGUI.setCurrentDirectory(directory)
+        self.topGUI.currentDirectory = directory
         if (fext == ".mmfile"):
             try:
                 with open(n,'r') as UseFile:
@@ -5942,7 +5931,7 @@ class fF(tk.Frame):
             self.figFreq.clear()
             dataColor = "tab:blue"
             deletedColor = "#A9CCE3"
-            if (self.topGUI.getTheme() == "dark"):
+            if (self.topGUI.theme == "dark"):
                 dataColor = "cyan"
             else:
                 dataColor = "tab:blue"
@@ -6121,7 +6110,7 @@ class fF(tk.Frame):
             self.figFreq.clear()
             dataColor = "tab:blue"
             deletedColor = "#A9CCE3"
-            if (self.topGUI.getTheme() == "dark"):
+            if (self.topGUI.theme == "dark"):
                 dataColor = "cyan"
             else:
                 dataColor = "tab:blue"
@@ -6157,12 +6146,6 @@ class fF(tk.Frame):
             self.rangeLabel.configure(background="#424242", foreground="#FFFFFF")
         except Exception:
             pass
-    
-    def setEllipseColor(self, color):
-        self.ellipseColor = color
-    
-    def needToSave(self):
-        return self.saveNeeded
     
     def insert_node(self, parent, text, abspath):
         if (text.endswith(".mmformula") or os.path.isdir(abspath)):
@@ -6753,7 +6736,7 @@ class fF(tk.Frame):
         """
         Allows the user to choose an image for the formula description
         """
-        image = tk.filedialog.askopenfilename(initialdir=self.topGUI.getCurrentDirectory(), filetypes = [("All images", "*.bmp *.gif *.jpg *.jpeg *.png *.tif *.tiff"),
+        image = tk.filedialog.askopenfilename(initialdir=self.topGUI.currentDirectory, filetypes = [("All images", "*.bmp *.gif *.jpg *.jpeg *.png *.tif *.tiff"),
             ("Bitmap (*.bmp)", "*.bmp"), ("GIF (*.gif)", "*.gif"), ("JPEG (*.jpeg, *.jpg)", "*.jpeg *.jpg"), ("PNG (*.png)", "*.png"), ("TIFF (*.tiff, *.tif)", "*.tiff *.tif")], title = "Choose an image", parent=self.formulaDescriptionWindow)
         if image.strip() != "" and image is not None:
             try:

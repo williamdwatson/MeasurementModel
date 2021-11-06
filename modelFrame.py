@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Created on Mon Jul  9 16:30:37 2018
 
@@ -28,10 +27,7 @@ import mmFittingA
 import mmFittingCap
 import autoFitter
 import numpy as np
-import threading
-import ctypes
 import comtypes.client as cc
-import queue
 import pyperclip
 #--------------------------------pyperclip-----------------------------------
 #     Source: https://pypi.org/project/pyperclip/
@@ -39,9 +35,7 @@ import pyperclip
 #     By: Al Sweigart
 #     License: BSD
 #----------------------------------------------------------------------------
-import os.path
-import sys
-import os
+import sys, os, queue, ctypes, threading
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -58,6 +52,7 @@ from rangeSlider import RangeSlider
 #	Stephen Damm (shinhalsafar@gmail.com)
 #----------------------------------------------------------------------------
 from functools import partial
+from utils import resource_path
 
 class ThreadedTaskAuto(threading.Thread):
     def __init__(self, queue, max_nve, fRe, fReV, nMC, w, r, j, per, c, t, errA, errB, errBRe, errG, errD):
@@ -269,40 +264,29 @@ class CreateToolTip(object):
 
 class mmF(tk.Frame):
     def __init__(self, parent, topOne):
-        
-        def resource_path(relative_path):
-            """ Get absolute path to resource, works for dev and for PyInstaller """
-            try:
-                # PyInstaller creates a temp folder and stores path in _MEIPASS
-                base_path = sys._MEIPASS
-            except Exception:
-                base_path = os.path.abspath(".")
-        
-            return os.path.join(base_path, relative_path)
-        
         self.parent = parent
         self.topGUI = topOne
-        if (self.topGUI.getTheme() == "dark"):
+        if (self.topGUI.theme == "dark"):
             self.backgroundColor = "#424242"
             self.foregroundColor = "white"
-        elif (self.topGUI.getTheme() == "light"):
+        elif (self.topGUI.theme == "light"):
             self.backgroundColor = "white"
             self.foregroundColor = "black"
         tk.Frame.__init__(self, parent, background=self.backgroundColor)
         
         s = ttk.Style()
-        if (self.topGUI.getTheme() == "light"):
+        if (self.topGUI.theme == "light"):
             s.configure('TCheckbutton', background='white')
             s.configure('TCombobox', background='white')
             s.configure('TEntry', background='white')
             s.configure('TRadiobutton', background='white', foreground='black')
-        elif (self.topGUI.getTheme() == "dark"):
+        elif (self.topGUI.theme == "dark"):
             s.configure('TCheckbutton', background='#424242')
             s.configure('TCombobox', background='#424242')
             s.configure('TEntry', background='#424242')
             s.configure('TLabelFrame', background='#424242', foreground="#FFFFFF")
             s.configure('TRadiobutton', background='#424242', foreground='#FFFFFF')
-        self.ellipseColor = self.topGUI.getEllipseColor()
+        self.ellipseColor = self.topGUI.ellipseColor
                         
         
         self.omega = np.zeros(1)
@@ -409,7 +393,7 @@ class mmF(tk.Frame):
         self.autoFitWindow.iconbitmap(resource_path('img/elephant3.ico'))
         self.autoFitWindow.resizable(False, False)
         self.autoMaxNVEVariable = tk.StringVar(self, "15")
-        self.autoNMCVariable = tk.StringVar(self, str(self.topGUI.getMC()))
+        self.autoNMCVariable = tk.StringVar(self, str(self.topGUI.MCDefault))
         self.autoReFixVariable = tk.IntVar(self, 0)
         self.autoReFixEntryVariable = tk.StringVar(self, "0")
         self.autoWeightingVariable = tk.StringVar(self, "Modulus")
@@ -478,7 +462,7 @@ class mmF(tk.Frame):
         self.magicCanvasInput._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
         def OpenFile():
-            name = askopenfilename(initialdir=self.topGUI.getCurrentDirectory(), filetypes = [("Measurement model files", "*.mmfile *.mmfitting"), ("Measurement model data (*.mmfile)", "*.mmfile"), ("Measurement model fit (*.mmfitting)", "*.mmfitting")], title = "Choose a file")
+            name = askopenfilename(initialdir=self.topGUI.currentDirectory, filetypes = [("Measurement model files", "*.mmfile *.mmfitting"), ("Measurement model data (*.mmfile)", "*.mmfile"), ("Measurement model fit (*.mmfitting)", "*.mmfitting")], title = "Choose a file")
             try:
                 with open(name,'r') as UseFile:
                     return name
@@ -490,7 +474,7 @@ class mmF(tk.Frame):
             if (n != '+'):
                 fname, fext = os.path.splitext(n)
                 directory = os.path.dirname(str(n))
-                self.topGUI.setCurrentDirectory(directory)
+                self.topGUI.currentDirectory = directory
                 if (fext == ".mmfile"):
                     try:
                         with open(n,'r') as UseFile:
@@ -521,7 +505,7 @@ class mmF(tk.Frame):
                                     self.jdataRaw[i] = self.jdataRaw[i+1]
                                     self.jdataRaw[i+1] = tempJ
                                     doneSorting = False
-                        if (self.topGUI.getFreqLoad() == 1):
+                        if self.topGUI.freqLoad == 1:
                             try:
                                 if (self.upDelete == 0):
                                     self.wdata = self.wdataRaw.copy()[self.lowDelete:]
@@ -570,7 +554,7 @@ class mmF(tk.Frame):
                             self.figFreq.clear()
                             dataColor = "tab:blue"
                             deletedColor = "#A9CCE3"
-                            if (self.topGUI.getTheme() == "dark"):
+                            if (self.topGUI.theme == "dark"):
                                 dataColor = "cyan"
                             else:
                                 dataColor = "tab:blue"
@@ -743,22 +727,12 @@ class mmF(tk.Frame):
                         self.wdataRaw = w_in
                         self.rdataRaw = r_in
                         self.jdataRaw = j_in
-                        #---Bubble sort the data---
-                        doneSorting = False
-                        while (not doneSorting):
-                            doneSorting = True
-                            for i in range(len(self.wdataRaw)-1):
-                                if (self.wdataRaw[i] > self.wdataRaw[i+1]):
-                                    temp = self.wdataRaw[i]
-                                    self.wdataRaw[i] = self.wdataRaw[i+1]
-                                    self.wdataRaw[i+1] = temp
-                                    tempR = self.rdataRaw[i]
-                                    self.rdataRaw[i] = self.rdataRaw[i+1]
-                                    self.rdataRaw[i+1] = tempR
-                                    tempJ = self.jdataRaw[i]
-                                    self.jdataRaw[i] = self.jdataRaw[i+1]
-                                    self.jdataRaw[i+1] = tempJ
-                                    doneSorting = False
+                        #---Sort the data---
+                        sorter = np.argsort(np.asarray(self.wdataRaw))
+                        self.wdataRaw = self.wdataRaw[sorter]
+                        self.rdataRaw = self.rdataRaw[sorter]
+                        self.jdataRaw = self.jdataRaw[sorter]
+
                         self.upDelete = uD
                         self.lowDelete = lD
                         self.lowerSpinboxVariable.set(str(self.lowDelete))
@@ -775,7 +749,7 @@ class mmF(tk.Frame):
                             self.figFreq.clear()
                             dataColor = "tab:blue"
                             deletedColor = "#A9CCE3"
-                            if (self.topGUI.getTheme() == "dark"):
+                            if (self.topGUI.theme == "dark"):
                                 dataColor = "cyan"
                             else:
                                 dataColor = "tab:blue"
@@ -1525,12 +1499,12 @@ class mmF(tk.Frame):
                         self.paramEntryVariables[i+1].set(str(round(self.tauDefault, -int(np.floor(np.log10(self.tauDefault))) + (4 - 1))))
             except Exception:
                 pass
-            name = askopenfilename(initialdir=self.topGUI.getCurrentDirectory(), filetypes = [("Measurement model fitting", "*.mmfitting")], title = "Choose a file")
+            name = askopenfilename(initialdir=self.topGUI.currentDirectory, filetypes = [("Measurement model fitting", "*.mmfitting")], title = "Choose a file")
             if (len(name) == 0):
                 return
             try:
                 directory = os.path.dirname(str(name))
-                self.topGUI.setCurrentDirectory(directory)
+                self.topGUI.currentDirectory = directory
                 with open(name,'r') as toLoad:
                     for i in range(12):
                         toLoad.readline()
@@ -1938,7 +1912,7 @@ class mmF(tk.Frame):
                         y = np.array(self.jdata)
                         dataColor = "tab:blue"
                         fitColor = "orange"
-                        if (self.topGUI.getTheme() == "dark"):
+                        if (self.topGUI.theme == "dark"):
                             dataColor = "cyan"
                             fitColor = "gold"
                         else:
@@ -2325,7 +2299,7 @@ class mmF(tk.Frame):
                         y = np.array(self.jdata)
                         dataColor = "tab:blue"
                         fitColor = "orange"
-                        if (self.topGUI.getTheme() == "dark"):
+                        if (self.topGUI.theme == "dark"):
                             dataColor = "cyan"
                             fitColor = "gold"
                         else:
@@ -2741,7 +2715,7 @@ class mmF(tk.Frame):
                         y = np.array(self.jdata)
                         dataColor = "tab:blue"
                         fitColor = "orange"
-                        if (self.topGUI.getTheme() == "dark"):
+                        if (self.topGUI.theme == "dark"):
                             dataColor = "cyan"
                             fitColor = "gold"
                         else:
@@ -3628,11 +3602,11 @@ class mmF(tk.Frame):
             self.errorDeltaEntryAuto.bind("<Button-3>", popup_delta_auto)
             
             #---Propagate error structure changes---
-            self.errorAlphaEntryAuto.bind("<KeyRelease>", lambda e: self.topGUI.changeAlpha("auto", self.errorAlphaEntryAuto.get()))
-            self.errorBetaEntryAuto.bind("<KeyRelease>", lambda e: self.topGUI.changeBeta("auto", self.errorBetaEntryAuto.get()))
-            self.errorBetaReEntryAuto.bind("<KeyRelease>", lambda e: self.topGUI.changeBetaRe("auto", self.errorBetaReEntryAuto.get()))
-            self.errorGammaEntryAuto.bind("<KeyRelease>", lambda e: self.topGUI.changeGamma("auto", self.errorGammaEntryAuto.get()))
-            self.errorDeltaEntryAuto.bind("<KeyRelease>", lambda e: self.topGUI.changeDelta("auto", self.errorDeltaEntryAuto.get()))
+            self.errorAlphaEntryAuto.bind("<KeyRelease>", lambda e: self.topGUI.changeParam('Alpha', "auto", self.errorAlphaEntryAuto.get()))
+            self.errorBetaEntryAuto.bind("<KeyRelease>", lambda e: self.topGUI.changeParam('Beta', "auto", self.errorBetaEntryAuto.get()))
+            self.errorBetaReEntryAuto.bind("<KeyRelease>", lambda e: self.topGUI.changeParam('BetaRe', "auto", self.errorBetaReEntryAuto.get()))
+            self.errorGammaEntryAuto.bind("<KeyRelease>", lambda e: self.topGUI.changeParam('Gamma', "auto", self.errorGammaEntryAuto.get()))
+            self.errorDeltaEntryAuto.bind("<KeyRelease>", lambda e: self.topGUI.changeParam('Delta', "auto", self.errorDeltaEntryAuto.get()))
             
             self.autoWeighting.bind("<<ComboboxSelected>>", checkWeightAuto)
             self.autoSliderFrame = tk.Frame(self.autoFitWindow, background=self.backgroundColor)
@@ -3698,25 +3672,13 @@ class mmF(tk.Frame):
             else:
                 resultValues = resultValues[1:]
                 resultStdDevs = resultStdDevs[1:]
-            #---Bubble sort the results by increasing time constant---
-            doneSwapping = False
-            while (not doneSwapping):
-                doneSwapping = True
-                for i in range(1, len(resultValues)-1, 2):
-                    if (float(resultValues[i]) > float(resultValues[i+2])):
-                        tempT = resultValues[i]
-                        tempR = resultValues[i-1]
-                        tempTStd = resultStdDevs[i]
-                        tempRStd = resultStdDevs[i-1]
-                        resultValues[i] = resultValues[i+2]
-                        resultValues[i-1] = resultValues[i+1]
-                        resultStdDevs[i] = resultStdDevs[i+2]
-                        resultStdDevs[i-1] = resultStdDevs[i+1]
-                        resultValues[i+2] = tempT
-                        resultValues[i+1] = tempR
-                        resultStdDevs[i+2] = tempTStd
-                        resultStdDevs[i+1] = tempRStd
-                        doneSwapping = False
+            #---Sort the results by increasing time constant---
+            sorter = np.argsort(np.asarray(resultValues)[1::2])
+            resultValues[::2] = resultValues[::2][sorter]
+            resultValues[1::2] = resultValues[1::2][sorter]
+            resultStdDevs[::2] = resultStdDevs[::2][sorter]
+            resultStdDevs[1::2] = resultStdDevs[1::2][sorter]
+
             for i in range(0, len(resultValues)-1, 2):
                 c = float(resultValues[i+1])/float(resultValues[i])
                 cs = c*np.sqrt((float(resultStdDevs[i+1])/float(resultValues[i+1]))**2 + (float(resultStdDevs[i])/float(resultValues[i]))**2)
@@ -3789,7 +3751,7 @@ class mmF(tk.Frame):
             self.advResults.pack(fill=tk.BOTH, expand=True)
             
         def saveCurrent():
-            if (not self.capUsed):
+            if not self.capUsed:
                 valuesMatcher = []
                 a = True
                 for child in self.resultsView.get_children():
@@ -3808,7 +3770,7 @@ class mmF(tk.Frame):
                                 break
                         if (dontMatch):
                             a = messagebox.askokcancel("Values do not match", "The values under \"Edit Parameters\" do not match the current fitted values. Only values under \"Edit Parameters\" will be saved. Continue?")
-                if (a):
+                if a:
                     stringToSave = "filename: " + self.browseEntry.get() + "\n"
                     stringToSave += "number_voigt: " + self.numVoigtVariable.get() + "\n"
                     stringToSave += "number_simulations: " + self.numMonteVariable.get() + "\n"
@@ -3853,11 +3815,11 @@ class mmF(tk.Frame):
                         stringToSave += p.get() + "\n"
                     defaultSaveName, ext = os.path.splitext(os.path.basename(self.browseEntry.get()))
                     defaultSaveName += "-" + self.whatFit + str((len(self.fits)-1)//2)
-                    saveName = asksaveasfile(mode='w', defaultextension=".mmfitting", initialfile=defaultSaveName, initialdir=self.topGUI.getCurrentDirectory(), filetypes=[("Measurement model fitting", ".mmfitting")])
+                    saveName = asksaveasfile(mode='w', defaultextension=".mmfitting", initialfile=defaultSaveName, initialdir=self.topGUI.currentDirectory, filetypes=[("Measurement model fitting", ".mmfitting")])
                     if saveName is None:     #If save is cancelled
                         return
                     directory = os.path.dirname(str(saveName))
-                    self.topGUI.setCurrentDirectory(directory)
+                    self.topGUI.currentDirectory = directory
                     saveName.write(stringToSave)
                     saveName.close()
                     self.saveCurrent.configure(text="Saved")
@@ -3930,11 +3892,11 @@ class mmF(tk.Frame):
                         stringToSave += p.get() + "\n"
                     defaultSaveName, ext = os.path.splitext(os.path.basename(self.browseEntry.get()))
                     defaultSaveName += "-" + self.whatFit + str((len(self.fits)-1)//2)
-                    saveName = asksaveasfile(mode='w', defaultextension=".mmfitting", initialfile=defaultSaveName, initialdir=self.topGUI.getCurrentDirectory(), filetypes=[("Measurement model fitting", ".mmfitting")])
+                    saveName = asksaveasfile(mode='w', defaultextension=".mmfitting", initialfile=defaultSaveName, initialdir=self.topGUI.currentDirectory, filetypes=[("Measurement model fitting", ".mmfitting")])
                     if saveName is None:     #If save is cancelled
                         return
                     directory = os.path.dirname(str(saveName))
-                    self.topGUI.setCurrentDirectory(directory)
+                    self.topGUI.currentDirectory = directory
                     saveName.write(stringToSave)
                     saveName.close()
                     self.saveCurrent.configure(text="Saved")
@@ -3976,7 +3938,7 @@ class mmF(tk.Frame):
                     whichPlot = "a"
                     dataColor = "tab:blue"
                     fitColor = "orange"
-                    if (self.topGUI.getTheme() == "dark"):
+                    if (self.topGUI.theme == "dark"):
                         dataColor = "cyan"
                         fitColor = "gold"
                     else:
@@ -4345,7 +4307,7 @@ class mmF(tk.Frame):
                 pltFig.set_facecolor(self.backgroundColor)
                 dataColor = "tab:blue"
                 fitColor = "orange"
-                if (self.topGUI.getTheme() == "dark"):
+                if (self.topGUI.theme == "dark"):
                     dataColor = "cyan"
                     fitColor = "gold"
                 else:
@@ -4607,7 +4569,7 @@ class mmF(tk.Frame):
             self.nyCanvas.mpl_connect('button_press_event', onclick)
             self.nyCanvas._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
             def saveAllPlots():
-                folder = askdirectory(parent=self.resultPlot, initialdir=self.topGUI.getCurrentDirectory())
+                folder = askdirectory(parent=self.resultPlot, initialdir=self.topGUI.currentDirectory)
                 folder_str = str(folder)
                 if (len(folder_str) == 0):
                     pass
@@ -4619,7 +4581,7 @@ class mmF(tk.Frame):
                     pltSaveFig.set_facecolor(self.backgroundColor)
                     dataColor = "tab:blue"
                     fitColor = "orange"
-                    if (self.topGUI.getTheme() == "dark"):
+                    if (self.topGUI.theme == "dark"):
                         dataColor = "cyan"
                         fitColor = "gold"
                     else:
@@ -4879,11 +4841,11 @@ class mmF(tk.Frame):
                 stringToSave += str(self.wdata[i]) + "\t" + str(self.rdata[i] - model(self.wdata[i]).real) + "\t" + str(self.jdata[i] - model(self.wdata[i]).imag) + "\t" + str(self.rdata[i]) + "\t" + str(self.jdata[i]) + "\n"
             defaultSaveName, ext = os.path.splitext(os.path.basename(self.browseEntry.get()))
             defaultSaveName += "-" + self.whatFit + str((len(self.fits)-1)//2)
-            saveName = asksaveasfile(mode='w', defaultextension=".mmresiduals", initialfile=defaultSaveName, initialdir=self.topGUI.getCurrentDirectory(), filetypes=[("Measurement model residuals", ".mmresiduals")])
+            saveName = asksaveasfile(mode='w', defaultextension=".mmresiduals", initialfile=defaultSaveName, initialdir=self.topGUI.currentDirectory, filetypes=[("Measurement model residuals", ".mmresiduals")])
             if saveName is None:     #If save is cancelled
                 return
             directory = os.path.dirname(str(saveName))
-            self.topGUI.setCurrentDirectory(directory)
+            self.topGUI.currentDirectory = directory
             saveName.write(stringToSave)
             saveName.close()
             self.saveResiduals.configure(text="Saved")
@@ -4952,11 +4914,11 @@ class mmF(tk.Frame):
             stringToSave += "Chi-squared/degrees of freedom = %.4g"%(self.chiSquared/(self.lengthOfData*2-len(self.fits))) + "\n"
             defaultSaveName, ext = os.path.splitext(os.path.basename(self.browseEntry.get()))
             defaultSaveName += "-" + self.whatFit + str((len(self.fits)-1)//2)
-            saveName = asksaveasfile(title="Save All Results", mode='w', defaultextension=".txt", initialfile=defaultSaveName, initialdir=self.topGUI.getCurrentDirectory(), filetypes=[("Text file (*.txt)", ".txt")])
+            saveName = asksaveasfile(title="Save All Results", mode='w', defaultextension=".txt", initialfile=defaultSaveName, initialdir=self.topGUI.currentDirectory, filetypes=[("Text file (*.txt)", ".txt")])
             if saveName is None:
                 return
             directory = os.path.dirname(str(saveName))
-            self.topGUI.setCurrentDirectory(directory)
+            self.topGUI.currentDirectory = directory
             saveName.write(stringToSave)
             saveName.close()
             self.saveAll.configure(text="Saved")
@@ -5046,7 +5008,7 @@ class mmF(tk.Frame):
                         self.alphaLabel.grid(column=4, row=0)
                         self.alphaEntry.grid(column=5, row=0)
                         self.errorStructureFrame.grid_remove()
-                    if (self.topGUI.getFreqUndo() == 1):
+                    if self.topGUI.freqUndo == 1:
                         self.upDelete = self.undoUpDeleteStack.pop()
                         self.lowDelete = self.undoLowDeleteStack.pop()
                         try:
@@ -5073,7 +5035,7 @@ class mmF(tk.Frame):
                             self.figFreq.clear()
                             dataColor = "tab:blue"
                             deletedColor = "#A9CCE3"
-                            if (self.topGUI.getTheme() == "dark"):
+                            if (self.topGUI.theme == "dark"):
                                 dataColor = "cyan"
                             else:
                                 dataColor = "tab:blue"
@@ -5298,7 +5260,7 @@ class mmF(tk.Frame):
                         self.alphaLabel.grid(column=4, row=0)
                         self.alphaEntry.grid(column=5, row=0)
                         self.errorStructureFrame.grid_remove()
-                    if (self.topGUI.getFreqUndo() == 1):
+                    if self.topGUI.freqUndo == 1:
                         self.upDelete = self.undoUpDeleteStack.pop()
                         self.lowDelete = self.undoLowDeleteStack.pop()
                         try:
@@ -5325,7 +5287,7 @@ class mmF(tk.Frame):
                             self.figFreq.clear()
                             dataColor = "tab:blue"
                             deletedColor = "#A9CCE3"
-                            if (self.topGUI.getTheme() == "dark"):
+                            if (self.topGUI.theme == "dark"):
                                 dataColor = "cyan"
                             else:
                                 dataColor = "tab:blue"
@@ -5560,7 +5522,7 @@ class mmF(tk.Frame):
                     normalized_error_real_below[i] = 2*self.sdrReal[i]/Zfit[i].real
                     normalized_error_real_above[i] = -2*self.sdrReal[i]/Zfit[i].real
                 residualColor = "tab:blue"
-                if (self.topGUI.getTheme() == "dark"):
+                if (self.topGUI.theme == "dark"):
                     residualColor = "cyan"
                 else:
                     residualColor = "tab:blue"
@@ -5796,7 +5758,7 @@ class mmF(tk.Frame):
                 y = np.array(self.jdata)
                 dataColor = "tab:blue"
                 fitColor = "orange"
-                if (self.topGUI.getTheme() == "dark"):
+                if (self.topGUI.theme == "dark"):
                     dataColor = "cyan"
                     fitColor = "gold"
                 else:
@@ -5883,7 +5845,7 @@ class mmF(tk.Frame):
             self.upperSpinboxVariable.set(str(self.upDelete))
             dataColor = "tab:blue"
             deletedColor = "#A9CCE3"
-            if (self.topGUI.getTheme() == "dark"):
+            if (self.topGUI.theme == "dark"):
                 dataColor = "cyan"
             else:
                 dataColor = "tab:blue"
@@ -6102,7 +6064,7 @@ class mmF(tk.Frame):
             z0label.configure(text="Z(0) = %.5g"%Zzero + " \u00B1 %.3g"%ZzeroSigma)
             dataColor = "tab:blue"
             fitColor = "orange"
-            if (self.topGUI.getTheme() == "dark"):
+            if (self.topGUI.theme == "dark"):
                 dataColor = "cyan"
                 fitColor = "gold"
             else:
@@ -6333,7 +6295,7 @@ class mmF(tk.Frame):
         self.numVoigtVariable = tk.StringVar(self, "1")
         self.numVoigtSpinbox = tk.Spinbox(self.numVoigtFrame, from_=1, to=99, textvariable=self.numVoigtVariable, exportselection=0, state="disabled", width=3, command=changeNVE)
         self.numMonteLabel = tk.Label(self.numVoigtFrame, text="     Number of Simulations:   ", bg=self.backgroundColor, fg=self.foregroundColor)
-        self.numMonteVariable = tk.StringVar(self, self.topGUI.getMC())
+        self.numMonteVariable = tk.StringVar(self, self.topGUI.MCDefault)
         vcmd3 = (self.register(validateMC), '%P')
         self.numMonteEntry = ttk.Entry(self.numVoigtFrame, textvariable=self.numMonteVariable, validate="all", validatecommand=vcmd3, width=6)
         self.numVoigtLabel.grid(column=0, row=0)
@@ -6349,14 +6311,14 @@ class mmF(tk.Frame):
         #---The options frame (fit type, weighting, asssumed noise)---
         self.optionsFrame = tk.Frame(self, bg=self.backgroundColor)
         self.fitTypeLabel = tk.Label(self.optionsFrame, text="Fit type:   ", bg=self.backgroundColor, fg=self.foregroundColor)
-        self.fitTypeVariable = tk.StringVar(self, self.topGUI.getFit())
+        self.fitTypeVariable = tk.StringVar(self, self.topGUI.fitDefault)
         self.fitTypeCombobox = ttk.Combobox(self.optionsFrame, textvariable=self.fitTypeVariable, value=("Real", "Imaginary", "Complex"), exportselection=0, state="readonly", width=15)
         self.weightingLabel = tk.Label(self.optionsFrame, text="   Weighting:   ", bg=self.backgroundColor, fg=self.foregroundColor)
-        self.weightingVariable = tk.StringVar(self, self.topGUI.getWeight())
+        self.weightingVariable = tk.StringVar(self, self.topGUI.weightDefault)
         self.weightingCombobox = ttk.Combobox(self.optionsFrame, textvariable=self.weightingVariable, value=("None", "Modulus", "Proportional", "Error model"), exportselection=0, state="readonly", width=15)
         self.weightingCombobox.bind("<<ComboboxSelected>>", checkWeight)
         self.alphaLabel = tk.Label(self.optionsFrame, text="   α: ", bg=self.backgroundColor, fg=self.foregroundColor)  #Assumed noise
-        self.alphaVariable = tk.StringVar(self, self.topGUI.getAlpha())
+        self.alphaVariable = tk.StringVar(self, self.topGUI.alphaDefault)
         self.alphaEntry = ttk.Entry(self.optionsFrame, textvariable=self.alphaVariable, width=5)
         self.alphaEntry.bind("<FocusIn>", lambda e: self.alphaEntry.selection_range(0, tk.END))
         self.fitTypeLabel.grid(column=0, row=0, sticky="W")
@@ -6520,11 +6482,11 @@ class mmF(tk.Frame):
         self.errorDeltaEntry.bind("<Button-3>", popup_delta)
         
         #---Propagate error structure changes---
-        self.errorAlphaEntry.bind("<KeyRelease>", lambda e: self.topGUI.changeAlpha("model", self.errorAlphaEntry.get()))
-        self.errorBetaEntry.bind("<KeyRelease>", lambda e: self.topGUI.changeBeta("model", self.errorBetaEntry.get()))
-        self.errorBetaReEntry.bind("<KeyRelease>", lambda e: self.topGUI.changeBetaRe("model", self.errorBetaReEntry.get()))
-        self.errorGammaEntry.bind("<KeyRelease>", lambda e: self.topGUI.changeGamma("model", self.errorGammaEntry.get()))
-        self.errorDeltaEntry.bind("<KeyRelease>", lambda e: self.topGUI.changeDelta("model", self.errorDeltaEntry.get()))
+        self.errorAlphaEntry.bind("<KeyRelease>", lambda e: self.topGUI.changeParam('Alpha', "model", self.errorAlphaEntry.get()))
+        self.errorBetaEntry.bind("<KeyRelease>", lambda e: self.topGUI.changeParam('Beta', "model", self.errorBetaEntry.get()))
+        self.errorBetaReEntry.bind("<KeyRelease>", lambda e: self.topGUI.changeParam('BetaRe', "model", self.errorBetaReEntry.get()))
+        self.errorGammaEntry.bind("<KeyRelease>", lambda e: self.topGUI.changeParam('Gamma', "model", self.errorGammaEntry.get()))
+        self.errorDeltaEntry.bind("<KeyRelease>", lambda e: self.topGUI.changeParam('Delta', "model", self.errorDeltaEntry.get()))
         
         #---The fitting parameters---
         self.parametersFrame = tk.Frame(self, bg=self.backgroundColor)
@@ -6643,9 +6605,6 @@ class mmF(tk.Frame):
     def minusNVE_self(self, event):
         self.numVoigtSpinbox.invoke("buttondown")
         self.numVoigtMinus.configure(bg="DodgerBlue1", fg="white")
-    
-    def setEllipseColor(self, color):
-        self.ellipseColor = color
     
     def setThemeLight(self):
         self.backgroundColor = "#FFFFFF"
@@ -6955,7 +6914,7 @@ class mmF(tk.Frame):
             self.rdata = self.rdataRaw.copy()
             self.jdata = self.jdataRaw.copy()
             
-            if (self.browseEntry.get() != "" and self.topGUI.getFreqLoad() == 1):
+            if self.browseEntry.get() != "" and self.topGUI.freqLoad == 1:
                 try:
                     if (self.upDelete == 0):
                         self.wdata = self.wdataRaw.copy()[self.lowDelete:]
@@ -7004,7 +6963,7 @@ class mmF(tk.Frame):
                 self.figFreq.clear()
                 dataColor = "tab:blue"
                 deletedColor = "#A9CCE3"
-                if (self.topGUI.getTheme() == "dark"):
+                if (self.topGUI.theme == "dark"):
                     dataColor = "cyan"
                 else:
                     dataColor = "tab:blue"

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Created on Wed Jun 20 15:07:52 2018
 
@@ -20,6 +19,7 @@ Created on Wed Jun 20 15:07:52 2018
 """
 import tkinter as tk
 import webbrowser, sys, os
+from utils import resource_path
 
 class CreateToolTip(object):
     """
@@ -75,26 +75,15 @@ class CreateToolTip(object):
 
 class hF(tk.Frame):
     def __init__(self, parent, topOne):
-        
-        def resource_path(relative_path):
-            """ Get absolute path to resource, works for dev and for PyInstaller """
-            try:
-                # PyInstaller creates a temp folder and stores path in _MEIPASS
-                base_path = sys._MEIPASS
-            except Exception:
-                base_path = os.path.abspath(".")
-        
-            return os.path.join(base_path, relative_path)
-        
         self.parent = parent
         self.topGUI = topOne
         
         #---Appearance---
-        if (self.topGUI.getTheme() == "dark"):
+        if (self.topGUI.theme == "dark"):
             self.backgroundColor = "#424242"
             self.foregroundColor = "white"
             self.linkColor = "skyblue"
-        elif (self.topGUI.getTheme() == "light"):
+        elif (self.topGUI.theme == "light"):
             self.backgroundColor = "white"
             self.foregroundColor = "black"
             self.linkColor = "blue"

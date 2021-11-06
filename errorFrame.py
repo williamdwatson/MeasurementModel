@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Created on Mon Aug  6 15:03:45 2018
 
@@ -29,6 +28,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 import errorFitting
+from utils import resource_path
 import pyperclip
 #--------------------------------pyperclip-----------------------------------
 #     Source: https://pypi.org/project/pyperclip/
@@ -119,23 +119,12 @@ class CreateToolTip(object):
 
 class eF(tk.Frame):
     def __init__(self, parent, topOne):
-        
-        def resource_path(relative_path):
-            """ Get absolute path to resource, works for dev and for PyInstaller """
-            try:
-                # PyInstaller creates a temp folder and stores path in _MEIPASS
-                base_path = sys._MEIPASS
-            except Exception:
-                base_path = os.path.abspath(".")
-        
-            return os.path.join(base_path, relative_path)
-        
         self.parent = parent
         self.topGUI = topOne
-        if (self.topGUI.getTheme() == "dark"):
+        if (self.topGUI.theme == "dark"):
             self.backgroundColor = "#424242"
             self.foregroundColor = "white"
-        elif (self.topGUI.getTheme() == "light"):
+        elif (self.topGUI.theme == "light"):
             self.backgroundColor = "white"
             self.foregroundColor = "black"
         tk.Frame.__init__(self, parent, background=self.backgroundColor)
@@ -158,12 +147,12 @@ class eF(tk.Frame):
         self.covar = []
         
         def addFile():
-            n = askopenfilenames(initialdir=self.topGUI.getCurrentDirectory(), filetypes =[("Residual Error File (*.mmerrors)", "*.mmerrors")],title = "Choose a file")
+            n = askopenfilenames(initialdir=self.topGUI.currentDirectory, filetypes =[("Residual Error File (*.mmerrors)", "*.mmerrors")],title = "Choose a file")
             if (len(n) != 0):
                 try:
                     alreadyWarned = False
                     directory = os.path.dirname(str(n[0]))
-                    self.topGUI.setCurrentDirectory(directory)
+                    self.topGUI.currentDirectory = directory
                     for name in n:
                         fname, fext = os.path.splitext(name)
                         if (fext != ".mmerrors"):
@@ -412,7 +401,7 @@ class eF(tk.Frame):
                     imagColor = "tab:orange"
                     realColor = "tab:blue"
                     fitColor = "green"
-                    if (self.topGUI.getTheme() == "dark"):
+                    if (self.topGUI.theme == "dark"):
                         imagColor = "gold"
                         realColor = "cyan"
                         fitColor = "springgreen"
@@ -618,7 +607,7 @@ class eF(tk.Frame):
         self.regressFunctionFrame.grid(column=0, row=2, pady=5, sticky="W")
         
         self.regressionParamsFrame = tk.Frame(self, bg=self.backgroundColor)
-        self.alphaCheckboxVariable = tk.IntVar(self, self.topGUI.getErrorAlpha())
+        self.alphaCheckboxVariable = tk.IntVar(self, self.topGUI.errorAlphaDefault)
         self.alphaCheckbox = ttk.Checkbutton(self.regressionParamsFrame, text="\u03B1", variable=self.alphaCheckboxVariable, command=checkboxCommand)
         self.alphaEqual = tk.Label(self.regressionParamsFrame, text="=  ", bg=self.backgroundColor, fg=self.foregroundColor)
         self.alphaEntryVariable = tk.StringVar(self, "0.1")
@@ -648,7 +637,7 @@ class eF(tk.Frame):
         self.popup_menuA.add_command(label="Paste", command=paste_alpha)
         self.alphaEntry.bind("<Button-3>", popup_alpha)
         
-        self.betaCheckboxVariable = tk.IntVar(self, self.topGUI.getErrorBeta())
+        self.betaCheckboxVariable = tk.IntVar(self, self.topGUI.errorBetaDefault)
         self.betaCheckbox = ttk.Checkbutton(self.regressionParamsFrame, text="\u03B2", variable=self.betaCheckboxVariable, command=checkboxCommand)
         self.betaEqual = tk.Label(self.regressionParamsFrame, text="=  ", bg=self.backgroundColor, fg=self.foregroundColor)
         self.betaEntryVariable = tk.StringVar(self, "0.1")
@@ -678,9 +667,9 @@ class eF(tk.Frame):
         self.popup_menuB.add_command(label="Paste", command=paste_beta)
         self.betaEntry.bind("<Button-3>", popup_beta)
         
-        self.reCheckboxVariable = tk.IntVar(self, self.topGUI.getErrorRe())
+        self.reCheckboxVariable = tk.IntVar(self, self.topGUI.errorReDefault)
         self.reCheckbox = ttk.Checkbutton(self.regressionParamsFrame, text="R\u2091", variable=self.reCheckboxVariable, command=checkboxCommand)
-        self.gammaCheckboxVariable = tk.IntVar(self, self.topGUI.getErrorGamma())
+        self.gammaCheckboxVariable = tk.IntVar(self, self.topGUI.errorGammaDefault)
         self.gammaCheckbox = ttk.Checkbutton(self.regressionParamsFrame, text="\u03B3", variable=self.gammaCheckboxVariable, command=checkboxCommand)
         self.gammaEqual = tk.Label(self.regressionParamsFrame, text="= ", bg=self.backgroundColor, fg=self.foregroundColor)
         self.gammaEntryVariable = tk.StringVar(self, "0.1")
@@ -710,7 +699,7 @@ class eF(tk.Frame):
         self.popup_menuG.add_command(label="Paste", command=paste_gamma)
         self.gammaEntry.bind("<Button-3>", popup_gamma)
         
-        self.deltaCheckboxVariable = tk.IntVar(self, self.topGUI.getErrorDelta())
+        self.deltaCheckboxVariable = tk.IntVar(self, self.topGUI.errorDeltaDefault)
         self.deltaCheckbox = ttk.Checkbutton(self.regressionParamsFrame, text="\u03B4", variable=self.deltaCheckboxVariable, command=checkboxCommand)
         self.deltaEqual = tk.Label(self.regressionParamsFrame, text="= ", bg=self.backgroundColor, fg=self.foregroundColor)
         self.deltaEntryVariable = tk.StringVar(self, "0.1")
@@ -742,14 +731,14 @@ class eF(tk.Frame):
         
         self.optionsFrame = tk.Frame(self.regressionParamsFrame, bg=self.backgroundColor)
         self.weightingLabel = tk.Label(self.optionsFrame, text="Weighting: ", bg=self.backgroundColor, fg=self.foregroundColor)
-        self.weightingComboboxVariable = tk.StringVar(self, self.topGUI.getErrorWeighting())
+        self.weightingComboboxVariable = tk.StringVar(self, self.topGUI.errorWeightingDefault)
         self.weightingCombobox = ttk.Combobox(self.optionsFrame, textvariable=self.weightingComboboxVariable, value=("None", "Variance"), state="readonly", exportselection=0, width=10)
         self.weightingCombobox.bind("<<ComboboxSelected>>", checkWeight)
         self.movingAverageLabel = tk.Label(self.optionsFrame, text="Moving Average: ", bg=self.backgroundColor, fg=self.foregroundColor)
-        self.movingAverageComboboxVariable = tk.StringVar(self, self.topGUI.getMovingAverage())
+        self.movingAverageComboboxVariable = tk.StringVar(self, self.topGUI.errorMADefault)
         self.movingAverageCombobox = ttk.Combobox(self.optionsFrame, textvariable=self.movingAverageComboboxVariable, value=("None", "3 point", "5 point"), state="readonly", exportselection=0, width=10)
         self.detrendLabel = tk.Label(self.optionsFrame, text="Detrend: ", bg=self.backgroundColor, fg=self.foregroundColor)
-        self.detrendComboboxVariable = tk.StringVar(self, self.topGUI.getDetrend())
+        self.detrendComboboxVariable = tk.StringVar(self, self.topGUI.detrendDefault)
         self.detrendCombobox = ttk.Combobox(self.optionsFrame, textvariable=self.detrendComboboxVariable, value=("Off", "On"), state="readonly", exportselection=0, width=10)
         self.weightingLabel.grid(column=0, row=0, sticky="W")
         self.weightingCombobox.grid(column=1, row=0)

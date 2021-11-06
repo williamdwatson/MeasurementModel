@@ -239,7 +239,7 @@ def mp_imag(guesses, sharedList, index, parameters, numVoigtElements, Zj, V, w):
                         #---Check if the minimization is better than any previous---
                         nonlocal mp_current_min
                         nonlocal mp_current_best
-                        if (fittedMin.chisqr < current_min and fittedMin.success):
+                        if (fittedMin.chisqr < mp_current_min and fittedMin.success):
                             mp_current_min = fittedMin.chisqr
                             mp_current_best = fittedMin
         #---The non-base recursive case, which merely adds more parameters to recursiveGuesses based on the passed-in initial guesses---
@@ -350,7 +350,7 @@ def mp_real(guesses, sharedList, index, parameters, numVoigtElements, Zr, V, w):
                         #---Check if the minimization is better than any previous---
                         nonlocal mp_current_min
                         nonlocal mp_current_best
-                        if (fittedMin.chisqr < current_min and fittedMin.success):
+                        if (fittedMin.chisqr < mp_current_min and fittedMin.success):
                             mp_current_min = fittedMin.chisqr
                             mp_current_best = fittedMin
         #---The non-base recursive case, which merely adds more parameters to recursiveGuesses based on the passed-in initial guesses---

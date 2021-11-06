@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Created on Fri Oct  5 11:18:25 2018
 
@@ -28,6 +27,7 @@ import numpy as np
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
+from utils import resource_path
 
 class FileExtensionError(Exception):
     """Exception for files with an incorrect extension"""
@@ -94,24 +94,13 @@ class CreateToolTip(object):
             tw.destroy()
 
 class eFF(tk.Frame):
-    def __init__(self, parent, topOne):
-        
-        def resource_path(relative_path):
-            """ Get absolute path to resource, works for dev and for PyInstaller """
-            try:
-                # PyInstaller creates a temp folder and stores path in _MEIPASS
-                base_path = sys._MEIPASS
-            except Exception:
-                base_path = os.path.abspath(".")
-        
-            return os.path.join(base_path, relative_path)
-        
+    def __init__(self, parent, topOne):        
         self.parent = parent
         self.topGUI = topOne
-        if (self.topGUI.getTheme() == "dark"):
+        if (self.topGUI.theme == "dark"):
             self.backgroundColor = "#424242"
             self.foregroundColor = "white"
-        elif (self.topGUI.getTheme() == "light"):
+        elif (self.topGUI.theme == "light"):
             self.backgroundColor = "white"
             self.foregroundColor = "black"
         tk.Frame.__init__(self, parent, background=self.backgroundColor)
@@ -135,13 +124,13 @@ class eFF(tk.Frame):
             Add files to be combined into a .mmerrors file
             """
             #---Get file(s) to be added---
-            n = askopenfilenames(initialdir=self.topGUI.getCurrentDirectory(), filetypes =[("Residuals File (*.mmresiduals)", "*.mmresiduals")], title = "Choose a file")
+            n = askopenfilenames(initialdir=self.topGUI.currentDirectory, filetypes =[("Residuals File (*.mmresiduals)", "*.mmresiduals")], title = "Choose a file")
             if (len(n) != 0):   #If len(n) == 0, then no file chosen
                 try:
                     alreadyWarned = False   #Used to check if warning that a file has already been loaded
                     #---Set the current directory to the directory where the new file is located---
                     directory = os.path.dirname(str(n[0]))
-                    self.topGUI.setCurrentDirectory(directory)
+                    self.topGUI.currentDirectory = directory
                     #---Loop through each file and check if they have the right extension, number of data, and frequencies---
                     for name in n:
                         fname, fext = os.path.splitext(name)
@@ -433,10 +422,10 @@ class eFF(tk.Frame):
                     stringToSave += str(self.wdata[0][i]) + "\t" + str(self.standardDevsR[i]) + "\t" + str(self.standardDevsI[i]) + "\t" + str(avgR[i]) + "\t" + str(avgJ[i]) + "\t" + str(avgZ[i]) + "\t" + str(sigmasigma[i]) + "\n"
                 #---Get the desired save name from the user---
                 defaultSaveName = os.path.splitext(os.path.basename(self.fileListbox.get(0)))[0]
-                saveName = asksaveasfile(mode='w', defaultextension=".mmerrors", initialfile=defaultSaveName, initialdir=self.topGUI.getCurrentDirectory(), filetypes=[("Measurement model errors", ".mmerrors")])
+                saveName = asksaveasfile(mode='w', defaultextension=".mmerrors", initialfile=defaultSaveName, initialdir=self.topGUI.currentDirectory, filetypes=[("Measurement model errors", ".mmerrors")])
                 #---Set the current directory to the directory where the .mmerrors file was saved---
                 directory = os.path.dirname(str(saveName))
-                self.topGUI.setCurrentDirectory(directory)
+                self.topGUI.currentDirectory = directory
                 if saveName is None:     #If save is cancelled
                     return
                 #---Write to the saved file and then close---
@@ -470,7 +459,7 @@ class eFF(tk.Frame):
                 #---Prepare the plot appearance based on the theme---
                 imagColor = "tab:orange"
                 realColor = "tab:blue"
-                if (self.topGUI.getTheme() == "dark"):
+                if (self.topGUI.theme == "dark"):
                     imagColor = "gold"
                     realColor = "cyan"
                 else:
@@ -645,9 +634,9 @@ class eFF(tk.Frame):
         for i in range(self.wdataLength):
             stringToSave += str(self.wdata[0][i]) + "\t" + str(self.standardDevsR[i]) + "\t" + str(self.standardDevsI[i]) + "\t" + str(avgR[i]) + "\t" + str(avgJ[i]) + "\t" + str(avgZ[i]) + "\t" + str(sigmasigma[i]) + "\n"
         defaultSaveName = os.path.splitext(os.path.basename(self.fileListbox.get(0)))[0]
-        saveName = asksaveasfile(mode='w', defaultextension=".mmerrors", initialfile=defaultSaveName, initialdir=self.topGUI.getCurrentDirectory(), filetypes=[("Measurement model errors", ".mmerrors")])
+        saveName = asksaveasfile(mode='w', defaultextension=".mmerrors", initialfile=defaultSaveName, initialdir=self.topGUI.currentDirectory, filetypes=[("Measurement model errors", ".mmerrors")])
         directory = os.path.dirname(str(saveName))
-        self.topGUI.setCurrentDirectory(directory)
+        self.topGUI.currentDirectory = directory
         if saveName is None:     #If save is cancelled
             return
         saveName.write(stringToSave)
