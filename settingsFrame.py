@@ -24,6 +24,7 @@ from tkinter.filedialog import askdirectory
 import tkinter.ttk as ttk
 import tkinter.colorchooser as colorchooser
 import configparser, os
+from utils import get_root_drive
 
 class FileExtensionError(Exception):
     pass
@@ -524,8 +525,8 @@ class sF(tk.Frame):
             self.defaultDetrendVariable.set("Off")
             self.ellipseColor = "#FF0000"
             self.defaultDirectoryEntry.configure(state="normal")
-            self.defaultDirectoryEntry.delete(0,tk.END)
-            self.defaultDirectoryEntry.insert(0, "C:\\")
+            self.defaultDirectoryEntry.delete(0, tk.END)
+            self.defaultDirectoryEntry.insert(0, get_root_drive())
             self.defaultDirectoryEntry.configure(state="readonly")
             self.inputExitAlertVariable.set(0)
             self.customFormulaExitAlertVariable.set(0)
@@ -537,13 +538,13 @@ class sF(tk.Frame):
             self.defaultPropagateError.set(0)
             self.defaultFormulaDirectoryEntry.configure(state="normal")
             self.defaultFormulaDirectoryEntry.delete(0,tk.END)
-            self.defaultFormulaDirectoryEntry.insert(0, "C:\\")
+            self.defaultFormulaDirectoryEntry.insert(0, get_root_drive())
             self.defaultFormulaDirectoryEntry.configure(state="readonly")
             self.importPathListbox.delete(0, tk.END)
             
             #---Save the reset settings using ConfigParser---
             config = configparser.ConfigParser()
-            config['settings'] = {'theme': self.themeChosen, 'bar': self.barColor, 'highlight': self.highlightColor, 'accent': self.activeColor, 'dir': "C:\\", 'tab': self.defaultTabVariable.get(), 'scroll': self.defaultScrollVariable.get(), 'formulaDir': "C:\\", 'propagate': self.defaultPropagateErrorVariable.get()}
+            config['settings'] = {'theme': self.themeChosen, 'bar': self.barColor, 'highlight': self.highlightColor, 'accent': self.activeColor, 'dir': get_root_drive(), 'tab': self.defaultTabVariable.get(), 'scroll': self.defaultScrollVariable.get(), 'formulaDir': get_root_drive(), 'propagate': self.defaultPropagateErrorVariable.get()}
             config['input'] = {'detect': self.defaultDetectCommentsCheckboxVariable.get(),'comments': self.defaultCommentsVariable.get(), 'delimiter': self.defaultDelimiterVariable.get(), 'detectDelimiter': self.defaultDetectDelimiterCheckboxVariable.get()}
             config['model'] = {'mc': self.defaultMCVariable.get(), 'fit': self.defaultFitVariable.get(), 'weight': self.defaultWeightingVariable.get(), 'alpha': self.defaultAlphaVariable.get(), 'ellipse': self.ellipseColor, 'freqLoad': self.defaultFreqLoadVariable.get(), 'freqUndo': self.defaultFreqUndoVariable.get()}
             config['error'] = {'detrend': self.defaultDetrendVariable.get(), 'alphaError': self.defaultAlphaCheckboxVariable.get(), 'betaError': self.defaultBetaCheckboxVariable.get(), 'reError': self.defaultReCheckboxVariable.get(), 'gammaError': self.defaultGammaCheckboxVariable.get(), 'deltaError': self.defaultDeltaCheckboxVariable.get(), 'errorWeighting': self.defaultErrorWeightingVariable.get(), 'errorMA': self.defaultMovingAverageVariable.get()}

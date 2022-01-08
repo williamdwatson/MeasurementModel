@@ -89,3 +89,14 @@ def convert_to_type(obj, default, type_=int):
         return type_(obj)
     except (ValueError, TypeError):
         return default
+
+def get_root_drive():
+    """
+    Gets the root Windows drive
+
+    Returns
+    -------
+    str :
+        The root Windows drive
+    """
+    return os.path.splitdrive(sys.executable)[0] + os.sep

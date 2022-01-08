@@ -25,7 +25,7 @@ import tkinter.ttk as ttk
 from tkinter import messagebox
 import inputFrame, helpFrame, modelFrame, errorFileFrame, errorFrame, settingsFrame, formulaFrame
 from PIL import ImageTk, Image
-from utils import check_hex_color, convert_to_type, hex_to_RGB, resource_path, use_dark
+from utils import check_hex_color, convert_to_type, get_root_drive, hex_to_RGB, resource_path, use_dark
 
 class CreateToolTip(object):
     """
@@ -105,6 +105,12 @@ class myGUI:
         #---Load and set defaults---
         with open(resource_path('defaults.json'), 'r') as defaults_file:
             defaults = json.load(defaults_file)
+            if not os.path.exists(defaults['currentDirectory']):
+                defaults['currentDirectory'] = get_root_drive()
+            if not os.path.exists(defaults['defaultDirectory']):
+                defaults['defaultDirectory'] = get_root_drive()
+            if not os.path.exists(defaults['defaultFormulaDirectory']):
+                defaults['defaultFormulaDirectory'] = get_root_drive()
         for k, v in defaults.items():
             setattr(self, '_{}'.format(k) if k in ('theme', 'ellipseColor' 'backgroundColor', 'defaultScroll') else k, v)
         
@@ -363,17 +369,17 @@ class myGUI:
                 self.enterFormula(self.argFile)
             else:
                 self.enterInput(self.argFile)
-        elif (len(self.residualsFileList) > 0):
+        elif len(self.residualsFileList) > 0:
             self.enterResiduals(self.residualsFileList)
-        elif (len(self.errorsFileList) > 0):
+        elif len(self.errorsFileList) > 0:
             self.enterErrors(self.errorsFileList)
     
     #---Initialize settings---
     def initializeSettings(self):
-        if os.path.exists(os.getenv('LOCALAPPDATA')+r"\MeasurementModel\settings.ini"):   #Check if the settings file exists under LOCALAPPDATA
+        if os.path.exists(os.path.join(os.getenv('LOCALAPPDATA'), 'MeasurementModel', 'settings.ini')):     #Check if the settings file exists under LOCALAPPDATA
             try:
-                config = configparser.ConfigParser()                                        #Begin the config parser to read settings.ini
-                config.read(os.getenv('LOCALAPPDATA')+r"\MeasurementModel\settings.ini")    #Read the file
+                config = configparser.ConfigParser()                                                        #Begin the config parser to read settings.ini
+                config.read(os.path.join(os.getenv('LOCALAPPDATA'), 'MeasurementModel', 'settings.ini'))    #Read the file
                 
                 #---Check the theme---
                 if config['settings']['theme'] == 'light':
