@@ -37,7 +37,6 @@ def mp_complex(guesses, sharedList, index, parameters, numVoigtElements, Z_appen
     def diffComplex(params):
         return (Z_append - model(params))/V_append
     def model(p):
-        p.valuesdict()
         re = p['Re']
         r1 = p['R1']
         t1 = p['T1']
@@ -76,7 +75,6 @@ def mp_imag(guesses, sharedList, index, parameters, numVoigtElements, Zj, V, w, 
     def diffImag(params):
         return (Zj - modelImag(params))/V
     def modelImag(p):
-        p.valuesdict()
         re = p['Re']
         r1 = p['R1']
         t1 = p['T1']
@@ -115,7 +113,6 @@ def mp_real(guesses, sharedList, index, parameters, numVoigtElements, Zr, V, w, 
     def diffReal(params):
         return (Zr - modelReal(params))/V
     def modelReal(p):
-        p.valuesdict()
         re = p['Re']
         r1 = p['R1']
         t1 = p['T1']
@@ -149,6 +146,7 @@ def mp_real(guesses, sharedList, index, parameters, numVoigtElements, Zr, V, w, 
     sharedList[index] = [mp_current_min, mp_current_best]
 
 class fitter:
+    
     def __init__(self):
         self.processes = []
         self.keepGoing = True
@@ -159,77 +157,96 @@ class fitter:
             process.terminate()
     
     def findFit(self, w, Zr, Zj, numVoigtElements, numMonteCarlo, choice, assumed_noise, Rm, fitType, lowerBounds, initialGuesses, constants, upperBounds, listPercent, *error_params):
-        np.random.seed(1234)        #Use constant seed to ensure reproducibility of Monte Carlo simulations
-        constants = np.sort(constants)
-        Z_append = np.append(Zr, Zj)
-        numParams = numVoigtElements*2 + 1
+        """
+        Finds the fit for the measurement model
 
-        V = np.ones(len(w))                 #Default no weighting (all weights are 1) if choice==0
-        if (choice == 1):                   #Modulus weighting
-            for i in range(len(V)):
-                V[i] = assumed_noise*np.sqrt(Zr[i]**2 + Zj[i]**2)
-        elif (choice == 2):                 #Proportional weighting
-            Vj = np.ones(len(w))
-            for i in range(len(V)):
-                if (fitType != 1):          #If the fit type isn't imaginary use both Zr and Zj
-                    V[i] = assumed_noise*Zr[i]
-                else:                       #If the fit is imaginary use only Zj in weighting
-                    V[i] = assumed_noise*Zj[i]
-                Vj[i] = assumed_noise*Zj[i]
-        elif (choice == 3):                 #Error model weighting
+        Parameters
+        ----------
+        w : numpy array
+            1D numpy array of frequencies
+        Zr : numpy array
+            1D numpy array of real impedance data
+        Zj : numpy array
+            1D numpy array of imaginary impedance data
+        numVoigtElements : int
+            Number of Voigt elements to fit
+        numMonteCarlo : int
+            Number of Monte Carlo simulations to perform
+        choice : int
+            What weighting type to use; 0 for no weighting, 1 for modulus, 2 for proportional, 3 for error model
+        assumed_noise : float
+            Assumed noise for modulus weighting
+        Rm : float
+            Modifier for error model weighting gamma term
+        fitType : int
+            Type of fit to perform; 0 for complex, 1 for imaginary, 2 for real
+        lowerBounds : numpy array
+            1D numpy array of lower bounds for each parameter
+        initialGuesses : list
+            List of float initial guesses
+        constants : list
+            List of constant parameters
+        upperBounds : numpy array
+            1D numpy array of upper bounds for each parameter
+        listPercent : list
+            List to modify for communication with main thread
+        error_params : floats
+            Float error parameters (alpha, beta, betaRe, gamma, and delta)
+        
+        Returns
+        -------
+        result : list
+            List of parameter results
+        sigma : list
+            List of parameter standard errors
+        standardDevsReal : numpy array
+            1D numpy array of real Monte Carlo standard deviations
+        standardDevsImag : numpy array
+            1D numpy array of imaginary Monte Carlo standard deviations
+        Zzero : complex
+            Predicted impedance at 0 frequency
+        ZzeroSigma : complex
+            Standard error on `Zzero`
+        Zpolar : complex
+            Polarization impedance
+        ZpolarSigma : complex
+            Standard error on `Zpolar`
+        float :
+            Chi-squared of minimization
+        cor : numpy array
+            2D numpy array of parameter correlations
+        float :
+            Akaike Information Criterion
+        """
+        np.random.seed(1234)        #Use constant seed to ensure reproducibility of Monte Carlo simulations
+        self.constants = np.sort(constants)
+        self.Z_append = np.append(Zr, Zj)
+        self.numParams = numVoigtElements*2 + 1
+        self.w = w
+        self.numVoigtElements= numVoigtElements
+        self.Zr = Zr
+        self.Zj = Zj
+
+        self.V = np.ones(len(w))                 #Default no weighting (all weights are 1) if choice==0
+        if (choice == 1):                        #Modulus weighting
+            self.V = assumed_noise*np.sqrt(Zr**2 + Zj**2)
+        elif (choice == 2):                      #Proportional weighting
+            self.Vj = assumed_noise*Zj
+            if (fitType != 1):                   #If the fit type isn't imaginary use both Zr and Zj
+                self.V = assumed_noise*Zr
+            else:                                #If the fit is imaginary use only Zj in weighting
+                self.V = assumed_noise*Zj
+        elif (choice == 3):                      #Error model weighting
             alpha = error_params[0]
             beta = error_params[1]
             betaRe = error_params[2]
             gamma = error_params[3]
             delta = error_params[4]
-            for i in range(len(V)):
-                V[i] = alpha*abs(Zj[i]) + (beta*abs(Zr[i]) - betaRe) + gamma*(np.sqrt(Zr[i]**2 + Zj[i]**2)**2)/Rm + delta
+            self.V = alpha*np.abs(Zj) + (beta*np.abs(Zr) - betaRe) + gamma*(np.sqrt(Zr**2 + Zj**2)**2)/Rm + delta
         if (choice != 2):
-            V_append = np.append(V, V)
+            self.V_append = np.append(self.V, self.V)
         else:
-            V_append = np.append(V, Vj)
-        
-        def diffComplex(params):
-            return (Z_append - model(params))/V_append
-        
-        def diffImag(params):
-            return (Zj - modelImag(params))/V
-        
-        def diffReal(params):
-            return (Zr - modelReal(params))/V
-        
-        #---Model used in complex fitting; returns appendation of real and imaginary parts---
-        def model(p):
-            p.valuesdict()
-            re = p['Re']
-            r1 = p['R1']
-            t1 = p['T1']
-            actual = re + (r1/(1+(1j*w*2*np.pi*t1)))
-            for i in range(2, numVoigtElements+1):
-                actual += (p['R'+str(i)]/(1+(1j*w*2*np.pi*p['T'+str(i)])))
-            return np.append(actual.real, actual.imag)
-         
-        #---Model used in imaginary fitting; returns only imaginary part---
-        def modelImag(p):
-            p.valuesdict()
-            re = p['Re']
-            r1 = p['R1']
-            t1 = p['T1']
-            actual = re + (r1/(1+(1j*w*2*np.pi*t1)))
-            for i in range(2, numVoigtElements+1):
-                actual += (p['R'+str(i)]/(1+(1j*w*2*np.pi*p['T'+str(i)])))
-            return actual.imag
-        
-        #---Model used in real fitting; returns only real part---
-        def modelReal(p):
-            p.valuesdict()
-            re = p['Re']
-            r1 = p['R1']
-            t1 = p['T1']
-            actual = re + (r1/(1+(1j*w*2*np.pi*t1)))
-            for i in range(2, numVoigtElements+1):
-                actual += (p['R'+str(i)]/(1+(1j*w*2*np.pi*p['T'+str(i)])))
-            return actual.real    
+            self.V_append = np.append(self.V, self.Vj)
         
         parameters = lmfit.Parameters()
         parameterCorrector = 0
@@ -264,7 +281,7 @@ class fitter:
                             parameters.get("Re").set(value=recursiveGuesses[0][i])
                             parameters.get("R1").set(value=recursiveGuesses[1][j])
                             parameters.get("T1").set(value=recursiveGuesses[2][k])
-                            fittedMin = lmfit.minimize(diffComplex, parameters)
+                            fittedMin = lmfit.minimize(self.diffComplex, parameters)
                             nonlocal current_min
                             nonlocal current_best
                             listPercent.append(1)
@@ -288,7 +305,7 @@ class fitter:
                             parameters.get("Re").set(value=recursiveGuesses[0][i])
                             parameters.get("R1").set(value=recursiveGuesses[1][j])
                             parameters.get("T1").set(value=recursiveGuesses[2][k])
-                            fittedMin = lmfit.minimize(diffImag, parameters)
+                            fittedMin = lmfit.minimize(self.diffImag, parameters)
                             nonlocal current_min
                             nonlocal current_best
                             listPercent.append(1)
@@ -312,7 +329,7 @@ class fitter:
                             parameters.get("Re").set(value=recursiveGuesses[0][i])
                             parameters.get("R1").set(value=recursiveGuesses[1][j])
                             parameters.get("T1").set(value=recursiveGuesses[2][k])
-                            fittedMin = lmfit.minimize(diffReal, parameters)
+                            fittedMin = lmfit.minimize(self.diffReal, parameters)
                             nonlocal current_min
                             nonlocal current_best
                             listPercent.append(1)
@@ -351,7 +368,7 @@ class fitter:
                 for i in range(numCores):
                     if (not self.keepGoing):
                         return
-                    self.processes.append(mp.Process(target=mp_complex, args=(toRun[i], vals, i, parameters, numVoigtElements, Z_append, V_append, w, percentVal)))
+                    self.processes.append(mp.Process(target=mp_complex, args=(toRun[i], vals, i, parameters, numVoigtElements, self.Z_append, self.V_append, w, percentVal)))
                     listPercent.append(2)
                 for p in self.processes:
                     if (not self.keepGoing):
@@ -372,7 +389,7 @@ class fitter:
                 for i in range(numCores):
                     if (not self.keepGoing):
                         return
-                    self.processes.append(mp.Process(target=mp_imag, args=(toRun[i], vals, i, parameters, numVoigtElements, Zj, V, w, percentVal)))
+                    self.processes.append(mp.Process(target=mp_imag, args=(toRun[i], vals, i, parameters, numVoigtElements, Zj, self.V, w, percentVal)))
                     listPercent.append(2)
                 for p in self.processes:
                     if (not self.keepGoing):
@@ -392,7 +409,7 @@ class fitter:
                 for i in range(numCores):
                     if (not self.keepGoing):
                         return
-                    self.processes.append(mp.Process(target=mp_real, args=(toRun[i], vals, i, parameters, numVoigtElements, Zr, V, w, percentVal)))
+                    self.processes.append(mp.Process(target=mp_real, args=(toRun[i], vals, i, parameters, numVoigtElements, Zr, self.V, w, percentVal)))
                     listPercent.append(2)
                 for p in self.processes:
                     if (not self.keepGoing):
@@ -446,10 +463,10 @@ class fitter:
             Zpolar = 0
             for i in range(1, len(result), 2):
                 Zpolar += result[i]
-            cvar = np.zeros((numParams, numParams))
+            cvar = np.zeros((self.numParams, self.numParams))
             return result, "-", "-", "-", Zzero, "-", Zpolar, "-", minimized.chisqr, cvar, minimized.aic
         
-        cor = np.zeros((numParams, numParams))
+        cor = np.zeros((self.numParams, self.numParams))
         if (minimized.params['Re'].correl == None):
             cor[:,0] = 0
             cor[0,:] = 0
@@ -521,10 +538,10 @@ class fitter:
     
         
         #---Calculate numMonteCarlo number of parameters, using a Gaussian distribution---
-        randomParams = np.zeros((numParams, numMonteCarlo))
+        randomParams = np.zeros((self.numParams, numMonteCarlo))
         randomlyCalculated = np.zeros((len(w), numMonteCarlo), dtype=np.complex128)
         
-        for i in range(numParams):
+        for i in range(self.numParams):
             randomParams[i] = normal(result[i], abs(sigma[i]), numMonteCarlo)
         
         #---Calculate impedance values based on the random paramaters---
@@ -532,7 +549,7 @@ class fitter:
             for i in range(numMonteCarlo):
                 for j in range(len(w)):
                     randomlyCalculated[j][i] = randomParams[0][i] + (randomParams[1][i]/(1+(1j*w[j]*2*np.pi*randomParams[2][i])))
-                    for k in range(3, numParams, 2):
+                    for k in range(3, self.numParams, 2):
                         randomlyCalculated[j][i] += (randomParams[k][i]/(1+(1j*w[j]*2*np.pi*randomParams[k+1][i])))
     
         standardDevsReal = np.zeros(len(w))
@@ -559,3 +576,42 @@ class fitter:
                 
         #---Return everything---
         return result, sigma, standardDevsReal, standardDevsImag, Zzero, ZzeroSigma, Zpolar, ZpolarSigma, minimized.chisqr, cor, minimized.aic
+    
+    def diffComplex(self, params):
+        return (self.Z_append - self.model(params))/self.V_append
+    
+    def diffImag(self, params):
+        return (self.Zj - self.modelImag(params))/self.V
+    
+    def diffReal(self, params):
+        return (self.Zr - self.modelReal(params))/self.V
+    
+    #---Model used in complex fitting; returns appendation of real and imaginary parts---
+    def model(self, p):
+        re = p['Re']
+        r1 = p['R1']
+        t1 = p['T1']
+        actual = re + (r1/(1+(1j*self.w*2*np.pi*t1)))
+        for i in range(2, self.numVoigtElements+1):
+            actual += (p['R'+str(i)]/(1+(1j*self.w*2*np.pi*p['T'+str(i)])))
+        return np.append(actual.real, actual.imag)
+        
+    #---Model used in imaginary fitting; returns only imaginary part---
+    def modelImag(self, p):
+        re = p['Re']
+        r1 = p['R1']
+        t1 = p['T1']
+        actual = re + (r1/(1+(1j*self.w*2*np.pi*t1)))
+        for i in range(2, self.numVoigtElements+1):
+            actual += (p['R'+str(i)]/(1+(1j*self.w*2*np.pi*p['T'+str(i)])))
+        return actual.imag
+    
+    #---Model used in real fitting; returns only real part---
+    def modelReal(self, p):
+        re = p['Re']
+        r1 = p['R1']
+        t1 = p['T1']
+        actual = re + (r1/(1+(1j*self.w*2*np.pi*t1)))
+        for i in range(2, self.numVoigtElements+1):
+            actual += (p['R'+str(i)]/(1+(1j*self.w*2*np.pi*p['T'+str(i)])))
+        return actual.real
