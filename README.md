@@ -1,5 +1,7 @@
 # Measurement Model
-A GUI Python-based impedance measurement model tool. This project served as my University of Florida honors thesis. A version is availabe at ECSarXiv: [EIS: Measurement Model Program](https://osf.io/preprints/ecsarxiv/kze9x/kze9x_v1). This tool has also been referenced in published literature: [Physical properties obtained from measurement model analysis of impedance measurements](https://www.sciencedirect.com/science/article/abs/pii/S0013468620311403) by H. Liao, W. Watson, et. al.
+A GUI Python-based impedance measurement model tool. This project served as my University of Florida honors thesis.
+
+A version is availabe at ECSarXiv: [EIS: Measurement Model Program](https://osf.io/preprints/ecsarxiv/kze9x/kze9x_v1). This tool has also been referenced in published literature: [Physical properties obtained from measurement model analysis of impedance measurements](https://www.sciencedirect.com/science/article/abs/pii/S0013468620311403) by H. Liao, W. Watson, et. al.
 
 **Note:** The quality of the code isn't the best but it does the job. If I was writing this again there's a lot I would do differently!
 
